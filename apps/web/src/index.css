@@ -1,15 +1,7 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@config "../tailwind.config.js";
-
-/* Base styles for dark mode compatibility if class based approach does not work perfectly with new tailwind */
-@layer base {
-  body {
-    @apply bg-background text-on-background font-sans transition-colors duration-300 ease-in-out antialiased;
-  }
-
-  .dark body {
-    /* TODO: Add dark mode equivalent variables or class based backgrounds for body here */
-    @apply bg-slate-950 text-slate-200;
-  }
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
