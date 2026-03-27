@@ -79,3 +79,56 @@ export const notifications = [
   { id: 'n2', type: 'comment', user: 'Prof. Davis', target: 'your question', time: '1h ago', read: true },
   { id: 'n3', type: 'mention', user: 'David Kim', target: 'a comment', time: '2h ago', read: true }
 ];
+
+export const studentProfilePosts = [
+  ...posts.filter(p => p.author.id === currentUser.id),
+  {
+    id: 'p4',
+    author: currentUser,
+    content: "Has anyone taken Professor Smith's Advanced Operating Systems class? I'm wondering how heavy the workload is compared to CS412. Specifically regarding the final project.",
+    timestamp: '3 days ago',
+    upvotes: 18,
+    comments: 5,
+    hasUpvoted: false,
+    hasDownvoted: false,
+    tags: ['CS550', 'CourseAdvice']
+  },
+  {
+    id: 'p5',
+    author: currentUser,
+    content: "I finally understood how React's virtual DOM reconciliation algorithm works. It's fascinating how it uses heuristics to achieve O(n) complexity instead of the naive O(n^3) tree edit distance algorithm. Wrote a small blog post about it!",
+    timestamp: '1 week ago',
+    upvotes: 89,
+    comments: 14,
+    hasUpvoted: true,
+    hasDownvoted: false,
+    tags: ['WebDev', 'React', 'Algorithms']
+  }
+];
+
+export const businessProfilePosts = [
+  ...posts.filter(p => p.author.id === businessUser.id),
+  {
+    id: 'p6',
+    author: businessUser,
+    content: "New Seasonal Menu Alert! 🍂 Try our new Maple Pecan Latte and Pumpkin Spice Croissants. Available starting tomorrow morning. Limited time only!",
+    timestamp: '2 days ago',
+    upvotes: 215,
+    comments: 42,
+    hasUpvoted: false,
+    hasDownvoted: false,
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=800&h=400',
+    tags: ['NewMenu', 'FallFlavors']
+  },
+  {
+    id: 'p7',
+    author: businessUser,
+    content: "We're hiring! Looking for part-time baristas to join our amazing team. Flexible hours that work around your class schedule. DM us for an application link or drop your resume at the counter.",
+    timestamp: '1 week ago',
+    upvotes: 67,
+    comments: 5,
+    hasUpvoted: false,
+    hasDownvoted: false,
+    tags: ['Hiring', 'StudentJobs']
+  }
+];

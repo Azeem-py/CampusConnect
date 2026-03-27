@@ -9,7 +9,7 @@ export const Home = () => {
     <div className="max-w-screen-2xl mx-auto flex">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 min-h-screen">
+      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 h-screen overflow-y-auto scrollbar-thin">
         <header className="mb-8 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-headline font-bold text-on-surface tracking-tight">Your Network</h1>

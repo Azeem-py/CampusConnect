@@ -61,7 +61,7 @@ export const Composer = () => {
               <span className="font-semibold text-sm text-on-surface tracking-wide uppercase px-2">Live Preview</span>
               <span className="text-xs font-label text-outline bg-surface-container px-2 py-1 rounded">Markdown + LaTeX</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 text-on-surface-variant prose prose-invert max-w-none prose-p:leading-relaxed whitespace-pre-line">
+            <div className="flex-1 overflow-y-auto scrollbar-thin p-6 text-on-surface-variant prose prose-invert max-w-none prose-p:leading-relaxed whitespace-pre-line">
               {content || <span className="text-outline italic">Preview will appear here...</span>}
             </div>
           </div>

@@ -1,14 +1,14 @@
 import React from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { PostCard } from '../components/PostCard';
-import { businessUser, posts } from '../mocks/data';
+import { businessUser, businessProfilePosts } from '../mocks/data';
 
 export const BusinessProfile = () => {
   return (
     <div className="max-w-screen-2xl mx-auto flex min-h-screen bg-surface">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 h-screen overflow-y-auto">
+      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 h-screen overflow-y-auto scrollbar-thin">
         {/* Profile Header */}
         <div className="relative mb-12 border-b border-outline-variant/20 pb-8">
           <div className="h-48 w-full bg-gradient-to-br from-secondary/20 to-surface-container rounded-xl mb-16 overflow-hidden">
@@ -31,17 +31,17 @@ export const BusinessProfile = () => {
           </div>
 
           <div className="mt-8 flex justify-end gap-3 px-8">
-            <button className="px-5 py-2 rounded-lg text-sm font-semibold bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm">
+            <button className="px-5 py-2 rounded-lg text-sm font-semibold bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm cursor-pointer">
               Subscribe
             </button>
-            <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors bg-surface-container-low p-2 rounded-lg shadow-sm">
+            <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors bg-surface-container-low p-2 rounded-lg shadow-sm cursor-pointer">
               map
             </button>
           </div>
 
           <div className="mt-8 px-8 flex flex-col gap-4">
             <p className="text-on-surface-variant leading-relaxed max-w-2xl text-[15px]">{businessUser.bio}</p>
-            <div className="flex items-center gap-6 text-sm text-outline font-label uppercase tracking-wider">
+            <div className="flex items-center gap-6 text-sm text-outline font-label uppercase tracking-wider flex-wrap">
               <span className="flex items-center gap-2"><span className="material-symbols-outlined text-base">location_on</span>{businessUser.location}</span>
               <span className="flex items-center gap-2"><span className="material-symbols-outlined text-base">language</span><a href="#" className="hover:underline">{businessUser.website}</a></span>
               <span className="flex items-center gap-2 text-primary font-bold"><span className="material-symbols-outlined text-base">storefront</span>Open until 2 AM</span>
@@ -50,19 +50,21 @@ export const BusinessProfile = () => {
         </div>
 
         {/* Profile Tabs */}
-        <div className="flex items-center gap-8 border-b border-outline-variant/20 px-8 mb-6 overflow-x-auto">
-          <button className="px-4 py-3 text-secondary font-bold border-b-2 border-secondary -mb-[2px] whitespace-nowrap">Announcements</button>
-          <button className="px-4 py-3 text-on-surface-variant hover:text-on-surface font-semibold transition-colors whitespace-nowrap">Menu/Services</button>
-          <button className="px-4 py-3 text-on-surface-variant hover:text-on-surface font-semibold transition-colors whitespace-nowrap">Reviews</button>
+        <div className="flex items-center gap-8 border-b border-outline-variant/20 px-8 mb-6 overflow-x-auto scrollbar-hide">
+          <button className="px-4 py-3 text-secondary font-bold border-b-2 border-secondary -mb-[2px] whitespace-nowrap cursor-pointer">Announcements</button>
+          <button className="px-4 py-3 text-on-surface-variant hover:text-on-surface font-semibold transition-colors whitespace-nowrap cursor-pointer">Menu/Services</button>
+          <button className="px-4 py-3 text-on-surface-variant hover:text-on-surface font-semibold transition-colors whitespace-nowrap cursor-pointer">Reviews</button>
         </div>
 
         <section className="flex flex-col gap-6 px-8 pb-16">
-          <PostCard post={posts[1]} />
+          {businessProfilePosts.map((post) => (
+             <PostCard key={post.id} post={post} />
+          ))}
         </section>
       </main>
 
       {/* Services Sidebar */}
-      <aside className="hidden xl:block w-80 sticky top-24 h-[calc(100vh-6rem)] ml-8 pl-8 border-l border-outline-variant/20 pt-8">
+      <aside className="hidden xl:block w-80 sticky top-24 h-[calc(100vh-6rem)] ml-8 pl-8 border-l border-outline-variant/20 pt-8 overflow-y-auto scrollbar-thin">
         <h3 className="text-on-surface-variant font-semibold tracking-wider uppercase text-xs mb-4">Promotions</h3>
         <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-4 flex flex-col gap-4 shadow-sm">
           <div className="p-3 bg-secondary/10 rounded-lg text-secondary border border-secondary/20 group cursor-pointer hover:bg-secondary/20 transition-colors">
