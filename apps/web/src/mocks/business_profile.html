@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Stitch Tutoring Services | CampusConnect</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary-fixed-variant": "#3323cc",
+              "error": "#ba1a1a",
+              "surface-container-low": "#1e1e1e",
+              "secondary-fixed-dim": "#b5c4ff",
+              "primary-fixed-dim": "#c3c0ff",
+              "surface-tint": "#4d44e3",
+              "background": "#0f111a",
+              "on-secondary-fixed": "#00164d",
+              "inverse-on-surface": "#edf0ff",
+              "secondary": "#7193ff",
+              "tertiary-container": "#b42e00",
+              "on-tertiary-fixed-variant": "#872000",
+              "surface-variant": "#2b2b3b",
+              "tertiary-fixed": "#ffdbd1",
+              "surface-bright": "#1a1c25",
+              "surface": "#12141c",
+              "on-surface-variant": "#c7c4d8",
+              "surface-container-lowest": "#1e1e1e",
+              "tertiary-fixed-dim": "#ffb5a0",
+              "on-tertiary": "#ffffff",
+              "on-error": "#ffffff",
+              "outline": "#8e8da0",
+              "surface-container-highest": "#33354a",
+              "inverse-primary": "#4d44e3",
+              "on-error-container": "#93000a",
+              "outline-variant": "#464555",
+              "secondary-fixed": "#dce1ff",
+              "on-secondary": "#ffffff",
+              "on-tertiary-fixed": "#3b0900",
+              "surface-dim": "#12141c",
+              "on-primary-fixed": "#000069",
+              "primary-container": "#4f46e5",
+              "primary-fixed": "#e2dfff",
+              "on-primary-container": "#dad7ff",
+              "error-container": "#ffdad6",
+              "surface-container-high": "#27293d",
+              "on-tertiary-container": "#ffd1c5",
+              "on-surface": "#e1e8fd",
+              "on-secondary-container": "#dce1ff",
+              "tertiary": "#ffb5a0",
+              "on-secondary-fixed-variant": "#0c3da7",
+              "on-background": "#e1e8fd",
+              "primary": "#c3c0ff",
+              "secondary-container": "#3157c0",
+              "inverse-surface": "#e1e8fd",
+              "surface-container": "#1a1c25",
+              "on-primary": "#000069"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["JetBrains Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass {
+            background: rgba(79, 70, 229, 0.4);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased">
+<!-- SideNavBar Anchor -->
+<aside class="h-screen w-64 fixed left-0 top-0 overflow-y-auto bg-surface dark:bg-[#0c0e14] flex flex-col py-8 z-50 border-r border-outline-variant/10">
+<div class="px-6 mb-10">
+<h1 class="text-2xl font-bold tracking-tighter text-primary">CampusConnect</h1>
+<p class="text-xs font-medium text-outline uppercase tracking-widest mt-1">The Digital Commons</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant font-medium hover:bg-surface-container transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span>Home</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant font-medium hover:bg-surface-container transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span>Search</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant font-medium hover:bg-surface-container transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+<span>Create</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant font-medium hover:bg-surface-container transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span>Notifications</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-4 text-on-surface-variant font-medium hover:bg-surface-container transition-colors duration-200 active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span>Profile</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-4 text-primary font-semibold bg-surface-container-highest/40 rounded-r-full active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span>Services</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full py-3 bg-primary-container text-white font-bold rounded-lg shadow-lg hover:opacity-90 transition-opacity">
+                Post
+            </button>
+</div>
+</aside>
+<!-- TopNavBar Anchor -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-background/80 backdrop-blur-md flex justify-between items-center px-8 py-3 h-16 border-b border-outline-variant/10">
+<div class="flex items-center bg-surface-container-high px-4 py-2 rounded-full w-96 group focus-within:ring-2 ring-primary/20 transition-all">
+<span class="material-symbols-outlined text-outline" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full ml-2 text-on-surface" placeholder="Search campus services..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden ring-1 ring-outline-variant/30">
+<img alt="User Avatar" data-alt="close up portrait of a young professional man with short dark hair in a bright studio setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9L5VcTa0M7UPfTrHMHiZWB-ub_QMzF0NfgVPpaS6WjtK_ZC5FkBHXvpfGNHDjESOKnASxs_BU5P5vJeAM6wmS0hAGNldwgPDTSn-MJ0cPMv89t_Qi0atkowFmS65Hrj5mFN-Zq_iQmxkbpP9J3rtpwGgc3wXp1vV27lwMpd97JxfM-kRKLP5sRJQ77YQ2deCbsI5mGC3JB-c4G9nImyJKSHolCNzEUAfaWOyFboEA7exWN1SdF87uIvDDtgc2a6Y1Zuv8lbxHpMrS"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-20 px-8 min-h-screen pb-20">
+<!-- Hero Business Profile Section -->
+<section class="grid grid-cols-12 gap-8 mb-12">
+<!-- Profile Info (8 cols) -->
+<div class="col-span-12 lg:col-span-8 space-y-6">
+<div class="flex items-start gap-8">
+<div class="w-32 h-32 rounded-xl bg-primary-container overflow-hidden shrink-0 shadow-xl ring-2 ring-outline-variant/20">
+<img alt="Business Logo" data-alt="minimalist logo design of an intertwined thread forming an S shape on a clean indigo background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA21eMOrrCmKVXRFrCFDeWuMnYEbfreEBG1cj8rBaIFIzHJ0MognQEIjYul20QmBqh1zcSX6uX2q4fpwuTq6CRmk_K931Gz9l3cHf4nXek9t5XZB3KfOjZ7s6bN6_-qnXTmgZweqzA1u-DMJAyIwOa5S6UmltqXIU-7Z7Rx6--JwwZxgnmxRByaftHcPFcZQmSjuER-nnfl1szuPJ9eC2Dyq9Dn9DP7CQWaWP9QqEQc8_qkzbnUhWa0KnGfyFODhsv_Uo7QnVQlefaS"/>
+</div>
+<div class="flex-1 pt-2">
+<div class="flex items-center gap-3 mb-2">
+<h2 class="text-3xl font-bold tracking-tight text-on-surface">Stitch Tutoring Services</h2>
+<div class="flex items-center gap-1 bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="text-[10px] font-bold uppercase tracking-wider text-primary">Official Campus Business</span>
+</div>
+</div>
+<p class="text-on-surface-variant text-lg leading-relaxed max-w-2xl">
+                            Bridging the gap between theory and practice. We provide specialized 1-on-1 tutoring for advanced quantitative courses and programming fundamentals.
+                        </p>
+<div class="flex items-center gap-6 mt-6">
+<div class="flex flex-col">
+<span class="mono text-xs text-outline tracking-tighter uppercase">Rating</span>
+<span class="font-bold text-xl flex items-center gap-1 text-on-surface">4.9 <span class="material-symbols-outlined text-tertiary text-[18px]" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span></span>
+</div>
+<div class="w-px h-8 bg-outline-variant/30"></div>
+<div class="flex flex-col">
+<span class="mono text-xs text-outline tracking-tighter uppercase">Students Helped</span>
+<span class="font-bold text-xl text-on-surface">1.2k+</span>
+</div>
+<div class="w-px h-8 bg-outline-variant/30"></div>
+<div class="flex flex-col">
+<span class="mono text-xs text-outline tracking-tighter uppercase">Community Upvotes</span>
+<span class="font-bold text-xl text-secondary">842</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="flex items-center gap-4 pt-4">
+<button class="px-8 py-3 bg-primary-container text-white font-bold rounded-lg shadow-xl hover:scale-[1.02] transition-transform flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+                        Book a Session
+                    </button>
+<button class="px-8 py-3 bg-surface-container-high text-on-surface font-bold rounded-lg hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+                        Inquiry
+                    </button>
+<div class="flex-1"></div>
+<a class="text-outline hover:text-primary transition-colors flex items-center gap-1 font-medium" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="link">link</span>
+                        stitch-tutors.edu
+                    </a>
+</div>
+</div>
+<!-- Stats/Mini Map (4 cols) -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container-low rounded-xl p-6 relative overflow-hidden group border border-outline-variant/10">
+<div class="relative z-10">
+<h3 class="mono text-[10px] font-bold uppercase tracking-[0.2em] text-outline mb-4">Location &amp; Hours</h3>
+<div class="aspect-video rounded-lg mb-4 overflow-hidden border border-outline-variant/20 grayscale contrast-125 opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500">
+<img alt="Map Location" data-alt="clean minimal city map illustration with dark navy tones and neon indigo accents with a glowing pin dropped on a campus building" data-location="New York" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANcFXQa6W5QEzqcqtKdGj2QV3KNpnoeDeZrVTM89CwzsHrlfXjvG42UvCdianWrGWZRan09O8hDaFMsptpkjcFIOVUCHw7BifNLylxBMSK2X7w67LnG7OAJpEGzn0-Sc4uVMuQKZEZypv0IolYGHMJvnopwcYLXVHblYmRqyvO-aG_ygGS2kVBNfvLIE66ZPMHzGsWiw4n82A0hw3MmrJ-6vERqq-y7BHwFsIBYKdr8f0FDD5e4dhHe22WfTTP573HQkTcfRHGsMNA"/>
+</div>
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="location_on">location_on</span>
+<span class="text-sm font-medium text-on-surface">Student Union, Suite 402</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="schedule">schedule</span>
+<span class="text-sm font-medium text-on-surface">Mon - Fri: 09:00 - 18:00</span>
+</div>
+</div>
+</div>
+<!-- Subtle Gradient Glow -->
+<div class="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-colors"></div>
+</div>
+</section>
+<!-- Main Dashboard Content -->
+<div class="grid grid-cols-12 gap-10">
+<!-- Sidebar: Pinned Services (4 cols) -->
+<aside class="col-span-12 lg:col-span-4 space-y-8">
+<div>
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-xl font-bold tracking-tight text-on-surface">Pinned Services</h3>
+<span class="mono text-[10px] text-primary px-2 py-1 bg-primary/10 rounded">LIVE</span>
+</div>
+<div class="space-y-4">
+<!-- Service Card 1 -->
+<div class="p-5 bg-[#1E1E1E] rounded-xl shadow-lg border border-outline-variant/10 hover:border-primary/30 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-3">
+<span class="mono text-[10px] font-bold text-tertiary-container bg-tertiary-container/20 px-2 py-0.5 rounded">ECON402</span>
+<span class="text-lg font-bold text-primary">$30/hr</span>
+</div>
+<h4 class="font-bold text-on-surface mb-1">Intro to Econometrics</h4>
+<p class="text-xs text-on-surface-variant mb-4">Mastering linear regression, hypothesis testing, and STATA essentials.</p>
+<div class="flex items-center gap-2">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-[#1E1E1E] bg-slate-700"></div>
+<div class="w-6 h-6 rounded-full border-2 border-[#1E1E1E] bg-slate-800"></div>
+</div>
+<span class="text-[10px] text-outline font-medium">12 students currently enrolled</span>
+</div>
+</div>
+<!-- Service Card 2 -->
+<div class="p-5 bg-[#1E1E1E] rounded-xl shadow-lg border border-outline-variant/10 hover:border-primary/30 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-3">
+<span class="mono text-[10px] font-bold text-secondary bg-secondary/10 px-2 py-0.5 rounded">CS105</span>
+<span class="text-lg font-bold text-primary">$40/hr</span>
+</div>
+<h4 class="font-bold text-on-surface mb-1">Python for Data Science</h4>
+<p class="text-xs text-on-surface-variant mb-4">From NumPy arrays to Pandas dataframes. Perfect for business analytics majors.</p>
+<div class="flex items-center gap-2">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border-2 border-[#1E1E1E] bg-slate-600"></div>
+<div class="w-6 h-6 rounded-full border-2 border-[#1E1E1E] bg-slate-700"></div>
+</div>
+<span class="text-[10px] text-outline font-medium">8 slots remaining this week</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Credibility/Trust -->
+<div class="bg-primary/5 p-6 rounded-xl border border-primary/10">
+<h4 class="font-bold mb-4 flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-primary" data-icon="reviews">reviews</span>
+                        Student Feedback
+                    </h4>
+<div class="space-y-4">
+<div class="italic text-sm text-on-surface-variant">
+                            "Stitch helped me pull my Econometrics grade from a C to an A- in just 4 weeks. Highly recommend!"
+                            <div class="mt-2 font-bold not-italic text-on-surface">— Sarah J., Econ '24</div>
+</div>
+<div class="h-px bg-outline-variant/20"></div>
+<div class="italic text-sm text-on-surface-variant">
+                            "Clear, concise, and professional. The Python sessions are a lifesaver."
+                            <div class="mt-2 font-bold not-italic text-on-surface">— Mark L., MBA</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Feed Content (8 cols) -->
+<section class="col-span-12 lg:col-span-8 space-y-8">
+<div class="flex items-center gap-8 border-b border-outline-variant/10">
+<button class="pb-4 px-2 border-b-2 border-primary text-primary font-bold transition-all">Updates</button>
+<button class="pb-4 px-2 text-outline hover:text-on-surface transition-all font-medium">Resources</button>
+<button class="pb-4 px-2 text-outline hover:text-on-surface transition-all font-medium">Gallery</button>
+</div>
+<!-- Post 1 (Educational Content) -->
+<article class="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
+<div class="p-6">
+<div class="flex justify-between items-center mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest ring-1 ring-outline-variant/20">
+<img alt="Stitch Avatar" class="rounded-full" data-alt="minimalist professional logo icon for a tutoring business in deep indigo and light blue" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrRikUSp5CXRENlKHQcz_3zK6-avpCItYlFWd-hM8ppQQTWKUAzJKebOXLpb5G9bZD4Qy60gI60p_-jYKOnm4x6iFHaw52OEtXLHvIYuOjQRQC8jMqk0YG3QuZXt0uwI4gfWDz2sxuqaMZKTg1wXcvi1vFQ-ADNwWBi901UbjVUK40nWM4lbYny6GuQWf5AMMmZAFk8OQUEX_8jND2sSUWePiS1XfZllVb_dl3l0U9_kAkNxHa4RTbqWNlTW9YA9dcdnZX9cswlSr2"/>
+</div>
+<div>
+<h5 class="font-bold text-sm text-on-surface">Stitch Tutoring Services</h5>
+<span class="mono text-[10px] text-outline">2 HOURS AGO</span>
+</div>
+</div>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</button>
+</div>
+<p class="text-on-surface leading-relaxed mb-6">
+                            Struggling with Heteroskedasticity? 📉 Check out our latest cheat sheet for identifying non-constant variance in your residuals. Essential for next week's Econ midterm!
+                        </p>
+<div class="rounded-lg overflow-hidden border border-outline-variant/20 mb-4 bg-black/20">
+<img alt="Educational Graphic" class="opacity-90 hover:opacity-100 transition-opacity" data-alt="professional data visualization chart showing a scatter plot with regression line and residual analysis on a clean digital whiteboard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuQV_-6wyjdJjGI5IeRZU5YaE21z5BP49Sc76zR8wjZ_92oBmKJTsI4lbsYPTpsQkRj1mw4zmdwe_n8mxO6v3KasKXUUZ9O5MReqgxqmWjZg4u_q6L9tmLCyp52LusMjCONNrF0pA0HCj97HF6WNXMaeSigDCZU6CFmLjxp91ALrUyIm01pnPLmSvbVcZHm4q7SdEJ7DCYsVRYfYKMOKub5Rdy5QsGZQ-PwQMIdj64xjoJav1q3w051sMnzCYCPiuYgKmsDKtRKVpc"/>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-outline-variant/10">
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-1.5 text-sm font-bold text-secondary">
+<span class="material-symbols-outlined text-[20px]" data-icon="thumb_up">thumb_up</span>
+                                    124
+                                </button>
+<button class="flex items-center gap-1.5 text-sm font-medium text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="chat_bubble">chat_bubble</span>
+                                    12
+                                </button>
+</div>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="share">share</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Post 2 (Promotional) -->
+<article class="bg-surface-container-low rounded-xl overflow-hidden shadow-sm border border-outline-variant/10">
+<div class="p-6">
+<div class="flex justify-between items-center mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest ring-1 ring-outline-variant/20">
+<img alt="Stitch Avatar" class="rounded-full" data-alt="minimalist professional logo icon for a tutoring business in deep indigo and light blue" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpSPWTrYLLnWKLTizDKPWOO6vLHUQgr8Zw3ELsCiZuAkj5fRqtkQp2n_2n34c-QsAlhZEOTUBJwH1UyFXpkq66RDENh9nOJUWsM-sXPJVgBkLpK_vsN5jK89i_pqFwGdBewZ0-wAPKet4-sGbqwFL04G0KQ9JRPRfqBNz72y5Uloig1q2bh3ErSpXgHVHxC6PFrVbGKlCABwpVS62kVKuDx32SIp3QlTYAA0WQlDAGIz5WXjh4gvmeFdXkhqZD_7465QyoGcxuPrgb"/>
+</div>
+<div>
+<h5 class="font-bold text-sm text-on-surface">Stitch Tutoring Services</h5>
+<span class="mono text-[10px] text-outline">1 DAY AGO</span>
+</div>
+</div>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</button>
+</div>
+<div class="bg-primary/10 p-5 rounded-lg border-l-4 border-primary mb-4">
+<h4 class="text-primary font-bold mb-1">Flash Sale: Group Study Slots</h4>
+<p class="text-sm text-on-surface-variant">We've opened 3 new group slots for Python Basics this Saturday. $25/person instead of the usual $40! 🚀</p>
+</div>
+<div class="flex items-center justify-between pt-4">
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-1.5 text-sm font-bold text-secondary">
+<span class="material-symbols-outlined text-[20px]" data-icon="thumb_up">thumb_up</span>
+                                    89
+                                </button>
+<button class="flex items-center gap-1.5 text-sm font-medium text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="chat_bubble">chat_bubble</span>
+                                    4
+                                </button>
+</div>
+<button class="px-4 py-1.5 bg-primary-container text-white text-xs font-bold rounded-full hover:opacity-90 transition-opacity">
+                                Book Now
+                            </button>
+</div>
+</div>
+</article>
+</section>
+</div>
+</main>
+<!-- Floating Action Button Contextual Suppression: Suppress as per rules for business profile -->
+</body></html>

@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+@layer base {
+  body {
+    @apply bg-background text-on-surface;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* Glassmorphism gradient */
+.bg-gradient-primary {
+  background: linear-gradient(45deg, #6366F1, #4338ca);
 }

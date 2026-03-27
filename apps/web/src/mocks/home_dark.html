@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CampusConnect | The Digital Commons</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-fixed-dim": "#6366f1",
+              "surface-container-low": "#2a2a2a",
+              "secondary-fixed-dim": "#4f46e5",
+              "on-primary-fixed-variant": "#e0e7ff",
+              "error": "#cf6679",
+              "tertiary-container": "#4a1d1d",
+              "secondary": "#818cf8",
+              "surface-tint": "#6366f1",
+              "on-secondary-fixed": "#000000",
+              "inverse-on-surface": "#121212",
+              "background": "#121212",
+              "on-tertiary-fixed-variant": "#ffb4ab",
+              "surface": "#121212",
+              "tertiary-fixed": "#ffdad6",
+              "surface-variant": "#2c2c2c",
+              "surface-bright": "#1e1e1e",
+              "surface-container-lowest": "#000000",
+              "tertiary-fixed-dim": "#ffb4ab",
+              "on-tertiary": "#000000",
+              "on-surface-variant": "#a1a1aa",
+              "secondary-fixed": "#e0e7ff",
+              "outline-variant": "#3f3f46",
+              "outline": "#71717a",
+              "on-error": "#000000",
+              "on-error-container": "#ffdad6",
+              "surface-container-highest": "#333333",
+              "inverse-primary": "#4338ca",
+              "primary-fixed": "#e0e7ff",
+              "primary-container": "#4338ca",
+              "surface-dim": "#0a0a0a",
+              "on-primary-fixed": "#000000",
+              "on-tertiary-fixed": "#310001",
+              "on-secondary": "#000000",
+              "on-secondary-container": "#e0e7ff",
+              "tertiary": "#ffb4ab",
+              "on-secondary-fixed-variant": "#3730a3",
+              "on-background": "#e4e4e7",
+              "surface-container-high": "#2c2c2c",
+              "on-tertiary-container": "#ffdad6",
+              "on-primary-container": "#e0e7ff",
+              "error-container": "#93000a",
+              "on-surface": "#e4e4e7",
+              "secondary-container": "#3730a3",
+              "inverse-surface": "#e4e4e7",
+              "on-primary": "#ffffff",
+              "surface-container": "#1e1e1e",
+              "primary": "#6366F1"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["JetBrains Mono"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass {
+            background: rgba(99, 102, 241, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .latex-invert {
+            filter: invert(1) hue-rotate(180deg) brightness(1.5);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface selection:bg-primary/30">
+<nav class="w-full sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
+<div class="flex items-center justify-between px-6 py-3 max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-primary">CampusConnect</span>
+<div class="hidden md:flex items-center gap-6">
+<button class="text-primary font-semibold transition-colors">Home</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low transition-colors px-2 py-1 rounded">Research</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low transition-colors px-2 py-1 rounded">Labs</button>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors">account_circle</button>
+</div>
+</div>
+</nav>
+<div class="max-w-screen-2xl mx-auto flex">
+<aside class="fixed left-0 top-0 h-full w-64 pt-20 flex flex-col gap-2 p-4 bg-surface border-r border-outline-variant/20 hidden lg:flex">
+<div class="flex items-center gap-3 px-4 py-3 text-primary bg-primary/10 rounded-lg active:translate-x-1 duration-200">
+<span class="material-symbols-outlined">home</span>
+<span>Home</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low transition-all cursor-pointer">
+<span class="material-symbols-outlined">search</span>
+<span>Search</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low transition-all cursor-pointer">
+<span class="material-symbols-outlined">add_box</span>
+<span>Create</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low transition-all cursor-pointer">
+<span class="material-symbols-outlined">notifications</span>
+<span>Notifications</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low transition-all cursor-pointer">
+<span class="material-symbols-outlined">person</span>
+<span>Profile</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-low transition-all cursor-pointer">
+<span class="material-symbols-outlined">grid_view</span>
+<span>Services</span>
+</div>
+<div class="mt-8 px-4">
+<button class="w-full bg-primary text-white py-3 rounded font-semibold shadow-lg shadow-primary/20 active:scale-95 transition-transform">
+                    Post Research
+                </button>
+</div>
+</aside>
+<main class="flex-1 lg:ml-64 lg:mr-80 min-h-screen bg-background">
+<div class="sticky top-[52px] z-30 bg-background/80 backdrop-blur-md">
+<div class="flex border-b border-outline-variant/20 px-6 pt-4">
+<button class="pb-3 px-4 text-sm font-bold border-b-2 border-primary text-primary tracking-tight">For You</button>
+<button class="pb-3 px-4 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors tracking-tight">Following</button>
+</div>
+<div class="flex items-center gap-2 px-6 py-4 overflow-x-auto no-scrollbar">
+<span class="text-[10px] uppercase tracking-widest font-bold text-outline mr-2">Filter</span>
+<button class="px-4 py-1.5 rounded-full bg-primary text-on-primary text-xs font-medium mono">Newest</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-medium mono hover:bg-surface-container-high transition-colors">Oldest</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-medium mono hover:bg-surface-container-high transition-colors">Most Popular</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-medium mono hover:bg-surface-container-high transition-colors">Trending</button>
+</div>
+</div>
+<div class="px-6 py-4 space-y-8">
+<article class="bg-surface-container p-6 rounded-xl transition-all border border-outline-variant/10">
+<header class="flex justify-between items-start mb-6">
+<div class="flex gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="professional headshot of a young male researcher with glasses and a friendly expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWuYbHwR8yRypxMDKEBmbktTjdxyfcYyaf5LoF5h5iI9O3cDVE4bt6tT-mglgww1Bj_SjeimqB_iZUUw2WYYYWTA4EuKiVk9429Z6OHyeaeT2rTDugtQz5_hjV2gmtxJe-xjf1Mn20MdQ3iY8RqlLKkgg_XGA7Mt0cBFK9jCYH_Od-8boaLMgTcgvwkUSrFsjl86oFZ71zBLuPxPtzAYbbGcfNTasIIDRUQZ-Fr58oandM_hHP6dKNT6Tq8jlC7hTAyyzO_Swehatr"/>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-on-surface">Dr. Aris Thorne</h3>
+<p class="text-[10px] mono text-outline">Physics Dept. • 2h ago</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-surface-container-low text-primary text-[10px] font-bold mono rounded">PHYS-402</span>
+</header>
+<div class="space-y-4">
+<h2 class="text-xl font-bold tracking-tight text-on-surface">Novel approaches to Quantum Decoherece in Superconducting Qubits</h2>
+<p class="text-sm leading-relaxed text-on-surface-variant">
+                            Our latest simulation suggests that the error rates in transmon qubits can be suppressed by a factor of $10^2$ using asymmetric flux bias. Consider the Hamiltonian:
+                        </p>
+<div class="p-4 bg-surface-container-low rounded-lg mono text-primary text-sm overflow-x-auto border border-outline-variant/10">
+                            H = ∑ ω_j a†_j a_j + ∑ g_ij (a†_i a_j + a_i a†_j)
+                        </div>
+<img alt="Quantum Simulation" class="w-full aspect-video object-cover rounded-lg shadow-sm" data-alt="complex 3D visualization of quantum particle wavefunctions with glowing neon blue and purple trajectories in a dark void" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwwXneu_VwtUMi0um_tWqRoHQKLBaqV5Wa9L_8z_hnr5IgJI2SUwBBtW5rv191xQcElW3sPKbS9RCi7gBcTYPDjZ6S-vc8533nKhN_Cw7gzgPSn3YvrwZNSffrVUXtLttXI0Vqt3G9ZAxHfMsYUNulEZl9p5DI6rcYgg_W5AQZVrGGWcqEsjCxgPbwChaTwxK6TRVjysfuZZ3zotN0Gp7YTklfwIjWKRrElroNOy_W8cgs99Fm93_IAIHV5Nd8JLvBEbV4fR9Ga5Ak"/>
+</div>
+<footer class="mt-6 flex items-center justify-between">
+<div class="flex gap-6">
+<button class="flex items-center gap-2 group">
+<div class="w-8 h-8 rounded-full flex items-center justify-center bg-tertiary-container/20 text-tertiary group-hover:bg-tertiary-container/40 transition-colors">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
+</div>
+<span class="text-xs font-bold mono">1.2k</span>
+</button>
+<button class="flex items-center gap-2 group">
+<div class="w-8 h-8 rounded-full flex items-center justify-center bg-secondary-container/20 text-secondary group-hover:bg-secondary-container/40 transition-colors">
+<span class="material-symbols-outlined text-sm">comment</span>
+</div>
+<span class="text-xs font-bold mono">84</span>
+</button>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">bookmark</button>
+</footer>
+</article>
+<article class="bg-surface-container p-6 rounded-xl transition-all border border-outline-variant/10">
+<header class="flex justify-between items-start mb-6">
+<div class="flex gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="portrait of a female computer scientist with curly hair and a focused expression in a bright office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCc-6uPfZ27Nx11pyUdnzQez7lu_awG2nuvk6dDKKA-5excxnpWOromtqI9D4bW7zCwHtnQ5J7x3SDjST3EaKWn4bfMnS-nbgLjT1WPScame3Es1EZkAEBC6xB--Yuc6xKVibkEw4_JC0qgXGnKEwvr3DYCqNgEVtSQUbeQ28gcxH24wGZ9aF3dq6IvI3MOBVtDZzFCA6iFFYW_m8tzvcpkEINj9oPKtShhladZBwe0CjDMV3D7c5XoGDwE-8s50NWtfNV11qf2GrRs"/>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-on-surface">Sarah Jenkins</h3>
+<p class="text-[10px] mono text-outline">CS Graduate • 5h ago</p>
+</div>
+</div>
+<span class="px-2 py-1 bg-surface-container-low text-primary text-[10px] font-bold mono rounded">CS-501</span>
+</header>
+<div class="space-y-4">
+<h2 class="text-xl font-bold tracking-tight text-on-surface">Optimizing Transformer Attention with Sparse Kernels</h2>
+<p class="text-sm leading-relaxed text-on-surface-variant">
+                            By leveraging the sparsity inherent in attention matrices after the first 4 layers, we can reduce FLOPs by 30% without sacrificing perplexity on the WikiText-103 benchmark.
+                        </p>
+<div class="grid grid-cols-2 gap-4">
+<div class="h-40 bg-surface-container-low rounded-lg p-3 flex flex-col justify-center items-center text-center border border-outline-variant/10">
+<span class="text-2xl font-bold text-primary mono">-30%</span>
+<span class="text-[10px] uppercase tracking-wider text-outline">Latency</span>
+</div>
+<div class="h-40 bg-surface-container-low rounded-lg p-3 flex flex-col justify-center items-center text-center border border-outline-variant/10">
+<span class="text-2xl font-bold text-tertiary mono">+12%</span>
+<span class="text-[10px] uppercase tracking-wider text-outline">Throughput</span>
+</div>
+</div>
+</div>
+<footer class="mt-6 flex items-center justify-between">
+<div class="flex gap-6">
+<button class="flex items-center gap-2 group">
+<div class="w-8 h-8 rounded-full flex items-center justify-center bg-tertiary-container/20 text-tertiary group-hover:bg-tertiary-container/40 transition-colors">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
+</div>
+<span class="text-xs font-bold mono">856</span>
+</button>
+<button class="flex items-center gap-2 group">
+<div class="w-8 h-8 rounded-full flex items-center justify-center bg-secondary-container/20 text-secondary group-hover:bg-secondary-container/40 transition-colors">
+<span class="material-symbols-outlined text-sm">comment</span>
+</div>
+<span class="text-xs font-bold mono">42</span>
+</button>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">share</button>
+</footer>
+</article>
+</div>
+</main>
+<aside class="fixed right-0 top-0 h-full w-80 pt-20 p-6 space-y-8 hidden xl:block bg-surface-container-low/50 border-l border-outline-variant/10 overflow-y-auto">
+<section>
+<h4 class="text-[10px] font-bold uppercase tracking-[0.2em] text-outline mb-4">Trending Topics</h4>
+<div class="space-y-4">
+<div class="group cursor-pointer">
+<p class="text-xs mono text-primary">#NeuralDynamics</p>
+<p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Non-linear Oscillator Networks</p>
+<p class="text-[10px] text-outline">2.4k Research Posts</p>
+</div>
+<div class="group cursor-pointer">
+<p class="text-xs mono text-primary">#CRISPR-Cas9</p>
+<p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Gene-editing in Rice Cultivars</p>
+<p class="text-[10px] text-outline">1.1k Research Posts</p>
+</div>
+<div class="group cursor-pointer">
+<p class="text-xs mono text-primary">#GameTheory</p>
+<p class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">Nash Equilibrium in Web3</p>
+<p class="text-[10px] text-outline">942 Research Posts</p>
+</div>
+</div>
+</section>
+<section class="p-5 bg-primary-container rounded-lg text-on-primary-container relative overflow-hidden">
+<div class="relative z-10">
+<h4 class="text-xs font-bold uppercase tracking-wider mb-2 opacity-80">Popular Course</h4>
+<p class="text-lg font-bold leading-tight mb-4 text-white">CS-440: Advanced AI Ethics &amp; Policy</p>
+<button class="w-full py-2 bg-white text-primary-container text-xs font-bold rounded hover:bg-opacity-90 transition-opacity">View Syllabus</button>
+</div>
+<div class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+</section>
+<section>
+<h4 class="text-[10px] font-bold uppercase tracking-[0.2em] text-outline mb-4">Top Contributors</h4>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<img alt="Avatar" class="w-8 h-8 rounded-full bg-surface-container-high" data-alt="older professor with grey beard and academic cap, dignified style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAW2Y--xR1bPHbNpI-UeMrFYSRi-Suw7g200GUyRNt0OSG8qqmjMtM6EZQDLKxk32IRTQp5BVFmcm2qkwgkUQ3Yl_Bf8bfsRVD2Lhso2Jgnbb_ef2pbzQJTv4vsVYun0dno34IkuxOkXYWjqZrOjeli_YXKYde7qECc7qOw08D-j1DUqQCHRn_fWDNQi3AUpS4l8SavC3lqvPcGMFfCiL4_xzxNaFcCBsy9tb9tq0Ehyk0vOcHK6kFmKTlnuqoU677H9pRZ9m60yLKm"/>
+<div>
+<p class="text-xs font-bold">Prof. Lawrence</p>
+<p class="text-[10px] mono text-outline">Math Dept • 420 Rep</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<img alt="Avatar" class="w-8 h-8 rounded-full bg-surface-container-high" data-alt="smart female student with sleek hair and confident posture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2eaaIb2epX-XmalUIViIiWH1c58oUvdqqBzi3nUisl4fCpS55NaMn7cI1j1gRI_uHTiZ-QZiDwbxP3q4vEdMoIsPoQV35EtiMS9CLwLBX1zpF06iS_xNisivz9j3jh7dTup3_yuwX2s7ckyfBj9E73SZBC1ser6tg_CukfvQtgKsETQ3yl5O8JHC2P5b7wU-yf6PCiaoa6TgktEoNnTSXGXGSrcjke6XlDi3tdvjIkG5fNcFIgtHBlM6hc4jWAItcXQoPMyViL1eu"/>
+<div>
+<p class="text-xs font-bold">Elena Vance</p>
+<p class="text-[10px] mono text-outline">Bio Engineering • 380 Rep</p>
+</div>
+</div>
+</div>
+</section>
+<footer class="pt-8 border-t border-outline-variant/20">
+<div class="flex flex-wrap gap-x-4 gap-y-2 text-[10px] text-outline mono">
+<a class="hover:text-primary transition-colors" href="#">About</a>
+<a class="hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms</a>
+<a class="hover:text-primary transition-colors" href="#">Help</a>
+<span>© 2024 CampusConnect</span>
+</div>
+</footer>
+</aside>
+</div>
+<button class="lg:hidden fixed right-6 bottom-6 w-14 h-14 bg-primary text-white rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-transform z-50">
+<span class="material-symbols-outlined">add</span>
+</button>
+</body></html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#3525cd",
+            "on-secondary-fixed": "#00164d",
+            "tertiary-fixed-dim": "#ffb5a0",
+            "secondary-container": "#7193ff",
+            "on-primary-container": "#dad7ff",
+            "on-background": "#141b2b",
+            "surface-container-highest": "#dce2f7",
+            "surface-variant": "#dce2f7",
+            "on-tertiary-fixed": "#3b0900",
+            "tertiary": "#8a2100",
+            "on-tertiary": "#ffffff",
+            "tertiary-fixed": "#ffdbd1",
+            "surface-bright": "#f9f9ff",
+            "on-primary-fixed": "#0f0069",
+            "background": "#f9f9ff",
+            "tertiary-container": "#b42e00",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff",
+            "primary-fixed": "#e2dfff",
+            "on-secondary-container": "#00297c",
+            "surface-container-high": "#e1e8fd",
+            "outline": "#777587",
+            "on-secondary": "#ffffff",
+            "inverse-on-surface": "#edf0ff",
+            "secondary-fixed": "#dce1ff",
+            "primary-fixed-dim": "#c3c0ff",
+            "surface": "#f9f9ff",
+            "surface-container-lowest": "#ffffff",
+            "inverse-primary": "#c3c0ff",
+            "secondary-fixed-dim": "#b5c4ff",
+            "on-secondary-fixed-variant": "#0c3da7",
+            "surface-container": "#e9edff",
+            "primary-container": "#4f46e5",
+            "surface-tint": "#4d44e3",
+            "surface-dim": "#d3daef",
+            "on-primary-fixed-variant": "#3323cc",
+            "on-tertiary-container": "#ffd1c5",
+            "inverse-surface": "#293040",
+            "outline-variant": "#c7c4d8",
+            "secondary": "#3157c0",
+            "on-surface-variant": "#464555",
+            "on-tertiary-fixed-variant": "#872000",
+            "surface-container-low": "#f1f3ff",
+            "on-surface": "#141b2b",
+            "on-error-container": "#93000a",
+            "error": "#ba1a1a",
+            "on-primary": "#ffffff"
+          },
+          fontFamily: {
+            "headline": ["Inter"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          },
+          borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #020617; /* OLED Black */
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .glass-effect {
+      background: rgba(79, 70, 229, 0.1);
+      backdrop-filter: blur(12px);
+    }
+    .primary-gradient {
+      background: linear-gradient(45deg, #3525CD, #4F46E5);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body text-slate-200 antialiased selection:bg-primary/30">
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-6 h-16 w-full max-w-none">
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:bg-slate-800 transition-colors p-2 rounded-full active:scale-95 duration-150">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="text-[#4F46E5] font-bold tracking-tighter text-lg font-headline">CampusConnect</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-800">
+<img alt="Profile" data-alt="close-up portrait of a young professional woman with a friendly smile, soft studio lighting, high resolution" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdTKj_nbWf4cJQ674tXdiouiNgKjK7RObhlDT7mQA8o1-_6fH3HbpQvYv_W_wm0dDiu1eJyQ2lo2jUTKI7u6FNx9AX0qH8RlaDS8KNWRvHCaDiCdda6nrBKBfC__c3VQ1wqFdYfGfR3wexZLTNZbvP_fxFddU3gf1f6GmYVbeABosiZ8lpo2PWeVQmD4UKuW83pddbAsViUyZ2pmTGk83eRShNxWe300wafS_9p8EfWNMdRegJfWOvuu5tUziErgXLyJKESyS8_YTk"/>
+</div>
+</div>
+</header>
+<main class="pt-16 pb-24">
+<!-- Hero Header -->
+<section class="relative">
+<div class="h-44 w-full bg-slate-900 relative overflow-hidden">
+<img class="w-full h-full object-cover opacity-50" data-alt="abstract architectural geometry with deep blue and purple gradients, high contrast minimalist aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkMoa-BhnI_jElvb93RgIJLTA6-XSesNks8yxb0GIJgld4bzs199qCoDf_eHdFkfduBiQbubjA9xVpjEs_OftLsBHwgRDeU0BZvsOEK1DHIxsdRwTDbSyl2EekyO_DAFW83CNSADunS_oKsdi5rBENPxHXBVjwdmF0IwHYJra7G9R5IfDWjN9ZkG7_SBvAoKQmIdvB-2ZGHpWcdImKCBsLvYutOe388T6f1NMxAR1jWFgzmTFY_RUyzbcppeHALxPR-7J3mk-LLf9a"/>
+<div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent"></div>
+</div>
+<div class="px-6 -mt-12 relative flex flex-col items-start">
+<div class="relative">
+<div class="w-24 h-24 rounded-xl border-4 border-slate-950 overflow-hidden bg-slate-800 shadow-xl">
+<img alt="Sarah Jenkins" data-alt="young woman with glasses and dark hair smiling in a library setting, warm bokeh background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsYqcrgt4XuXEUYkb7YYBr4llkV-X9WZ0TelSJMREfEf62Mf78RvS_un0jbCJVme2N05zHkrOn7AszAQ2czzjOhD4ztixtxhdkl5cLATuabIMMSjWdO3LzY5ra0jFn7je7IXZKXGmyw3OOzIVNNqLRACyrA4fG1U7UYx-o6XmlRhQiVcKl5m0U1nYNq8jPydwqpM0dKU5mO78fq62eUkDB6JCNOHRJ6uEpi138shknQbcEXAWMT_97thsCyBq7tn5tY8ZFi1Eo7zlj"/>
+</div>
+<div class="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-slate-950"></div>
+</div>
+<div class="mt-4 w-full flex justify-between items-end">
+<div>
+<h1 class="text-2xl font-bold font-headline tracking-tight text-white">Sarah Jenkins</h1>
+<p class="text-slate-400 text-sm flex items-center gap-2 mt-0.5">
+<span class="font-medium text-[#4F46E5]">Data Science</span>
+<span class="w-1 h-1 bg-slate-700 rounded-full"></span>
+<span class="font-label text-[10px] uppercase tracking-wider text-slate-500">Class of 2025</span>
+</p>
+</div>
+<button class="primary-gradient text-white text-xs font-semibold px-4 py-2 rounded-lg active:scale-95 duration-150 transition-all">
+            Edit Profile
+          </button>
+</div>
+</div>
+</section>
+<!-- Bio & Links -->
+<section class="px-6 mt-6">
+<div class="flex flex-wrap gap-3 items-center mb-6">
+<div class="flex items-center gap-2 text-xs font-label bg-slate-900 px-3 py-1.5 rounded-full text-slate-400">
+<span class="material-symbols-outlined text-sm">link</span>
+          github.com/sjenkins-ds
+        </div>
+<div class="flex items-center gap-2 text-xs font-label bg-slate-900 px-3 py-1.5 rounded-full text-slate-400">
+<span class="material-symbols-outlined text-sm">mail</span>
+          s.jenkins@campus.edu
+        </div>
+</div>
+<!-- Bento Stats Grid -->
+<div class="grid grid-cols-12 gap-4">
+<div class="col-span-12 glass-effect rounded-2xl p-6 border border-white/5 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<p class="font-label text-[10px] uppercase tracking-widest text-[#4F46E5] mb-1">Reputation Score</p>
+<h2 class="text-5xl font-bold text-white font-headline tracking-tighter">1,450</h2>
+<div class="mt-4 flex items-center gap-2">
+<div class="h-1.5 flex-1 bg-slate-800 rounded-full overflow-hidden">
+<div class="h-full w-[72%] primary-gradient rounded-full"></div>
+</div>
+<span class="text-[10px] font-label text-slate-500">TOP 5%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Content Navigation Tabs -->
+<nav class="mt-8 border-b border-slate-900/50 flex px-6 overflow-x-auto no-scrollbar gap-8">
+<button class="pb-4 text-sm font-semibold text-[#4F46E5] border-b-2 border-[#4F46E5] whitespace-nowrap">Contributions</button>
+<button class="pb-4 text-sm font-medium text-slate-500 hover:text-slate-300 transition-colors whitespace-nowrap">Upvoted</button>
+<button class="pb-4 text-sm font-medium text-slate-500 hover:text-slate-300 transition-colors whitespace-nowrap">Collections</button>
+</nav>
+<!-- Feed Content -->
+<section class="mt-4 space-y-4 px-4">
+<!-- Post 1 -->
+<article class="bg-slate-950 p-5 rounded-2xl border border-slate-900/50 hover:bg-slate-900/40 transition-colors">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label text-[10px] text-[#7193ff] bg-[#7193ff]/10 px-2 py-0.5 rounded">CS301: ALGORITHMS</span>
+<span class="font-label text-[10px] text-slate-600">2h ago</span>
+</div>
+<h3 class="text-white font-semibold mb-3 leading-tight">Optimization of Stochastic Gradient Descent in High-Dimensional Spaces</h3>
+<p class="text-slate-400 text-sm mb-4 leading-relaxed">
+          I've been experimenting with the convergence rates of SGD when applied to sparse datasets. Here is the local update rule I'm currently testing:
+        </p>
+<div class="bg-black/50 p-4 rounded-xl border border-slate-800 mb-4 font-label text-xs text-[#c3c0ff] leading-loose">
+          \theta_{t+1} = \theta_t - \eta \cdot \nabla J(\theta_t; x^{(i)}, y^{(i)})
+        </div>
+<div class="flex items-center gap-6 mt-2">
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1; color: #b42e00;">arrow_upward</span>
+<span class="font-label text-xs">342</span>
+</div>
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-sm">chat_bubble</span>
+<span class="font-label text-xs">18</span>
+</div>
+</div>
+</article>
+<!-- Post 2 -->
+<article class="bg-slate-950 p-5 rounded-2xl border border-slate-900/50 hover:bg-slate-900/40 transition-colors">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label text-[10px] text-[#7193ff] bg-[#7193ff]/10 px-2 py-0.5 rounded">MATH204: STATS</span>
+<span class="font-label text-[10px] text-slate-600">Yesterday</span>
+</div>
+<h3 class="text-white font-semibold mb-3 leading-tight">Visualizing Bayesian Priors for Linear Regression</h3>
+<p class="text-slate-400 text-sm mb-4 leading-relaxed">
+          The importance of choosing the right prior in Bayesian modeling can't be understated. For a normal prior on weights:
+        </p>
+<div class="bg-black/50 p-4 rounded-xl border border-slate-800 mb-4 font-label text-xs text-[#c3c0ff] leading-loose">
+          P(w | \alpha) = \mathcal{N}(w | 0, \alpha^{-1}I)
+        </div>
+<div class="flex items-center gap-6 mt-2">
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1; color: #b42e00;">arrow_upward</span>
+<span class="font-label text-xs">128</span>
+</div>
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-sm">chat_bubble</span>
+<span class="font-label text-xs">5</span>
+</div>
+</div>
+</article>
+</section>
+</main>
+<!-- BottomNavBar Shell -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-safe-offset-2 h-20 bg-slate-950/80 backdrop-blur-md border-t border-slate-800 shadow-[0_-4px_24px_rgba(53,37,205,0.04)] z-50">
+<div class="flex flex-col items-center justify-center text-slate-400 px-3 py-1 hover:text-[#4F46E5] transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['JetBrains_Mono'] text-[10px] font-medium uppercase mt-1">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 px-3 py-1 hover:text-[#4F46E5] transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">search</span>
+<span class="font-['JetBrains_Mono'] text-[10px] font-medium uppercase mt-1">Search</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 px-3 py-1 hover:text-[#4F46E5] transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined text-3xl">add_circle</span>
+<span class="font-['JetBrains_Mono'] text-[10px] font-medium uppercase mt-1">Create</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 px-3 py-1 hover:text-[#4F46E5] transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-['JetBrains_Mono'] text-[10px] font-medium uppercase mt-1">Alerts</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#3525CD]/30 text-[#DCE2F7] rounded-xl px-3 py-1 active:scale-90 duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">tag</span>
+<span class="font-['JetBrains_Mono'] text-[10px] font-medium uppercase mt-1">Profile</span>
+</div>
+</nav>
+</body></html>
