@@ -1,11 +1,14 @@
-import React from 'react';
+import './App.css'
 
-const App: React.FC = () => {
+function App() {
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <h1 className="text-2xl font-bold text-gray-900">CampusConnect</h1>
-    </div>
-  );
-};
+    <>
+      <div>
+      </div>
+      <h1>Vite + React</h1>
+    </>
+  )
+}
 
-export default App;
+export default App
