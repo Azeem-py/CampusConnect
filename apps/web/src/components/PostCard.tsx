@@ -1,4 +1,7 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 interface PostCardProps {
   post: any;
@@ -25,6 +28,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           </div>
         </div>
         <div className="flex gap-2">
+          {post.isAnswer && (
+            <span className="px-3 py-1 bg-green-500/10 rounded-full text-xs font-label text-green-500 border border-green-500/20 flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm font-variation-settings:'FILL' 1">check_circle</span>
+              Answer
+            </span>
+          )}
           {post.tags?.map((tag: string) => (
             <span key={tag} className="px-3 py-1 bg-surface rounded-full text-xs font-label text-primary border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer">
               {tag}
@@ -33,8 +42,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </div>
       </header>
 
-      <div className="prose prose-invert max-w-none text-on-surface-variant leading-relaxed text-[15px] mb-6 font-body whitespace-pre-line">
-        <p>{post.content}</p>
+      <div className="prose prose-invert max-w-none text-on-surface-variant leading-relaxed text-[15px] mb-6 font-body whitespace-pre-line dark:prose-invert">
+        <ReactMarkdown
+           remarkPlugins={[remarkMath]}
+           rehypePlugins={[rehypeKatex]}
+        >
+          {post.content}
+        </ReactMarkdown>
 
         {post.image && (
           <div className="mt-4 rounded-xl overflow-hidden border border-outline-variant/20">
@@ -46,22 +60,22 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       <footer className="flex items-center justify-between pt-4 border-t border-outline-variant/10">
         <div className="flex items-center gap-6">
           <button className={`flex items-center gap-2 group transition-colors ${post.hasUpvoted ? 'text-primary' : 'text-on-surface-variant hover:text-primary'}`}>
-            <span className={`material-symbols-outlined ${post.hasUpvoted ? 'font-variation-settings:\'FILL\' 1' : ''}`}>arrow_upward</span>
+            <span className={`material-symbols-outlined ${post.hasUpvoted ? "font-variation-settings:'FILL' 1" : ''}`}>arrow_upward</span>
             <span className="font-label font-bold text-sm">{post.upvotes}</span>
           </button>
           <button className={`flex items-center gap-2 group transition-colors ${post.hasDownvoted ? 'text-secondary' : 'text-on-surface-variant hover:text-secondary'}`}>
-            <span className={`material-symbols-outlined ${post.hasDownvoted ? 'font-variation-settings:\'FILL\' 1' : ''}`}>arrow_downward</span>
+            <span className={`material-symbols-outlined ${post.hasDownvoted ? "font-variation-settings:'FILL' 1" : ''}`}>arrow_downward</span>
           </button>
-          <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
+          <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
             <span className="material-symbols-outlined group-hover:bg-primary/10 rounded-full p-1 transition-colors">chat_bubble</span>
             <span className="font-label text-sm">{post.comments}</span>
           </button>
-          <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
+          <button className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group cursor-pointer">
             <span className="material-symbols-outlined group-hover:bg-primary/10 rounded-full p-1 transition-colors">share</span>
             <span className="font-label text-sm hidden sm:inline">Share</span>
           </button>
         </div>
-        <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors hover:bg-primary/10 p-2 rounded-full">
+        <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors hover:bg-primary/10 p-2 rounded-full cursor-pointer">
           bookmark_add
         </button>
       </footer>

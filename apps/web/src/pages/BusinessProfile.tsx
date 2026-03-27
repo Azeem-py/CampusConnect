@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { PostCard } from '../components/PostCard';
-import { businessUser, businessProfilePosts } from '../mocks/data';
+import { businessUser, businessProfilePosts, businessServices, businessReviews } from '../mocks/data';
+
+type Tab = 'Announcements' | 'Menu/Services' | 'Reviews';
 
 export const BusinessProfile = () => {
+  const [activeTab, setActiveTab] = useState<Tab>('Announcements');
+
   return (
-    <div className="max-w-screen-2xl mx-auto flex min-h-screen bg-surface">
+    <div className="max-w-screen-2xl mx-auto flex h-full bg-surface pb-20 lg:pb-0">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 h-screen overflow-y-auto scrollbar-thin">
+      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 h-[calc(100vh-64px)] overflow-y-auto scrollbar-thin">
         {/* Profile Header */}
         <div className="relative mb-12 border-b border-outline-variant/20 pb-8">
           <div className="h-48 w-full bg-gradient-to-br from-secondary/20 to-surface-container rounded-xl mb-16 overflow-hidden">
@@ -51,15 +55,49 @@ export const BusinessProfile = () => {
 
         {/* Profile Tabs */}
         <div className="flex items-center gap-8 border-b border-outline-variant/20 px-8 mb-6 overflow-x-auto scrollbar-hide">
-          <button className="px-4 py-3 text-secondary font-bold border-b-2 border-secondary -mb-[2px] whitespace-nowrap cursor-pointer">Announcements</button>
-          <button className="px-4 py-3 text-on-surface-variant hover:text-on-surface font-semibold transition-colors whitespace-nowrap cursor-pointer">Menu/Services</button>
-          <button className="px-4 py-3 text-on-surface-variant hover:text-on-surface font-semibold transition-colors whitespace-nowrap cursor-pointer">Reviews</button>
+          {['Announcements', 'Menu/Services', 'Reviews'].map((tab) => (
+             <button
+               key={tab}
+               onClick={() => setActiveTab(tab as Tab)}
+               className={`px-4 py-3 font-semibold border-b-2 whitespace-nowrap cursor-pointer transition-colors ${activeTab === tab ? 'text-secondary border-secondary font-bold -mb-[2px]' : 'text-on-surface-variant border-transparent hover:text-on-surface'}`}
+             >
+               {tab}
+             </button>
+          ))}
         </div>
 
         <section className="flex flex-col gap-6 px-8 pb-16">
-          {businessProfilePosts.map((post) => (
-             <PostCard key={post.id} post={post} />
-          ))}
+          {activeTab === 'Announcements' && businessProfilePosts.map((post) => <PostCard key={post.id} post={post} />)}
+          {activeTab === 'Menu/Services' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               {businessServices.map(s => (
+                 <div key={s.id} className="bg-surface-container-low rounded-xl p-6 border border-outline-variant/10 flex flex-col justify-between">
+                   <div>
+                     <h3 className="font-bold text-lg text-on-surface">{s.name}</h3>
+                     <p className="text-on-surface-variant text-sm mt-2 leading-relaxed">{s.description}</p>
+                   </div>
+                   <span className="text-secondary font-label font-bold mt-4">{s.price}</span>
+                 </div>
+               ))}
+            </div>
+          )}
+          {activeTab === 'Reviews' && (
+             <div className="flex flex-col gap-4">
+               {businessReviews.map(r => (
+                 <div key={r.id} className="bg-surface-container-low rounded-xl p-6 border border-outline-variant/10">
+                   <div className="flex justify-between items-center mb-3">
+                     <span className="font-bold text-on-surface">{r.user}</span>
+                     <div className="flex text-amber-500">
+                       {[...Array(5)].map((_, i) => (
+                         <span key={i} className={`material-symbols-outlined text-sm ${i < r.rating ? "font-variation-settings:'FILL' 1" : ""}`}>star</span>
+                       ))}
+                     </div>
+                   </div>
+                   <p className="text-on-surface-variant text-sm italic">"{r.text}"</p>
+                 </div>
+               ))}
+             </div>
+          )}
         </section>
       </main>
 

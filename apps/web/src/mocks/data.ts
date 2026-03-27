@@ -132,3 +132,41 @@ export const businessProfilePosts = [
     tags: ['Hiring', 'StudentJobs']
   }
 ];
+
+export const savedPosts = [
+  posts[0],
+  businessProfilePosts[0]
+];
+
+export const userCourses = [
+  { id: 'c1', name: 'CS 412 - Machine Learning', term: 'Fall 2024', grade: 'A' },
+  { id: 'c2', name: 'MATH 301 - Advanced Calculus', term: 'Fall 2024', grade: 'A-' },
+  { id: 'c3', name: 'PHYS 202 - Quantum Mechanics', term: 'Spring 2024', grade: 'B+' }
+];
+
+export const businessServices = [
+  { id: 's1', name: 'Nitro Cold Brew', price: '$4.50', description: 'Smooth, creamy cold brew infused with nitrogen.' },
+  { id: 's2', name: 'Avocado Toast', price: '$6.00', description: 'Fresh avocado on sourdough with chili flakes and microgreens.' },
+  { id: 's3', name: 'Matcha Latte', price: '$5.00', description: 'Ceremonial grade matcha with oat milk.' }
+];
+
+export const businessReviews = [
+  { id: 'r1', user: 'Alex Rivera', rating: 5, text: 'Best coffee on campus! Saved my life during finals week.' },
+  { id: 'r2', user: 'Sarah Chen', rating: 4, text: 'Great study spot, but it gets loud around noon.' },
+  { id: 'r3', user: 'David Kim', rating: 5, text: 'The new maple pecan latte is amazing.' }
+];
+
+export const answerPosts = [
+  {
+    id: 'a1',
+    author: currentUser,
+    content: "The main difference is that Eigenvalues apply to square matrices and represent scalar multipliers for eigenvectors during transformation. Singular values apply to ANY matrix ($m \\times n$) and represent the lengths of the semi-axes of the hyperellipse. \n\nMathematically, the singular values of $A$ are the square roots of the eigenvalues of $A^T A$.",
+    timestamp: '1 day ago',
+    upvotes: 45,
+    comments: 3,
+    hasUpvoted: true,
+    hasDownvoted: false,
+    tags: ['Answer', 'MATH210'],
+    isAnswer: true
+  }
+];

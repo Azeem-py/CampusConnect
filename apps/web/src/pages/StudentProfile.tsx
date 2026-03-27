@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from '../components/layout/Sidebar';
 import { PostCard } from '../components/PostCard';
-import { currentUser, studentProfilePosts } from '../mocks/data';
+import { currentUser, studentProfilePosts, answerPosts, savedPosts, userCourses } from '../mocks/data';
+
+type Tab = 'Posts' | 'Answers' | 'Saved' | 'Courses';
 
 export const StudentProfile = () => {
+  const [activeTab, setActiveTab] = useState<Tab>('Posts');
+
   return (
-    <div className="max-w-screen-2xl mx-auto flex min-h-screen bg-surface">
+    <div className="max-w-screen-2xl mx-auto flex h-full bg-surface pb-20 lg:pb-0">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 h-screen overflow-y-auto scrollbar-thin">
+      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 h-[calc(100vh-64px)] overflow-y-auto scrollbar-thin">
         {/* Profile Header */}
         <div className="relative mb-12 border-b border-outline-variant/20 pb-8">
           <div className="h-48 w-full bg-gradient-primary rounded-xl mb-16 overflow-hidden">
@@ -48,16 +52,34 @@ export const StudentProfile = () => {
 
         {/* Profile Tabs */}
         <div className="flex items-center gap-8 border-b border-outline-variant/20 px-8 mb-6 overflow-x-auto scrollbar-hide">
-          <button className="px-4 py-3 text-primary font-bold border-b-2 border-primary -mb-[2px] whitespace-nowrap cursor-pointer">Posts</button>
-          <button className="px-4 py-3 text-on-surface-variant hover:text-on-surface font-semibold transition-colors whitespace-nowrap cursor-pointer">Answers</button>
-          <button className="px-4 py-3 text-on-surface-variant hover:text-on-surface font-semibold transition-colors whitespace-nowrap cursor-pointer">Saved</button>
-          <button className="px-4 py-3 text-on-surface-variant hover:text-on-surface font-semibold transition-colors whitespace-nowrap cursor-pointer">Courses</button>
+          {['Posts', 'Answers', 'Saved', 'Courses'].map((tab) => (
+             <button
+               key={tab}
+               onClick={() => setActiveTab(tab as Tab)}
+               className={`px-4 py-3 font-semibold border-b-2 whitespace-nowrap cursor-pointer transition-colors ${activeTab === tab ? 'text-primary border-primary font-bold -mb-[2px]' : 'text-on-surface-variant border-transparent hover:text-on-surface'}`}
+             >
+               {tab}
+             </button>
+          ))}
         </div>
 
         <section className="flex flex-col gap-6 px-8 pb-16">
-          {studentProfilePosts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
+          {activeTab === 'Posts' && studentProfilePosts.map((post) => <PostCard key={post.id} post={post} />)}
+          {activeTab === 'Answers' && answerPosts.map((post) => <PostCard key={post.id} post={post} />)}
+          {activeTab === 'Saved' && savedPosts.map((post) => <PostCard key={post.id} post={post} />)}
+          {activeTab === 'Courses' && (
+            <div className="flex flex-col gap-4">
+               {userCourses.map(c => (
+                 <div key={c.id} className="bg-surface-container-low rounded-xl p-6 border border-outline-variant/10">
+                   <h3 className="font-bold text-lg text-on-surface">{c.name}</h3>
+                   <div className="flex gap-4 mt-2">
+                     <span className="text-sm text-on-surface-variant font-label">{c.term}</span>
+                     <span className="text-sm font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">Grade: {c.grade}</span>
+                   </div>
+                 </div>
+               ))}
+            </div>
+          )}
         </section>
       </main>
 
