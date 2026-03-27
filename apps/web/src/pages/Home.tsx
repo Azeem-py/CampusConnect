@@ -9,10 +9,10 @@ export const Home = () => {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="max-w-screen-2xl mx-auto flex h-full">
+    <div className="w-full max-w-screen-2xl mx-auto flex h-screen overflow-hidden">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 px-4 py-6 md:py-8 h-[calc(100vh-64px)] overflow-y-auto scrollbar-thin pb-24 md:pb-8">
+      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 px-4 py-6 md:py-8 h-full overflow-y-auto scrollbar-thin pb-24 md:pb-8">
         <header className="mb-8 flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-headline font-bold text-on-surface tracking-tight">Your Network</h1>

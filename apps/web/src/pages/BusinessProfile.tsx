@@ -9,13 +9,13 @@ export const BusinessProfile = () => {
   const [activeTab, setActiveTab] = useState<Tab>('Announcements');
 
   return (
-    <div className="max-w-screen-2xl mx-auto flex h-full bg-surface pb-20 lg:pb-0">
+    <div className="w-full max-w-screen-2xl mx-auto flex h-screen bg-surface overflow-hidden">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 h-[calc(100vh-64px)] overflow-y-auto scrollbar-thin">
+      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-0 py-0 lg:py-8 lg:px-8 h-full overflow-y-auto scrollbar-thin pb-24 lg:pb-8">
         {/* Profile Header */}
         <div className="relative mb-12 border-b border-outline-variant/20 pb-8">
-          <div className="h-48 w-full bg-gradient-to-br from-secondary/20 to-surface-container rounded-xl mb-16 overflow-hidden">
+          <div className="h-48 w-full bg-gradient-to-br from-secondary/20 to-surface-container lg:rounded-xl mb-16 overflow-hidden">
              <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=1920&h=400" alt="Cover" className="w-full h-full object-cover opacity-60 mix-blend-overlay" />
           </div>
 

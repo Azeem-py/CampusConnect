@@ -3,25 +3,7 @@
 > vite
 
 
-  VITE v5.4.21  ready in 664 ms
+  VITE v5.4.21  ready in 979 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
-7:20:32 PM [vite] hmr update /src/App.tsx, /src/index.css
-7:20:43 PM [vite] hmr update /src/App.tsx, /src/index.css
-7:21:04 PM [vite] hmr update /src/App.tsx, /src/index.css
-7:21:19 PM [vite] hmr update /src/components/layout/Navbar.tsx, /src/index.css
-7:22:51 PM [vite] hmr update /src/pages/Composer.tsx, /src/index.css
-7:23:25 PM [vite] hmr update /src/index.css, /src/pages/BusinessProfile.tsx, /src/pages/Home.tsx, /src/pages/StudentProfile.tsx
-7:23:48 PM [vite] hmr update /src/pages/StudentProfile.tsx, /src/index.css
-7:24:14 PM [vite] hmr update /src/pages/BusinessProfile.tsx, /src/index.css
-7:24:32 PM [vite] hmr update /src/components/PostCard.tsx, /src/index.css
-7:25:28 PM [vite] hmr update /src/App.tsx, /src/index.css
-7:25:46 PM [vite] hmr update /src/index.css
-7:26:06 PM [vite] hmr update /src/pages/Home.tsx, /src/index.css
-7:26:22 PM [vite] hmr update /src/pages/StudentProfile.tsx, /src/index.css
-7:26:43 PM [vite] hmr update /src/pages/StudentProfile.tsx, /src/index.css
-7:27:02 PM [vite] hmr update /src/pages/BusinessProfile.tsx, /src/index.css
-7:27:19 PM [vite] hmr update /src/pages/BusinessProfile.tsx, /src/index.css
-7:27:50 PM [vite] ✨ new dependencies optimized: react-markdown, remark-math, rehype-katex
-7:27:50 PM [vite] ✨ optimized dependencies changed. reloading

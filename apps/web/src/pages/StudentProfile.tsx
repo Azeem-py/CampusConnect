@@ -9,13 +9,13 @@ export const StudentProfile = () => {
   const [activeTab, setActiveTab] = useState<Tab>('Posts');
 
   return (
-    <div className="max-w-screen-2xl mx-auto flex h-full bg-surface pb-20 lg:pb-0">
+    <div className="w-full max-w-screen-2xl mx-auto flex h-screen bg-surface overflow-hidden">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-8 py-8 h-[calc(100vh-64px)] overflow-y-auto scrollbar-thin">
+      <main className="flex-1 lg:ml-64 xl:mr-80 lg:px-0 py-0 lg:py-8 lg:px-8 h-full overflow-y-auto scrollbar-thin pb-24 lg:pb-8">
         {/* Profile Header */}
         <div className="relative mb-12 border-b border-outline-variant/20 pb-8">
-          <div className="h-48 w-full bg-gradient-primary rounded-xl mb-16 overflow-hidden">
+          <div className="h-48 w-full bg-gradient-primary lg:rounded-xl mb-16 overflow-hidden">
             <img src="https://images.unsplash.com/photo-1518655048521-f130df041f66?auto=format&fit=crop&q=80&w=1920&h=400" alt="Cover" className="w-full h-full object-cover opacity-60" />
           </div>
 

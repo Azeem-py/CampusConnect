@@ -31,7 +31,7 @@ export const Composer = () => {
 
   return (
     <div className="max-w-screen-2xl mx-auto flex min-h-screen bg-surface">
-      <main className="flex-1 lg:ml-64 lg:px-8 py-8 h-screen flex flex-col md:pb-8 pb-24">
+      <main className="flex-1 lg:ml-64 lg:px-8 py-8 h-screen flex flex-col md:pb-8 pb-24 lg:mr-4">
         {/* Header Actions */}
         <div className="flex items-center justify-between border-b border-outline-variant/20 pb-4 mb-6 px-4 lg:px-0">
           <div className="flex items-center gap-4">
