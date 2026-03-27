@@ -9,27 +9,41 @@ CampusConnect bridges the gap between a rigorous academic tool and a fast-paced 
 
 ---
 
-## 2. Color System & Theming
-To support late-night studying and battery saving, **Dark Mode is a first-class citizen**, not an afterthought. 
+## 2. Adaptive Theming (Triple-Mode System)
+To ensure the best reading experience for students during 24-hour study cycles, CampusConnect implements a sophisticated three-state theming system.
 
-### Palette Definition
-* **Primary Brand:** `Indigo` or `Electric Blue` (e.g., `#4F46E5`). Convey trust, academia, and modern tech. Used for primary actions (Post button, active tab).
-* **Background (Light):** `#FAFAFA` (Off-white) to reduce eye strain compared to pure white.
-* **Background (Dark):** `#121212` (OLED-friendly dark gray) with `#1E1E1E` for elevated surface cards.
-* **Semantic Colors:**
-    * *Upvote:* `#FF4500` (Standard mental model for upvotes).
-    * *Downvote:* `#7193FF` (Cool tone to contrast the upvote).
-    * *Success/Verified (Business):* `#10B981` (Emerald green).
+### 2.1. The Three Modes
+1. **Light Mode:** High contrast, crisp backgrounds for daytime use and bright environments.
+2. **Dark Mode:** Low-glare, OLED-optimized surfaces for late-night research and battery preservation.
+3. **Auto Mode (Context Aware):** 
+   - **System Sync:** Defaults to the OS-level `prefers-color-scheme`.
+   - **Time-Based Override:** If no system preference is set, the app automatically transitions:
+     - **06:00 - 18:00:** Light Mode
+     - **18:00 - 06:00:** Dark Mode (Evening Shift)
+
+### 2.2. Color Palettes
+
+| Semantic Token | Light Mode (Day) | Dark Mode (Night) |
+| :--- | :--- | :--- |
+| **Primary Brand** | `#4F46E5` (Indigo) | `#6366F1` (Indigo 400) |
+| **Background (Base)** | `#FAFAFA` (Off-white) | `#121212` (OLED Black) |
+| **Surface (Card)** | `#FFFFFF` | `#1E1E1E` (Elevated) |
+| **Text (Primary)** | `#111827` (Gray 900) | `#F9FAFB` (Gray 50) |
+| **Text (Secondary)** | `#4B5563` (Gray 600) | `#9CA3AF` (Gray 400) |
+| **Border** | `#E5E7EB` (Gray 200) | `#374151` (Gray 700) |
+| **Upvote** | `#FF4500` (Red-Orange) | `#FF5722` (Vibrant) |
+| **Downvote** | `#7193FF` (Sky Blue) | `#82B1FF` (Soft Blue) |
 
 ---
 
-## 3. Typography
+## 3. Typography & Technical Rendering
 Legibility is critical for an app handling academic discourse and LaTeX equations.
 
-* **UI & Headings:** `Inter`, `Geist`, or system fonts (`San Francisco` on Apple, `Roboto` on Android). These render sharply on all screens.
-* **Body Text (User Posts):** 16px base size with a 1.5 line height. High readability for long-form explanations.
-* **Code Blocks (Markdown):** `JetBrains Mono` or `Fira Code`. Must include horizontal scrolling for overflow.
-* **Math (LaTeX):** Handled via `KaTeX`. Ensure the font size scales proportionally with the surrounding body text so equations don't look awkwardly large or small.
+* **UI & Headings:** `Inter` or `Geist`. These render sharply on all high-DPI screens.
+* **Body Text (User Posts):** 16px base size with a 1.6 line height. Optimized for long-form explanations.
+* **Math (LaTeX):** Rendered via `KaTeX`.
+  - In **Dark Mode**, LaTeX equations must use `filter: invert(1) hue-rotate(180) brightness(1.1)` or be rendered with white SVGs to ensure visibility against dark surfaces.
+* **Code Blocks:** `JetBrains Mono` or `Fira Code` with syntax highlighting adjusted per theme.
 
 ---
 
@@ -39,43 +53,30 @@ Because this is a PWA, it must feel native on a phone and expansive on a 4K moni
 
 ### Mobile (Screens < 768px)
 * **Navigation:** Bottom Navigation Bar (Home, Search, Create Post [FAB], Notifications, Profile).
-* **Feed:** Single column. Full width or slight padding (16px).
-* **Header:** Collapses or hides on scroll down, reappears on scroll up to maximize screen real estate.
-
-### Tablet / Small Desktop (768px - 1024px)
-* **Navigation:** Left-hand Rail (Icon only or Icon + Text).
-* **Feed:** Centered single column (max-width: 650px).
+* **Header:** Collapses on scroll down to maximize screen real estate for technical diagrams.
 
 ### Desktop (Screens > 1024px)
 * **Navigation:** Fixed Left Sidebar (Full text navigation).
-* **Feed:** Centered column (max-width: 650px).
-* **Contextual Right Sidebar:** Used for "Trending Topics," "Suggested Business Profiles," or "Popular Courses."
+* **Feed:** Centered column (max-width: 680px) to maintain optimal line length for reading.
+* **Contextual Right Sidebar:** Used for "Trending Topics," "Popular Courses," or "Campus News."
 
 ---
 
-## 5. Core Components
+## 5. Component Logic
 
 ### The "Post" Card
 The most repeated UI element. Needs strict visual hierarchy.
-1.  **Header:** Author Avatar, Name, Time ago (e.g., "2h"), and an "Options" ellipsis.
-2.  **Body:** Truncated at 5 lines for the main feed (with a "Read More" button). LaTeX and images render inline. Images should have a consistent aspect ratio (e.g., 4:3 or 1:1) in the feed, expanding to full size on click.
-3.  **Footer (Action Bar):** * Left-aligned: Upvote/Downvote group (with current score).
-    * Center-aligned: Comment icon (with count).
-    * Right-aligned: Share/Repost icon.
+1. **Header:** Author Avatar, Name, Credibility Badge (Student/Business), and Timestamp.
+2. **Body:** Truncated at 6 lines in the feed. LaTeX and images render inline.
+3. **Action Bar:** Persistent at the bottom of the card with large touch targets (min 44x44px).
 
-### Forms & Inputs
-* **The Composer:** Must feel like a premium text editor. Include a formatting toolbar (B, I, Link, Code, Math) directly above the keyboard on mobile, and at the bottom of the input box on desktop.
-* **Touch Targets:** ALL clickable elements (buttons, links, voting arrows) must have a minimum interactive area of `44x44 pixels` to comply with mobile accessibility standards.
+### The Composer
+* **Floating Toolbar:** On mobile, the formatting toolbar (B, I, LaTeX, Code) floats directly above the system keyboard.
+* **Live Preview:** A side-by-side or "Toggle Preview" mode is required to verify LaTeX syntax before posting.
 
 ---
 
-## 6. Micro-interactions & Polish
-* **Voting:** When a user upvotes, use a slight scale spring animation (e.g., using `framer-motion`) and change the color to provide immediate tactile feedback.
-* **Image Loading:** Use skeleton loaders or blurred placeholders (like Next/Vite image optimization strategies) to prevent layout shifts when heavy lecture notes load.
-* **Pull-to-Refresh:** Implement native-feeling pull-to-refresh on mobile feeds.
-* **Route Transitions:** Smooth fade-ins when moving between the Feed and a specific Post detail view.
-
----
-
-## 7. Implementation Recommendation
-To build this rapidly while maintaining high quality, consider using a headless component library like **Radix UI** or **Headless UI** combined with **Tailwind CSS**. This gives you full control over the exact design language without wrestling with default component styles.
+## 6. Micro-interactions & Motion
+* **Theme Transition:** When switching modes (especially Auto-mode shifts), use a 300ms ease-in-out transition on background-color and text-color to avoid "flashing" the user.
+* **Optimistic Voting:** The vote count and icon color change instantly upon clicking, with a subtle scale spring animation (`stiffness: 400`, `damping: 10`).
+* **Haptic Feedback:** On mobile PWAs, trigger a "light" haptic vibration for successful upvotes and post submissions.
