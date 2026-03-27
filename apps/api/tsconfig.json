@@ -4,6 +4,6 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "baseUrl": "./",
-    "outDir": "../../dist/apps/api"
+    "outDir": "./dist"
   }
 }
