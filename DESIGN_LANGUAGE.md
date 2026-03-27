@@ -21,18 +21,19 @@ To ensure the best reading experience for students during 24-hour study cycles, 
      - **06:00 - 18:00:** Light Mode
      - **18:00 - 06:00:** Dark Mode (Evening Shift)
 
-### 2.2. Color Palettes
+### 2.2. Color Palettes (Academic Indigo & Vibrant Gold)
 
-| Semantic Token | Light Mode (Day) | Dark Mode (Night) |
-| :--- | :--- | :--- |
-| **Primary Brand** | `#4F46E5` (Indigo) | `#6366F1` (Indigo 400) |
-| **Background (Base)** | `#FAFAFA` (Off-white) | `#121212` (OLED Black) |
-| **Surface (Card)** | `#FFFFFF` | `#1E1E1E` (Elevated) |
-| **Text (Primary)** | `#111827` (Gray 900) | `#F9FAFB` (Gray 50) |
-| **Text (Secondary)** | `#4B5563` (Gray 600) | `#9CA3AF` (Gray 400) |
-| **Border** | `#E5E7EB` (Gray 200) | `#374151` (Gray 700) |
-| **Upvote** | `#FF4500` (Red-Orange) | `#FF5722` (Vibrant) |
-| **Downvote** | `#7193FF` (Sky Blue) | `#82B1FF` (Soft Blue) |
+| Semantic Token | Light Mode (Day) | Dark Mode (Night) | Role |
+| :--- | :--- | :--- | :--- |
+| **Primary Brand** | `#1E3A8A` (Academic Indigo) | `#60A5FA` (Sky 400) | Authority, Headings, Primary CTAs |
+| **Gold Accent** | `#F59E0B` (Vibrant Gold) | `#FBBF24` (Amber 400) | Upvotes, Achievements, Business Profiles |
+| **Background (Base)** | `#FDFDFB` (Parchment) | `#111827` (Slate 900) | Page Foundation |
+| **Surface (Card)** | `#FFFFFF` | `#1F2937` (Slate 800) | Elevated Content |
+| **Text (Primary)** | `#1E293B` (Slate 800) | `#F8FAFC` (Slate 50) | Core Content |
+| **Text (Secondary)** | `#475569` (Scholarly Slate) | `#94A3B8` (Slate 400) | Metadata, Supporting Info |
+| **Border** | `#E2E8F0` (Slate 200) | `#334155` (Slate 700) | Subtle Boundaries |
+| **Upvote (Heat)** | `#F59E0B` (Vibrant Gold) | `#FBBF24` (Amber 400) | Social Engagement |
+| **Downvote** | `#94A3B8` (Slate 400) | `#475569` (Scholarly Slate) | Noise Filtering |
 
 ---
 

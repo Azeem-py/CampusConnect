@@ -1,0 +1,20 @@
+{
+  "name": "projects/2788113975905652454",
+  "projectId": "2788113975905652454",
+  "title": "CampusConnect PRD",
+  "deviceType": "DESKTOP",
+  "screens": {
+    "landing_mobile": {
+      "id": "8987b95693254534ab0abfe520f37ed2",
+      "sourceScreen": "projects/2788113975905652454/screens/8987b95693254534ab0abfe520f37ed2",
+      "width": 780,
+      "height": 6232
+    },
+    "landing_desktop": {
+      "id": "6dac1cb042ba4f8b8764b88af2d72685",
+      "sourceScreen": "projects/2788113975905652454/screens/6dac1cb042ba4f8b8764b88af2d72685",
+      "width": 2560,
+      "height": 4674
+    }
+  }
+}
