@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4F46E5;
+  --color-primary-dark: #6366F1;
+
+  --color-background: #FAFAFA;
+  --color-background-dark: #121212;
+
+  --color-surface: #FFFFFF;
+  --color-surface-dark: #1E1E1E;
+
+  --color-text-primary: #111827;
+  --color-text-primary-dark: #F9FAFB;
+
+  --color-text-secondary: #4B5563;
+  --color-text-secondary-dark: #9CA3AF;
+
+  --color-border-base: #E5E7EB;
+  --color-border-base-dark: #374151;
+
+  --color-upvote: #FF4500;
+  --color-upvote-dark: #FF5722;
+
+  --color-downvote: #7193FF;
+  --color-downvote-dark: #82B1FF;
+
+  --font-sans: "Inter", "Geist", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* Base styles for dark mode compatibility if class based approach does not work perfectly with new tailwind */
+@layer base {
+  body {
+    @apply bg-background text-text-primary font-sans transition-colors duration-300 ease-in-out;
+  }
+
+  .dark body {
+    @apply bg-background-dark text-text-primary-dark;
+  }
+}
