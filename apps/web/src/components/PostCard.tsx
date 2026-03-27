@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Post } from '../data/mock';
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, BadgeCheck } from 'lucide-react';
-import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 interface PostCardProps {
@@ -37,84 +35,79 @@ export function PostCard({ post }: PostCardProps) {
     }
   };
 
+  const voteCount = upvotes - downvotes;
+
   return (
-    <article className="border-b border-border-base dark:border-border-base-dark p-4 md:p-6 bg-surface dark:bg-surface-dark transition-colors duration-300">
-      <div className="flex items-start gap-3 mb-3">
-        {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary dark:text-primary-dark shrink-0">
-          {post.author.name.charAt(0)}
-        </div>
-
-        {/* Header Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1 flex-wrap">
-            <span className="font-bold text-text-primary dark:text-text-primary-dark truncate hover:underline cursor-pointer">
-              {post.author.name}
-            </span>
-            {post.author.isBusiness && (
-              <BadgeCheck className="w-4 h-4 text-primary dark:text-primary-dark shrink-0" />
-            )}
-            <span className="text-sm text-text-secondary dark:text-text-secondary-dark mx-1">•</span>
-            <span className="text-sm text-text-secondary dark:text-text-secondary-dark truncate">
-              {post.author.major} '{post.author.graduationYear.toString().slice(-2)}
-            </span>
-            <span className="text-sm text-text-secondary dark:text-text-secondary-dark mx-1">•</span>
-            <span className="text-sm text-text-secondary dark:text-text-secondary-dark whitespace-nowrap">
-              {post.timestamp}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="pl-[52px] mb-4">
-        <p className="text-text-primary dark:text-text-primary-dark whitespace-pre-wrap leading-relaxed">
-          {post.content}
-        </p>
-      </div>
-
-      {/* Action Bar */}
-      <div className="pl-[52px] flex items-center gap-6">
-        {/* Voting */}
-        <div className="flex items-center bg-background dark:bg-background-dark rounded-full border border-border-base dark:border-border-base-dark overflow-hidden transition-colors">
+    <article className="p-6 md:p-8 hover:bg-surface-container-lowest/50 dark:hover:bg-slate-900/50 transition-colors cursor-pointer group flex gap-4">
+      {/* Vote Column */}
+      <div className="flex flex-col items-center gap-2 pt-1 shrink-0">
           <button
-            onClick={handleUpvote}
+            onClick={(e) => { e.stopPropagation(); handleUpvote(); }}
             className={twMerge(
-              'flex items-center justify-center p-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors',
-              voteState === 'up' && 'text-upvote dark:text-upvote-dark'
+              "p-2 rounded-xl transition-all active:scale-95 group/btn",
+              voteState === 'up' ? "bg-tertiary-container/10 text-tertiary-container" : "text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-800"
             )}
             aria-label="Upvote"
           >
-            <ArrowBigUp className={twMerge("w-5 h-5", voteState === 'up' && "fill-current")} />
+              <span className={twMerge("material-symbols-outlined text-xl leading-none block", voteState === 'up' && "font-variation-settings-'FILL' 1")}>arrow_upward</span>
           </button>
           <span className={twMerge(
-            "text-sm font-semibold min-w-[20px] text-center",
-            voteState === 'up' ? "text-upvote dark:text-upvote-dark" : voteState === 'down' ? "text-downvote dark:text-downvote-dark" : "text-text-primary dark:text-text-primary-dark"
+            "text-sm font-mono font-bold leading-none",
+            voteState === 'up' ? "text-tertiary-container" : voteState === 'down' ? "text-secondary-container" : "text-slate-500"
           )}>
-             {upvotes - downvotes}
+            {voteCount > 0 ? `+${voteCount}` : voteCount}
           </span>
           <button
-            onClick={handleDownvote}
+            onClick={(e) => { e.stopPropagation(); handleDownvote(); }}
             className={twMerge(
-              'flex items-center justify-center p-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors',
-              voteState === 'down' && 'text-downvote dark:text-downvote-dark'
+              "p-2 rounded-xl transition-all active:scale-95 group/btn",
+              voteState === 'down' ? "bg-secondary-container/10 text-secondary-container" : "text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-800"
             )}
             aria-label="Downvote"
           >
-            <ArrowBigDown className={twMerge("w-5 h-5", voteState === 'down' && "fill-current")} />
+              <span className={twMerge("material-symbols-outlined text-xl leading-none block", voteState === 'down' && "font-variation-settings-'FILL' 1")}>arrow_downward</span>
           </button>
-        </div>
+      </div>
 
-        {/* Comments */}
-        <button className="flex items-center gap-2 text-text-secondary dark:text-text-secondary-dark hover:text-primary dark:hover:text-primary-dark transition-colors p-2 rounded-full hover:bg-primary/5">
-          <MessageSquare className="w-5 h-5" />
-          <span className="text-sm font-medium">{post.comments}</span>
-        </button>
+      {/* Content Column */}
+      <div className="flex-1 min-w-0">
+          {/* Header Info */}
+          <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=128&q=80" alt="Author avatar" className="w-6 h-6 rounded-full object-cover" />
+                  <span className="font-semibold text-sm text-on-surface dark:text-slate-200 hover:underline">{post.author.name}</span>
+                  <span className="text-slate-400 text-xs font-mono px-2 py-0.5 rounded bg-surface-container-low dark:bg-slate-800 tracking-tight">
+                    {post.author.major} '{post.author.graduationYear.toString().slice(-2)}
+                  </span>
+              </div>
+              <div className="flex items-center gap-3">
+                  {/* Contextual Data (JetBrains Mono) */}
+                  <span className="text-xs text-slate-400 font-mono tracking-tight bg-surface-container-low dark:bg-slate-800 px-2 py-1 rounded">CS 341</span>
+                  <span className="text-xs text-slate-500 font-mono hidden sm:inline">{post.timestamp}</span>
+                  <button className="material-symbols-outlined text-slate-400 hover:text-primary transition-colors text-xl">more_horiz</button>
+              </div>
+          </div>
 
-        {/* Share */}
-        <button className="flex items-center gap-2 text-text-secondary dark:text-text-secondary-dark hover:text-primary dark:hover:text-primary-dark transition-colors p-2 rounded-full hover:bg-primary/5 ml-auto">
-          <Share2 className="w-5 h-5" />
-        </button>
+          {/* Body */}
+          <div className="mb-4">
+              <p className="text-on-surface dark:text-slate-300 text-[15px] leading-relaxed whitespace-pre-wrap">
+                  {post.content}
+              </p>
+          </div>
+
+          {/* Action Bar */}
+          <div className="flex items-center gap-6 mt-4">
+              <button className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors group/action">
+                  <span className="material-symbols-outlined text-xl group-hover/action:bg-primary/10 p-1.5 rounded-full transition-colors">chat_bubble</span>
+                  <span className="text-xs font-mono font-medium">{post.comments} Replies</span>
+              </button>
+              <button className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors group/action ml-auto">
+                  <span className="material-symbols-outlined text-xl group-hover/action:bg-primary/10 p-1.5 rounded-full transition-colors">bookmark</span>
+              </button>
+              <button className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors group/action">
+                  <span className="material-symbols-outlined text-xl group-hover/action:bg-primary/10 p-1.5 rounded-full transition-colors">share</span>
+              </button>
+          </div>
       </div>
     </article>
   );

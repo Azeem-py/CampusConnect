@@ -26,8 +26,8 @@ describe('PostCard Component', () => {
     expect(screen.getByText(/Computer Science/)).toBeInTheDocument();
     expect(screen.getByText('This is a test post content')).toBeInTheDocument();
     // 10 upvotes - 2 downvotes = 8
-    expect(screen.getByText('8')).toBeInTheDocument();
-    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('+8')).toBeInTheDocument();
+    expect(screen.getByText(/5 Replies/)).toBeInTheDocument();
   });
 
   it('handles upvoting correctly', () => {
@@ -37,11 +37,11 @@ describe('PostCard Component', () => {
     fireEvent.click(upvoteButton);
 
     // (10 + 1) - 2 = 9
-    expect(screen.getByText('9')).toBeInTheDocument();
+    expect(screen.getByText('+9')).toBeInTheDocument();
 
     // Remove upvote
     fireEvent.click(upvoteButton);
-    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('+8')).toBeInTheDocument();
   });
 
   it('handles downvoting correctly', () => {
@@ -51,11 +51,11 @@ describe('PostCard Component', () => {
     fireEvent.click(downvoteButton);
 
     // 10 - (2 + 1) = 7
-    expect(screen.getByText('7')).toBeInTheDocument();
+    expect(screen.getByText('+7')).toBeInTheDocument();
 
     // Remove downvote
     fireEvent.click(downvoteButton);
-    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('+8')).toBeInTheDocument();
   });
 
   it('handles switching from upvote to downvote', () => {
@@ -65,9 +65,9 @@ describe('PostCard Component', () => {
     const downvoteButton = screen.getByLabelText('Downvote');
 
     fireEvent.click(upvoteButton);
-    expect(screen.getByText('9')).toBeInTheDocument(); // 11 upvotes - 2 downvotes
+    expect(screen.getByText('+9')).toBeInTheDocument(); // 11 upvotes - 2 downvotes
 
     fireEvent.click(downvoteButton);
-    expect(screen.getByText('7')).toBeInTheDocument(); // 10 upvotes - 3 downvotes
+    expect(screen.getByText('+7')).toBeInTheDocument(); // 10 upvotes - 3 downvotes
   });
 });
