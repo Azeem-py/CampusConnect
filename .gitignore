@@ -39,3 +39,7 @@ pnpm-debug.log*
 
 # Testing
 coverage
+
+# Local configuration
+opencode.json
+

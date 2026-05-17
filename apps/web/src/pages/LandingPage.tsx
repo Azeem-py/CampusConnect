@@ -1,139 +1,177 @@
-import React from 'react';
+import { Search, FlaskConical, Sigma, School, Smartphone, Laptop, ArrowRight } from "lucide-react"
+import { Button } from "../components/ui/Button"
+import { Tag } from "../components/ui/Tag"
+import { Avatar } from "../components/ui/Avatar"
+import { Footer } from "../components/layout/Footer"
+import { Link } from "react-router-dom"
 
-export const LandingPage: React.FC = () => {
+export function LandingPage() {
   return (
-    <div className="landing-page">
-      {/* Navigation */}
-      <nav className="navbar">
-        <div className="container nav-content">
-          <div className="logo">CampusConnect</div>
-          <div className="nav-links">
-            <a href="#" className="nav-link">Social Feed</a>
-            <a href="#" className="nav-link">Course Rooms</a>
-            <a href="#" className="nav-link">Governance</a>
-            <a href="#" className="nav-link">Business</a>
-            <a href="#" className="btn-pill">Login / Get Started</a>
+    <div className="min-h-screen bg-surface">
+      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/15">
+        <div className="mx-auto max-w-7xl flex items-center justify-between h-14 px-4 lg:px-6">
+          <Link to="/" className="flex items-center gap-2 shrink-0 no-underline">
+            <FlaskConical size={22} className="text-primary" />
+            <span className="font-geist font-bold text-title-lg text-on-surface">
+              Scholarsphere
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-6">
+            <a href="#" className="text-title-sm text-on-surface-variant hover:text-on-surface font-geist transition-colors no-underline">Research</a>
+            <a href="#" className="text-title-sm text-on-surface-variant hover:text-on-surface font-geist transition-colors no-underline">Departments</a>
+            <a href="#" className="text-title-sm text-on-surface-variant hover:text-on-surface font-geist transition-colors no-underline">Events</a>
+            <a href="#" className="text-title-sm text-on-surface-variant hover:text-on-surface font-geist transition-colors no-underline">Publications</a>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <div className="relative hidden sm:block">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="h-9 w-40 lg:w-48 pl-9 pr-3 bg-surface-container border border-outline-variant/20 rounded text-body-md font-inter text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
+            <Link to="/login">
+              <Button variant="ghost" size="sm">Sign In</Button>
+            </Link>
+            <Link to="/signup">
+              <Button variant="primary" size="sm">Join Scholar</Button>
+            </Link>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Hero Section */}
-      <section className="hero">
-        <div className="container">
-          <div className="bento-grid">
-            {/* Main Headline Card */}
-            <div className="bento-card col-span-8 animate-in" style={{ justifyContent: 'center' }}>
-              <div className="tag-mono" style={{ marginBottom: '1rem' }}>Evolution 1.0</div>
-              <h1 className="headline-xl">
-                Academic Discourse meets <span className="italic-serif">Social Networking</span>.
-              </h1>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '1.25rem', maxWidth: '580px' }}>
-                A premium, installable ecosystem designed for recursive scholarly engagement and fast-paced campus commerce.
-              </p>
+      <section className="mx-auto max-w-5xl px-4 lg:px-6 pt-16 pb-20 lg:pt-24 lg:pb-28">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h1 className="font-geist font-bold text-display-xl text-on-surface">
+              Where Academic Minds Connect
+            </h1>
+            <p className="mt-4 text-body-lg text-on-surface-variant font-inter leading-relaxed max-w-lg">
+              The first social platform built specifically for students and researchers. Share insights, solve complex problems with built-in LaTeX support, and stay updated with campus life.
+            </p>
+            <div className="flex items-center gap-3 mt-8">
+              <Link to="/signup">
+                <Button variant="primary" size="lg">
+                  Join the Conversation
+                  <ArrowRight size={16} />
+                </Button>
+              </Link>
+              <Link to="/explore">
+                <Button variant="secondary" size="lg">
+                  Explore Research
+                </Button>
+              </Link>
             </div>
+          </div>
 
-            {/* LaTeX Equation Card */}
-            <div className="bento-card col-span-4 tinted animate-in" style={{ animationDelay: '0.1s' }}>
-              <div className="tag-mono" style={{ alignSelf: 'center' }}>Schrödinger Eq.</div>
-              <div className="latex-block">
-                iℏ <span style={{ opacity: 0.6 }}>∂</span>/∂t Ψ = ĤΨ
+          <div className="bg-surface-container-lowest border border-outline-variant/15 rounded-lg p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <Avatar name="Dr. Rivera" size="md" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-geist font-semibold text-title-md text-on-surface">Dr. Rivera</span>
+                  <Tag variant="department">PHYS-401</Tag>
+                </div>
+                <span className="text-body-sm text-on-surface-variant font-inter">@physics_dept · 2h</span>
               </div>
-              <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Native browser-based LaTeX rendering for statistical and theoretical models.
+            </div>
+            <p className="text-body-md text-on-surface font-inter leading-relaxed">
+              Fascinating derivation for the quantum harmonic oscillator ground state today. Notice how the uncertainty principle naturally arises:
+            </p>
+            <div className="my-2 pl-4 border-l-2 border-primary bg-surface-container/50 py-3 pr-4 rounded-r-md overflow-x-auto text-sm">
+              <p className="font-mono text-on-surface">{`$$\\Delta x \\Delta p \\ge \\frac{\\hbar}{2}$$`}</p>
+              <p className="font-mono text-on-surface mt-1">{`$$\\psi_0(x) = \\left(\\frac{m\\omega}{\\pi\\hbar}\\right)^{1/4} e^{-\\frac{m\\omega x^2}{2\\hbar}}$$`}</p>
+            </div>
+            <div className="flex items-center gap-4 pt-1 text-on-surface-variant">
+              <span className="flex items-center gap-1.5 text-label-sm font-geist">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"/></svg>
+                24
+              </span>
+              <span className="flex items-center gap-1.5 text-label-sm font-geist">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                Cite
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-surface-container-low/50 py-16 lg:py-20">
+        <div className="mx-auto max-w-5xl px-4 lg:px-6">
+          <div className="text-center mb-12">
+            <h2 className="font-geist font-bold text-headline-lg text-on-surface">
+              Designed for Academic Rigor
+            </h2>
+            <p className="mt-2 text-on-surface-variant font-inter text-body-md">
+              We stripped away the noise so you can focus on the signal.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-surface-container-lowest border border-outline-variant/15 rounded-lg p-6 text-center">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
+                <Sigma size={20} />
+              </div>
+              <h3 className="font-geist font-semibold text-title-lg text-on-surface">Math as a First-Class Citizen</h3>
+              <p className="mt-2 text-body-sm text-on-surface-variant font-inter leading-relaxed">
+                Native LaTeX rendering. No more clumsy image uploads or unreadable ASCII math.
               </p>
             </div>
 
-            {/* Social Pulse Feed Preview */}
-            <div className="bento-card col-span-4 animate-in" style={{ animationDelay: '0.2s' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--color-primary-indigo)', border: '3px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}></div>
-                <div>
-                   <div style={{ fontWeight: '700', fontSize: '1.1rem' }}>Elena Rodriguez</div>
-                   <div className="tag-mono" style={{ color: 'var(--color-primary-indigo)', fontSize: '0.65rem' }}>PhD Scholar · Verified</div>
+            <div className="bg-surface-container-lowest border border-outline-variant/15 rounded-lg p-6 text-center">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
+                <School size={20} />
+              </div>
+              <h3 className="font-geist font-semibold text-title-lg text-on-surface">Departmental Pulse</h3>
+              <p className="mt-2 text-body-sm text-on-surface-variant font-inter leading-relaxed">
+                Follow course tags like CS-101 or BIO-L3 to filter the feed and never miss updates.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 mt-4">
+                <Tag variant="trending">#MachineLearning</Tag>
+                <Tag variant="trending">#QuantumComputing</Tag>
+                <Tag variant="trending">#Linguistics</Tag>
+              </div>
+            </div>
+
+            <div className="bg-surface-container-lowest border border-outline-variant/15 rounded-lg p-6 text-center">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
+                <div className="flex gap-1">
+                  <Smartphone size={20} />
+                  <Laptop size={20} />
                 </div>
               </div>
-              <p style={{ marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-                "Just shared my notes on the <span style={{ color: 'var(--color-accent-gold)', fontWeight: '600' }}>Black-Scholes</span> derivation in the Finance room. Native LaTeX makes it so much cleaner!"
+              <h3 className="font-geist font-semibold text-title-lg text-on-surface">Mobile &amp; Desktop Seamlessness</h3>
+              <p className="mt-2 text-body-sm text-on-surface-variant font-inter leading-relaxed">
+                A unified experience designed for the modern academic workflow.
               </p>
-              <div style={{ display: 'flex', gap: '2rem', marginTop: 'auto' }}>
-                 <div style={{ color: 'var(--color-accent-gold)', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>↑</span> 1.4k
-                 </div>
-                 <div style={{ color: 'var(--color-scholarly-slate)', opacity: 0.6, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span>🗣️</span> 42
-                 </div>
-              </div>
-            </div>
-
-            {/* PWA / Visual Banner */}
-            <div className="bento-card col-span-8 indigo-bg animate-in" style={{ animationDelay: '0.3s', minHeight: '300px' }}>
-               <div style={{ maxWidth: '400px', marginTop: 'auto' }}>
-                  <h2 style={{ color: 'white', fontSize: '2.5rem', marginBottom: '1rem' }}>Work Offline.</h2>
-                  <p style={{ opacity: 0.8, color: 'var(--color-parchment-white)' }}>
-                    Draft technical posts and upvote research while traveling. CampusConnect syncs instantly when you reconnect.
-                  </p>
-                  <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-                     <div style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.1)', borderRadius: '2rem', fontSize: '0.8rem' }}>Desktop Native</div>
-                     <div style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.1)', borderRadius: '2rem', fontSize: '0.8rem' }}>Background Sync</div>
-                  </div>
-               </div>
-               <div style={{ position: 'absolute', right: '-10%', top: '10%', fontSize: '12rem', opacity: 0.05, fontWeight: '900', userSelect: 'none' }}>
-                  PWA
-               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="pwa-section tinted">
-         <div className="container">
-            <h2 style={{ textAlign: 'center', fontSize: '3rem', marginBottom: '4rem' }}>Optimized for Excellence.</h2>
-            <div className="grid-3">
-               <div className="bento-card">
-                  <span className="feature-icon">☁️</span>
-                  <h3 style={{ marginBottom: '1rem' }}>Full Offline Sync</h3>
-                  <p style={{ color: 'var(--text-secondary)' }}>Service workers manage your local database, allowing for seamless reading and drafting without an internet connection.</p>
-               </div>
-               <div className="bento-card">
-                  <span className="feature-icon">🏅</span>
-                  <h3 style={{ marginBottom: '1rem' }}>Verified .edu Ecosystem</h3>
-                  <p style={{ color: 'var(--text-secondary)' }}>Connect your university domain to unlock exclusive institutional feeds and earn restricted-entry reputation badges.</p>
-               </div>
-               <div className="bento-card">
-                  <span className="feature-icon">🚀</span>
-                  <h3 style={{ marginBottom: '1rem' }}>One-Tap Install</h3>
-                  <p style={{ color: 'var(--text-secondary)' }}>No app stores needed. Install CampusConnect directly from your browser to your mobile home screen or desktop taskbar.</p>
-               </div>
-            </div>
-         </div>
+      <section className="mx-auto max-w-3xl px-4 lg:px-6 py-16 lg:py-20 text-center">
+        <h2 className="font-geist font-bold text-headline-lg text-on-surface">
+          Ready to Elevate Your Discourse?
+        </h2>
+        <p className="mt-2 text-on-surface-variant font-inter text-body-md">
+          Join thousands of students and researchers already building a smarter community.
+        </p>
+        <div className="mt-6">
+          <Link to="/signup">
+            <Button variant="primary" size="lg">
+              Sign Up
+            </Button>
+          </Link>
+        </div>
+        <p className="mt-3 text-body-sm text-on-surface-variant/60 font-inter">
+          Requires a valid institutional email address.
+        </p>
       </section>
 
-      {/* Footer */}
-      <footer>
-         <div className="container">
-            <div className="footer-content">
-               <div className="logo">CampusConnect</div>
-               <div style={{ display: 'flex', gap: '3rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                     <div className="tag-mono" style={{ marginBottom: '0.5rem' }}>Network</div>
-                     <a href="#" style={{ fontSize: '0.9rem' }}>Social Feed</a>
-                     <a href="#" style={{ fontSize: '0.9rem' }}>Courses</a>
-                     <a href="#" style={{ fontSize: '0.9rem' }}>Businesses</a>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                     <div className="tag-mono" style={{ marginBottom: '0.5rem' }}>Legal</div>
-                     <a href="#" style={{ fontSize: '0.9rem' }}>Privacy Policy</a>
-                     <a href="#" style={{ fontSize: '0.9rem' }}>Terms of Use</a>
-                  </div>
-               </div>
-               <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: '0.8rem', opacity: 0.5 }}>© 2026 CampusConnect Platform.</p>
-                  <p className="tag-mono" style={{ marginTop: '0.5rem' }}>Institutional Integrity First</p>
-               </div>
-            </div>
-         </div>
-      </footer>
+      <Footer />
     </div>
-  );
-};
+  )
+}
