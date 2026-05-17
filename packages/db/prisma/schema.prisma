@@ -11,11 +11,21 @@ model User {
   id              String           @id @default(cuid())
   email           String           @unique
   name            String?
+  username        String           @unique
+  password        String
   role            Role             @default(STUDENT)
   major           String?          // For Students
   graduationYear  Int?             // For Students
   bio             String?          @db.Text
-  reputationScore Int              @default(0)
+  phone           String?
+  department      String?
+  school          String?
+  interests       String?
+  hobby           String?
+  avatar            String?          @db.Text
+  banner            String?          @db.Text
+  refreshTokenHash  String?
+  reputationScore   Int              @default(0)
   posts           Post[]
   businessProfile BusinessProfile?
   votes           Vote[]
@@ -24,6 +34,7 @@ model User {
   updatedAt       DateTime         @updatedAt
 
   @@index([email])
+  @@index([username])
 }
 
 model BusinessProfile {

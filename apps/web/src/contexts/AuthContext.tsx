@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useCallback, type ReactNode } from "react"
+import { useCurrentUser, useLogin, useSignup, useLogout } from "../services/auth"
 
 interface SignUpData {
   name: string
@@ -19,18 +20,25 @@ interface User {
   name: string
   username: string
   email: string
-  phone: string
-  department: string
-  school: string
-  interests: string
-  hobby: string
-  avatar?: string
-  banner?: string
+  phone: string | null
+  department: string | null
+  school: string | null
+  interests: string | null
+  hobby: string | null
+  role: string
+  avatar: string | null
+  banner: string | null
+  reputationScore: number
+  bio: string | null
+  major: string | null
+  graduationYear: number | null
+  createdAt: string
 }
 
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
+  isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
   signup: (data: SignUpData) => Promise<boolean>
   logout: () => void
@@ -39,46 +47,52 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem("campus_user")
-    return stored ? JSON.parse(stored) : null
-  })
+  const { data: user, isLoading } = useCurrentUser()
+  const loginMutation = useLogin()
+  const signupMutation = useSignup()
+  const logoutMutation = useLogout()
 
-  const login = useCallback(async (email: string, _password: string) => {
-    const stored = localStorage.getItem("campus_user")
-    if (!stored) return false
-    const u: User = JSON.parse(stored)
-    if (u.email !== email) return false
-    setUser(u)
-    return true
-  }, [])
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      await loginMutation.mutateAsync({ email, password })
+      return true
+    } catch {
+      return false
+    }
+  }, [loginMutation])
 
   const signup = useCallback(async (data: SignUpData) => {
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      name: data.name,
-      username: data.username,
-      email: data.email,
-      phone: data.phone,
-      department: data.department,
-      school: data.school,
-      interests: data.interests,
-      hobby: data.hobby,
-      avatar: data.avatar,
-      banner: data.banner,
+    try {
+      await signupMutation.mutateAsync(data)
+      return true
+    } catch {
+      return false
     }
-    localStorage.setItem("campus_user", JSON.stringify(newUser))
-    setUser(newUser)
-    return true
-  }, [])
+  }, [signupMutation])
 
   const logout = useCallback(() => {
-    localStorage.removeItem("campus_user")
-    setUser(null)
-  }, [])
+    logoutMutation.mutate()
+  }, [logoutMutation])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{
+        user: user ?? null,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        signup,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

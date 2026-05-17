@@ -1,10 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   // Global validation pipe for strict DTO handling
   app.useGlobalPipes(
@@ -18,10 +25,32 @@ async function bootstrap() {
   // Global exception filter for consistent error responses
   app.useGlobalFilters(new AllExceptionsFilter());
 
+  // Cookie parser for httpOnly JWT cookies
+  app.use(cookieParser());
+
   // Enable CORS for frontend communication
-  app.enableCors();
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  });
+
+  // Swagger documentation
+  const config = new DocumentBuilder()
+    .setTitle('CampusConnect / ScholarSphare API')
+    .setDescription(
+      'REST API for the academic social network. Uses httpOnly cookies for JWT authentication.',
+    )
+    .setVersion('1.0')
+    .addCookieAuth('token')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(process.env.PORT || 3000);
-  console.log(`Application is running on: ${await app.getUrl()}`);
+
+  const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
+  logger.log(`Application is running on: ${await app.getUrl()}`);
+  logger.log(`Swagger docs available at: ${await app.getUrl()}/api/docs`);
 }
 bootstrap();
