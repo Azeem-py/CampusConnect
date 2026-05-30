@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Param, Body, Req, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiBody } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -97,5 +97,26 @@ export class UsersController {
   async unfollowUser(@Param('id') followingId: string, @Req() req: Request) {
     const followerId = (req as any).user.id;
     return this.usersService.unfollowUser(followerId, followingId);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get a user profile by ID' })
+  @ApiCookieAuth('token')
+  @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUserById(@Param('id') id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        following: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+    const { password: _, refreshTokenHash: __, ...userWithoutSensitive } = user;
+    return userWithoutSensitive;
   }
 }

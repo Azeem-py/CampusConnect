@@ -25,7 +25,7 @@ export function parseLatex(text: string): Segment[] {
     const blockIdx = blockMatch ? blockMatch.index! : Infinity
     const inlineIdx = inlineMatch ? inlineMatch.index! : Infinity
 
-    const useBlock = blockIdx < inlineIdx && blockMatch
+    const useBlock = blockIdx <= inlineIdx && blockMatch
 
     if (useBlock) {
       if (blockIdx > 0) {
@@ -174,7 +174,11 @@ export function renderEnhancedPreview(text: string) {
       )
     }
 
-    return renderInlineContent(block, i)
+    return (
+      <div key={i} className="min-h-[1em]">
+        {renderInlineContent(block, i)}
+      </div>
+    )
   })
 }
 

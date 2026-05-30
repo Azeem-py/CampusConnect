@@ -1,16 +1,13 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import { Search, Volume2 } from "lucide-react"
 import { Sidebar } from "../components/layout/Sidebar"
 import { FeedCard } from "../components/feed/FeedCard"
 import { Tag } from "../components/ui/Tag"
 import { ScholarsWidget } from "../components/widgets/ScholarsWidget"
 import { EventsWidget } from "../components/widgets/EventsWidget"
-import { usePosts } from "../services/posts"
+import { usePosts, useTrendingTopics } from "../services/posts"
 import { formatDistanceToNow } from "../lib/utils"
-
-const trendingTags = [
-  "#STA201", "#Rstats", "#DataScience", "#BayesianInference",
-]
 
 function FeedSkeleton() {
   return (
@@ -39,8 +36,22 @@ function FeedSkeleton() {
 }
 
 export function ExplorePage() {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("query") || "")
   const { data, isLoading, error } = usePosts()
+  const { data: trendingTopics = [] } = useTrendingTopics()
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("query") || "")
+  }, [searchParams])
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setSearchQuery(val)
+    setSearchParams(val ? { query: val } : {})
+  }
+
+  const trendingTags = trendingTopics.slice(0, 5).map((t) => t.label)
 
   const allPosts = data?.posts || []
 
@@ -69,21 +80,34 @@ export function ExplorePage() {
               type="text"
               placeholder="Search topics, departments, scholars..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full h-10 pl-10 pr-3 bg-surface-container border border-outline-variant/20 rounded-lg text-body-md font-inter text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary transition-colors"
             />
           </div>
 
           <div>
             <h2 className="text-title-md font-geist font-semibold text-on-surface mb-2">
-              Trending in Statistics
+              Trending Topics
             </h2>
             <div className="flex flex-wrap gap-2">
-              {trendingTags.map((tag) => (
-                <Tag key={tag} variant="trending">
-                  {tag}
-                </Tag>
-              ))}
+              {trendingTags.length === 0 ? (
+                <p className="text-body-sm text-on-surface-variant font-inter italic">No active tags.</p>
+              ) : (
+                trendingTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      setSearchQuery(tag)
+                      setSearchParams({ query: tag })
+                    }}
+                    className="cursor-pointer focus:outline-none"
+                  >
+                    <Tag variant="trending">
+                      {tag}
+                    </Tag>
+                  </button>
+                ))
+              )}
             </div>
           </div>
 

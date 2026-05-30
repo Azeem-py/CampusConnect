@@ -16,6 +16,8 @@ import {
   Image,
   Trash2,
   Upload,
+  Plus,
+  X,
 } from "lucide-react"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
@@ -101,6 +103,42 @@ const UNIVERSITIES = [
   { value: "other", label: "Other Institution" },
 ]
 
+const PRESET_INTERESTS = [
+  "Machine Learning",
+  "Quantum Physics",
+  "Cybersecurity",
+  "Creative Writing",
+  "Biotechnology",
+  "Astrophysics",
+  "Game Development",
+  "Macroeconomics",
+  "Sustainable Energy",
+  "Organic Chemistry",
+  "Data Science",
+  "Robotics",
+  "Ancient History",
+  "Philosophy",
+  "Cognitive Science",
+]
+
+const PRESET_HOBBIES = [
+  "Photography",
+  "Chess",
+  "Rock Climbing",
+  "Cooking",
+  "Hiking",
+  "Painting",
+  "Playing Guitar",
+  "Gardening",
+  "Cycling",
+  "Video Games",
+  "Running",
+  "Yoga",
+  "Reading",
+  "Sketching",
+  "Table Tennis",
+]
+
 const STEPS = [
   { id: 1, label: "Personal", icon: Users },
   { id: 2, label: "Academic", icon: GraduationCap },
@@ -127,6 +165,8 @@ export function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [customInterestInput, setCustomInterestInput] = useState("")
+  const [customHobbyInput, setCustomHobbyInput] = useState("")
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -145,6 +185,52 @@ export function SignUpPage() {
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     if (e.target.type === "file") return
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  function addInterest(tag: string) {
+    const trimmed = tag.trim()
+    if (!trimmed) return
+    const current = form.interests
+      ? form.interests.split(",").map((i) => i.trim()).filter(Boolean)
+      : []
+    if (current.includes(trimmed)) return
+    setForm((prev) => ({
+      ...prev,
+      interests: [...current, trimmed].join(", "),
+    }))
+  }
+
+  function removeInterest(tag: string) {
+    const current = form.interests
+      ? form.interests.split(",").map((i) => i.trim()).filter(Boolean)
+      : []
+    setForm((prev) => ({
+      ...prev,
+      interests: current.filter((i) => i !== tag).join(", "),
+    }))
+  }
+
+  function addHobby(tag: string) {
+    const trimmed = tag.trim()
+    if (!trimmed) return
+    const current = form.hobby
+      ? form.hobby.split(",").map((h) => h.trim()).filter(Boolean)
+      : []
+    if (current.includes(trimmed)) return
+    setForm((prev) => ({
+      ...prev,
+      hobby: [...current, trimmed].join(", "),
+    }))
+  }
+
+  function removeHobby(tag: string) {
+    const current = form.hobby
+      ? form.hobby.split(",").map((h) => h.trim()).filter(Boolean)
+      : []
+    setForm((prev) => ({
+      ...prev,
+      hobby: current.filter((h) => h !== tag).join(", "),
+    }))
   }
 
   function handleFileChange(name: string, file: File | null) {
@@ -468,31 +554,193 @@ export function SignUpPage() {
   }
 
   function renderInterestsStep() {
+    const interestsList = form.interests
+      ? form.interests.split(",").map((i) => i.trim()).filter(Boolean)
+      : []
+    const hobbyList = form.hobby
+      ? form.hobby.split(",").map((h) => h.trim()).filter(Boolean)
+      : []
+
     return (
-      <div className="space-y-4 animate-[fadeIn_0.3s_ease]">
+      <div className="space-y-6 animate-[fadeIn_0.3s_ease]">
         <div>
-          <h2 className="font-geist font-semibold text-headline-sm text-on-surface">Almost done</h2>
+          <h2 className="font-geist font-semibold text-headline-sm text-on-surface">Tell us your story</h2>
           <p className="text-body-md text-on-surface-variant font-inter mt-0.5">
-            Help us personalize your experience
+            Select what defines you to curate your personalized homepage.
           </p>
         </div>
 
-        <Input
-          label="What are you interested in?"
-          name="interests"
-          placeholder="e.g. Machine Learning, Quantum Physics, Poetry"
-          value={form.interests}
-          onChange={handleChange}
-          autoFocus
-        />
+        {/* --- INTERESTS SECTION --- */}
+        <div className="space-y-3.5 p-4 rounded-xl border border-outline-variant/15 bg-surface-container-low/50">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+              <Lightbulb size={16} />
+            </div>
+            <div>
+              <h3 className="font-geist font-semibold text-title-md text-on-surface">Academic Interests</h3>
+              <p className="text-body-sm text-on-surface-variant font-inter">What are you passionate about researching or studying?</p>
+            </div>
+          </div>
 
-        <Input
-          label="What's your hobby?"
-          name="hobby"
-          placeholder="e.g. Photography, Chess, Rock Climbing"
-          value={form.hobby}
-          onChange={handleChange}
-        />
+          {/* Selected Interests Tags */}
+          {interestsList.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 py-1">
+              {interestsList.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-label-md font-geist font-medium bg-primary/10 text-primary border border-primary/20 transition-all duration-200 animate-[scaleIn_0.2s_ease]"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeInterest(tag)}
+                    className="p-0.5 rounded-full hover:bg-primary/25 transition-colors cursor-pointer"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Custom Tag Input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Type custom interest (e.g. Robotics, AI Ethics)"
+              value={customInterestInput}
+              onChange={(e) => setCustomInterestInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  if (customInterestInput.trim()) {
+                    addInterest(customInterestInput)
+                    setCustomInterestInput("")
+                  }
+                }
+              }}
+              className="flex-1 px-3.5 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md font-inter focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant/40"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (customInterestInput.trim()) {
+                  addInterest(customInterestInput)
+                  setCustomInterestInput("")
+                }
+              }}
+              disabled={!customInterestInput.trim()}
+            >
+              <Plus size={16} />
+              Add
+            </Button>
+          </div>
+
+          {/* Suggestions */}
+          <div>
+            <span className="text-[11px] font-geist font-semibold text-on-surface-variant/60 uppercase tracking-wider block mb-1.5">Suggestions</span>
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+              {PRESET_INTERESTS.filter(tag => !interestsList.includes(tag)).map((tag) => (
+                <button
+                  type="button"
+                  key={tag}
+                  onClick={() => addInterest(tag)}
+                  className="px-2.5 py-1 rounded-full text-label-sm font-geist font-medium border border-outline-variant hover:border-primary hover:text-primary hover:bg-primary/5 transition-all text-on-surface-variant duration-200 hover:scale-[1.02] cursor-pointer"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* --- HOBBIES SECTION --- */}
+        <div className="space-y-3.5 p-4 rounded-xl border border-outline-variant/15 bg-surface-container-low/50">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-secondary-container text-on-secondary-container">
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <h3 className="font-geist font-semibold text-title-md text-on-surface">Hobbies & Activities</h3>
+              <p className="text-body-sm text-on-surface-variant font-inter">What do you enjoy doing in your free time?</p>
+            </div>
+          </div>
+
+          {/* Selected Hobbies Tags */}
+          {hobbyList.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 py-1">
+              {hobbyList.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-label-md font-geist font-medium bg-secondary-container text-on-secondary-container border border-secondary-container/20 transition-all duration-200 animate-[scaleIn_0.2s_ease]"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeHobby(tag)}
+                    className="p-0.5 rounded-full hover:bg-on-secondary-container/20 transition-colors cursor-pointer"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Custom Tag Input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Type custom hobby (e.g. Photography, Piano)"
+              value={customHobbyInput}
+              onChange={(e) => setCustomHobbyInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  if (customHobbyInput.trim()) {
+                    addHobby(customHobbyInput)
+                    setCustomHobbyInput("")
+                  }
+                }
+              }}
+              className="flex-1 px-3.5 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md font-inter focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-on-surface-variant/40"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (customHobbyInput.trim()) {
+                  addHobby(customHobbyInput)
+                  setCustomHobbyInput("")
+                }
+              }}
+              disabled={!customHobbyInput.trim()}
+            >
+              <Plus size={16} />
+              Add
+            </Button>
+          </div>
+
+          {/* Suggestions */}
+          <div>
+            <span className="text-[11px] font-geist font-semibold text-on-surface-variant/60 uppercase tracking-wider block mb-1.5">Suggestions</span>
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+              {PRESET_HOBBIES.filter(tag => !hobbyList.includes(tag)).map((tag) => (
+                <button
+                  type="button"
+                  key={tag}
+                  onClick={() => addHobby(tag)}
+                  className="px-2.5 py-1 rounded-full text-label-sm font-geist font-medium border border-outline-variant hover:border-secondary hover:text-secondary-fixed-dim hover:bg-secondary-container/20 transition-all text-on-surface-variant duration-200 hover:scale-[1.02] cursor-pointer"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }

@@ -149,3 +149,15 @@ export function useUnfollowUser() {
   });
 }
 
+export function useUserProfile(userId: string | undefined) {
+  return useQuery<User>({
+    queryKey: ['userProfile', userId],
+    queryFn: async () => {
+      const { data } = await api.get(`/users/${userId}`);
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+

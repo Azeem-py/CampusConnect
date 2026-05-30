@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Injectable()
 export class PostsService {
@@ -120,10 +121,21 @@ export class PostsService {
       include: {
         ...this.postInclude,
         comments: {
+          where: { parentId: null },
           orderBy: { createdAt: 'asc' },
           include: {
             author: {
               select: { id: true, name: true, username: true, avatar: true },
+            },
+            votes: true,
+            replies: {
+              orderBy: { createdAt: 'asc' },
+              include: {
+                author: {
+                  select: { id: true, name: true, username: true, avatar: true },
+                },
+                votes: true,
+              },
             },
           },
         },
@@ -263,6 +275,41 @@ export class PostsService {
         },
       },
     });
+  }
+
+  async addComment(postId: string, authorId: string, dto: CreateCommentDto) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+
+    if (dto.parentId) {
+      const parentComment = await this.prisma.comment.findUnique({ where: { id: dto.parentId } });
+      if (!parentComment) throw new NotFoundException('Parent comment not found');
+      if (parentComment.postId !== postId) throw new BadRequestException('Parent comment does not belong to this post');
+    }
+
+    return this.prisma.comment.create({
+      data: {
+        content: dto.content,
+        postId,
+        authorId,
+        parentId: dto.parentId ?? null,
+      },
+      include: {
+        author: {
+          select: { id: true, name: true, username: true, avatar: true },
+        },
+      },
+    });
+  }
+
+  async deleteComment(postId: string, commentId: string, userId: string) {
+    const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment) throw new NotFoundException('Comment not found');
+    if (comment.postId !== postId) throw new BadRequestException('Comment does not belong to this post');
+    if (comment.authorId !== userId) throw new ForbiddenException('You can only delete your own comments');
+
+    await this.prisma.comment.delete({ where: { id: commentId } });
+    return { message: 'Comment deleted successfully' };
   }
 
   private combineDateAndTime(dateStr: string, timeStr?: string): Date {

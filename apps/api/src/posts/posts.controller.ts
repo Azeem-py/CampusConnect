@@ -17,7 +17,7 @@ import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PostsService } from './posts.service';
 import { RecommendationService } from '../recommendations/recommendation.service';
-import { CreatePostDto, UpdatePostDto } from './dto';
+import { CreatePostDto, UpdatePostDto, CreateCommentDto } from './dto';
 
 @ApiTags('Posts')
 @Controller('api/v1/posts')
@@ -108,5 +108,28 @@ export class PostsController {
   async delete(@Param('id') id: string, @Req() req: Request) {
     const userId = (req as any).user.id;
     return this.postsService.delete(id, userId);
+  }
+
+  @Post(':id/comments')
+  @ApiOperation({ summary: 'Add a comment to a post' })
+  async addComment(
+    @Param('id') id: string,
+    @Body() dto: CreateCommentDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req as any).user.id;
+    return this.postsService.addComment(id, userId, dto);
+  }
+
+  @Delete(':id/comments/:commentId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a comment (owner only)' })
+  async deleteComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @Req() req: Request,
+  ) {
+    const userId = (req as any).user.id;
+    return this.postsService.deleteComment(id, commentId, userId);
   }
 }

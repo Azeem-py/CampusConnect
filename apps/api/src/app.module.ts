@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { SocialService } from './social/social.service';
+import { TrendingService } from './social/trending.service';
+import { SocialController } from './social/social.controller';
 import { PostsModule } from './posts/posts.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 
@@ -21,8 +23,8 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
     PostsModule,
     RecommendationsModule,
   ],
-  controllers: [AppController],
-  providers: [SocialService],
+  controllers: [AppController, SocialController],
+  providers: [SocialService, TrendingService],
 })
 export class AppModule {}
 

@@ -79,6 +79,13 @@ export interface PostWithComments extends Post {
   comments: Comment[];
 }
 
+export interface CommentVote {
+  id: string;
+  value: number;
+  userId: string;
+  commentId: string;
+}
+
 export interface Comment {
   id: string;
   content: string;
@@ -86,6 +93,9 @@ export interface Comment {
   authorId: string;
   author: { id: string; name: string; username: string; avatar: string | null };
   createdAt: string;
+  parentId?: string | null;
+  replies?: Comment[];
+  votes?: CommentVote[];
 }
 
 export interface PaginatedResponse {
@@ -139,14 +149,64 @@ export function useUserPosts(userId: string | undefined, page = 1, limit = 20, v
   });
 }
 
-export function usePost(id: string) {
+export function usePost(id: string, enabled = true) {
   return useQuery<PostWithComments>({
     queryKey: postKey(id),
     queryFn: async () => {
       const { data } = await api.get(`/posts/${id}`);
       return data;
     },
-    enabled: !!id,
+    enabled: !!id && enabled,
+  });
+}
+
+export function useCreateComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Comment, Error, { postId: string; content: string; parentId?: string }>({
+    mutationFn: async ({ postId, content, parentId }) => {
+      const { data } = await api.post(`/posts/${postId}/comments`, { content, parentId });
+      return data;
+    },
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: postKey(postId) });
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+    },
+  });
+}
+
+export function useVoteSocial() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { id: string; value: number },
+    Error,
+    { postId?: string; commentId?: string; value: 1 | -1 }
+  >({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/social/vote', payload);
+      return data;
+    },
+    onSuccess: (_data, { postId }) => {
+      if (postId) {
+        queryClient.invalidateQueries({ queryKey: postKey(postId) });
+      }
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+    },
+  });
+}
+
+export function useDeleteComment() {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { postId: string; commentId: string }>({
+    mutationFn: async ({ postId, commentId }) => {
+      await api.delete(`/posts/${postId}/comments/${commentId}`);
+    },
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: postKey(postId) });
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+    },
   });
 }
 
@@ -249,5 +309,22 @@ export function useUpcomingEvents(limit = 10) {
       return data;
     },
     staleTime: 60_000,
+  });
+}
+
+export interface TrendingTopic {
+  category: string;
+  label: string;
+  posts: string;
+}
+
+export function useTrendingTopics() {
+  return useQuery<TrendingTopic[]>({
+    queryKey: ['social', 'trending'],
+    queryFn: async () => {
+      const { data } = await api.get('/social/trending');
+      return data;
+    },
+    staleTime: 120_000,
   });
 }

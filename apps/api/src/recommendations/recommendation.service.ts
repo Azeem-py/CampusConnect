@@ -92,15 +92,19 @@ export class RecommendationService implements OnModuleInit {
     limit: number,
   ): Promise<string[]> {
     // FIX H1: Two queries in parallel (was four sequential)
-    const [candidates, followedAuthorIds] = await Promise.all([
+    const [candidates, userProfile] = await Promise.all([
       this.getCandidatesWithMeta(interactedPostIds),
-      this.getFollowedAuthorIds(userId),
+      this.getUserProfileAndFollows(userId),
     ]);
 
     if (candidates.length === 0) return [];
 
     const allPostIds = candidates.map((c) => c.id);
-    const profileVector = this.tfidf.buildUserProfile(interactedPostIds);
+    const profileVector = this.tfidf.buildUserProfile(
+      interactedPostIds,
+      userProfile.interests,
+      userProfile.hobby,
+    );
 
     // FIX C3: One call, all posts scored in a single pass
     const knnScoreMap = await this.knn.scoreMany(userId, allPostIds);
@@ -109,7 +113,7 @@ export class RecommendationService implements OnModuleInit {
       const tfidfScore = this.tfidf.scorePost(profileVector, postId);
       const svdScore   = sigmoid(this.svd.predict(userId, postId));
       const knnScore   = sigmoid(knnScoreMap.get(postId) ?? 0);
-      const social     = followedAuthorIds.has(authorId) ? 1 : 0;
+      const social     = userProfile.followedAuthorIds.has(authorId) ? 1 : 0;
       const recency    = this.recencyBoost(createdAt);
 
       const score =
@@ -133,6 +137,9 @@ export class RecommendationService implements OnModuleInit {
   /**
    * FIX H5 — Sorting is now done at the DB level via two targeted queries
    * instead of a JS-side filter over an over-fetched result set.
+   *
+   * Enhanced: Uses TF-IDF based content matching for users who have selected interests or hobbies,
+   * while maintaining the exact original department/votes fallback logic for unit tests and unpersonalized users.
    */
   private async coldStartFallback(
     userId: string,
@@ -140,11 +147,51 @@ export class RecommendationService implements OnModuleInit {
   ): Promise<string[]> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { department: true },
+      select: { department: true, interests: true, hobby: true },
     });
 
     const dept = user?.department;
 
+    // If the user has explicitly selected interests or hobby tags, perform premium content-based scoring fallback
+    if (user?.interests || user?.hobby) {
+      const profileVector = this.tfidf.buildUserProfile([], user.interests, user.hobby);
+
+      const posts = await this.prisma.post.findMany({
+        where: { status: 'PUBLISHED' },
+        select: {
+          id: true,
+          createdAt: true,
+          authorId: true,
+          author: { select: { department: true } },
+          votes: { select: { id: true } },
+        },
+      });
+
+      if (posts.length === 0) return [];
+
+      const scored = posts.map((post) => {
+        const tfidfScore = this.tfidf.scorePost(profileVector, post.id);
+        const isSameDept = dept && post.author.department === dept ? 1.0 : 0.0;
+        const votesCount = post.votes.length;
+        const recency = this.recencyBoost(post.createdAt);
+
+        // Score formula: balance interests, department relevance, popularity (votes), and recency
+        const score =
+          0.5 * tfidfScore +
+          0.2 * isSameDept +
+          0.2 * (1 - 1 / (1 + votesCount)) +
+          0.1 * recency;
+
+        return { postId: post.id, score };
+      });
+
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map((r) => r.postId);
+    }
+
+    // Default cold-start behavior when no explicit interest/hobby tags exist (and for test compatibility)
     if (dept) {
       // Two parallel queries: same-dept first, then others
       const [sameDept, others] = await Promise.all([
@@ -190,12 +237,24 @@ export class RecommendationService implements OnModuleInit {
     return posts.filter((p) => !interactedSet.has(p.id));
   }
 
-  private async getFollowedAuthorIds(userId: string): Promise<Set<string>> {
+  private async getUserProfileAndFollows(userId: string): Promise<{
+    interests: string | null;
+    hobby: string | null;
+    followedAuthorIds: Set<string>;
+  }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { following: { select: { id: true } } },
+      select: {
+        interests: true,
+        hobby: true,
+        following: { select: { id: true } },
+      },
     });
-    return new Set(user?.following.map((f) => f.id) ?? []);
+    return {
+      interests: user?.interests ?? null,
+      hobby: user?.hobby ?? null,
+      followedAuthorIds: new Set(user?.following.map((f) => f.id) ?? []),
+    };
   }
 
   /** FIX L2 — Uses named MS_PER_DAY constant. */

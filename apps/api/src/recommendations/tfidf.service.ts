@@ -42,18 +42,45 @@ export class TfidfService {
 
   /**
    * Builds a user interest profile vector by summing TF-IDF vectors of posts
-   * the user has interacted with.
+   * the user has interacted with, enriched with their explicit interests & hobbies.
    */
-  buildUserProfile(interactedPostIds: string[]): TermVector {
-    if (this.postVectors.size === 0) return new Map();
+  buildUserProfile(
+    interactedPostIds: string[],
+    interests?: string | null,
+    hobby?: string | null,
+  ): TermVector {
     const profile: TermVector = new Map();
-    interactedPostIds.forEach((postId) => {
-      const vec = this.postVectors.get(postId);
-      if (!vec) return;
-      vec.forEach((weight, term) => {
-        profile.set(term, (profile.get(term) ?? 0) + weight);
+
+    // 1. Incorporate interacted posts if they exist
+    if (this.postVectors.size > 0 && interactedPostIds.length > 0) {
+      interactedPostIds.forEach((postId) => {
+        const vec = this.postVectors.get(postId);
+        if (!vec) return;
+        vec.forEach((weight, term) => {
+          profile.set(term, (profile.get(term) ?? 0) + weight);
+        });
       });
+    }
+
+    // 2. Incorporate explicit interests & hobbies
+    const rawTokens: string[] = [];
+    if (interests) {
+      interests.split(',').forEach((val) => {
+        rawTokens.push(...this.tokenize(val));
+      });
+    }
+    if (hobby) {
+      hobby.split(',').forEach((val) => {
+        rawTokens.push(...this.tokenize(val));
+      });
+    }
+
+    // Give high importance to explicit user choices
+    // We can assign a fixed weight boost (e.g. 1.5 per term) to prioritize user-selected tags.
+    rawTokens.forEach((token) => {
+      profile.set(token, (profile.get(token) ?? 0) + 1.5);
     });
+
     return profile;
   }
 

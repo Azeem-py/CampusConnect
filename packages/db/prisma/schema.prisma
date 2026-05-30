@@ -122,18 +122,24 @@ enum PostStatus {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  content   String   @db.Text
+  id        String    @id @default(cuid())
+  content   String    @db.Text
   postId    String
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post      @relation(fields: [postId], references: [id])
   authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User      @relation(fields: [authorId], references: [id])
   votes     Vote[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Threaded replies
+  parentId  String?
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
 
   @@index([postId])
   @@index([authorId])
+  @@index([parentId])
 }
 
 model Vote {
