@@ -8,6 +8,7 @@ export interface SignupDto {
   interests?: string;
   hobby?: string;
   password: string;
+  confirmPassword: string;
   avatar?: string;
   banner?: string;
 }
@@ -18,13 +19,48 @@ export interface LoginDto {
 }
 
 export interface CreatePostDto {
-  title: string;
   content: string;
+  title?: string;
+  status?: 'DRAFT' | 'PUBLISHED';
+  courseCode?: string;
+  event?: {
+    title: string;
+    date: string;
+    time?: string;
+    location?: string;
+    description?: string;
+  } | null;
+  poll?: {
+    question: string;
+    options: string[];
+  } | null;
+}
+
+export interface UpdatePostDto {
+  title?: string;
+  content?: string;
+  status?: 'DRAFT' | 'PUBLISHED';
+  courseCode?: string;
+  event?: {
+    title: string;
+    date: string;
+    time?: string;
+    location?: string;
+    description?: string;
+  } | null;
+  poll?: {
+    question: string;
+    options: string[];
+  } | null;
 }
 
 export interface CreateCommentDto {
   content: string;
   postId: string;
+}
+
+export interface PollVoteDto {
+  pollOptionId: string;
 }
 
 export interface UpgradeBusinessDto {
@@ -33,3 +69,19 @@ export interface UpgradeBusinessDto {
   websiteUrl?: string;
   services: string;
 }
+
+export interface UpdateProfileDto {
+  name?: string;
+  username?: string;
+  bio?: string | null;
+  phone?: string | null;
+  department?: string | null;
+  school?: string | null;
+  major?: string | null;
+  graduationYear?: number | null;
+  interests?: string | null;
+  hobby?: string | null;
+  avatar?: string | null;
+  banner?: string | null;
+}
+

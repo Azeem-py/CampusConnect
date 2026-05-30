@@ -1,8 +1,9 @@
 import { Home, Compass, Bell, User, Plus } from "lucide-react"
-import { NavLink } from "react-router-dom"
+import { NavLink, Link } from "react-router-dom"
 import { cn } from "../../lib/utils"
 import { Avatar } from "../ui/Avatar"
 import { Button } from "../ui/Button"
+import { useAuth } from "../../contexts/AuthContext"
 
 const navItems = [
   { to: "/feed", icon: Home, label: "Home" },
@@ -12,16 +13,18 @@ const navItems = [
 ]
 
 export function Sidebar() {
+  const { user } = useAuth()
+
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 gap-2 py-4">
       <div className="flex items-center gap-3 px-4 mb-2">
-        <Avatar name="Dr. Sarah Jenkins" size="md" />
+        <Avatar src={user?.avatar ?? undefined} name={user?.name ?? "User"} size="md" />
         <div>
           <p className="text-title-md font-geist font-semibold text-on-surface leading-tight">
-            Dr. Sarah Jenkins
+            {user?.name}
           </p>
           <p className="text-body-sm text-on-surface-variant font-inter">
-            @sjenkins_lab
+            @{user?.username}
           </p>
         </div>
       </div>
@@ -47,9 +50,11 @@ export function Sidebar() {
       </nav>
 
       <div className="px-2 mt-2">
-        <Button variant="primary" size="md" className="w-full" icon={<Plus size={16} />}>
-          Post
-        </Button>
+        <Link to="/create">
+          <Button variant="primary" size="md" className="w-full" icon={<Plus size={16} />}>
+            Post
+          </Button>
+        </Link>
       </div>
     </aside>
   )

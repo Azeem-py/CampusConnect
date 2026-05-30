@@ -29,9 +29,12 @@ model User {
   posts           Post[]
   businessProfile BusinessProfile?
   votes           Vote[]
+  pollVotes       PollVote[]
   comments        Comment[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  followers       User[]           @relation("UserFollows")
+  following       User[]           @relation("UserFollows")
 
   @@index([email])
   @@index([username])
@@ -48,17 +51,74 @@ model BusinessProfile {
 }
 
 model Post {
-  id        String    @id @default(cuid())
-  title     String
-  content   String    @db.Text
-  authorId  String
-  author    User      @relation(fields: [authorId], references: [id])
-  votes     Vote[]
-  comments  Comment[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String     @id @default(cuid())
+  title      String?
+  content    String     @db.Text
+  status     PostStatus @default(DRAFT)
+  courseCode String?
+  authorId   String
+  author     User       @relation(fields: [authorId], references: [id])
+  event      Event?
+  poll       Poll?
+  votes      Vote[]
+  comments   Comment[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   @@index([authorId])
+  @@index([status])
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  date        DateTime
+  location    String?
+  description String?  @db.Text
+  postId      String   @unique
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Poll {
+  id        String       @id @default(cuid())
+  question  String
+  postId    String       @unique
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  options   PollOption[]
+  votes     PollVote[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model PollOption {
+  id     String    @id @default(cuid())
+  text   String
+  pollId String
+  poll   Poll      @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes  PollVote[]
+
+  @@index([pollId])
+}
+
+model PollVote {
+  id           String     @id @default(cuid())
+  pollOptionId String
+  pollOption   PollOption @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
+  pollId       String
+  poll         Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@unique([pollId, userId])
+  @@index([pollOptionId])
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
 }
 
 model Comment {

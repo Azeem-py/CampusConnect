@@ -11,6 +11,7 @@ interface SignUpData {
   interests: string;
   hobby: string;
   password: string;
+  confirmPassword: string;
   avatar?: string;
   banner?: string;
 }
@@ -33,6 +34,7 @@ interface User {
   major: string | null;
   graduationYear: number | null;
   createdAt: string;
+  following?: { id: string }[];
 }
 
 const CURRENT_USER_KEY = ['currentUser'];
@@ -89,3 +91,61 @@ export function useLogout() {
     },
   });
 }
+
+export interface UpdateProfileData {
+  name?: string;
+  username?: string;
+  bio?: string | null;
+  phone?: string | null;
+  department?: string | null;
+  school?: string | null;
+  major?: string | null;
+  graduationYear?: number | null;
+  interests?: string | null;
+  hobby?: string | null;
+  avatar?: string | null;
+  banner?: string | null;
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation<User, Error, UpdateProfileData>({
+    mutationFn: async (payload) => {
+      const { data } = await api.patch('/users/me', payload);
+      return data as User;
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(CURRENT_USER_KEY, updatedUser);
+    },
+  });
+}
+
+export function useFollowUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation<User, Error, string>({
+    mutationFn: async (followingId) => {
+      const { data } = await api.post(`/users/${followingId}/follow`);
+      return data as User;
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(CURRENT_USER_KEY, updatedUser);
+    },
+  });
+}
+
+export function useUnfollowUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation<User, Error, string>({
+    mutationFn: async (followingId) => {
+      const { data } = await api.post(`/users/${followingId}/unfollow`);
+      return data as User;
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(CURRENT_USER_KEY, updatedUser);
+    },
+  });
+}
+

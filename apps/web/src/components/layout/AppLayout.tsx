@@ -1,10 +1,12 @@
-import { Search, FlaskConical } from "lucide-react"
-import { Button } from "../ui/Button"
+import { Search, FlaskConical, LogOut } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
+import { useAuth } from "../../contexts/AuthContext"
+import { Avatar } from "../ui/Avatar"
 import { BottomNav } from "./BottomNav"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
+  const { user, logout } = useAuth()
   const isLanding = location.pathname === "/"
   const hideShell = isLanding || location.pathname === "/create" || location.pathname === "/login" || location.pathname === "/signup"
 
@@ -33,9 +35,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link to="/" className="text-label-sm text-on-surface-variant hover:text-on-surface font-geist transition-colors">
-              <Button variant="ghost" size="sm">Switch to Landing</Button>
+            <Link to="/profile" className="flex items-center gap-2 no-underline">
+              <Avatar src={user?.avatar ?? undefined} name={user?.name ?? "User"} size="sm" />
+              <span className="text-label-md text-on-surface font-geist font-medium hidden sm:inline">
+                {user?.name}
+              </span>
             </Link>
+            <button
+              onClick={logout}
+              className="text-on-surface-variant hover:text-on-surface transition-colors"
+              title="Log out"
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </div>
       </header>

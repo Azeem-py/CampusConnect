@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { Logger } from 'nestjs-pino';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
@@ -11,7 +11,7 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+  app.useLogger(app.get(Logger));
 
   // Global validation pipe for strict DTO handling
   app.useGlobalPipes(
@@ -49,7 +49,7 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT || 3000);
 
-  const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
+  const logger = app.get(Logger);
   logger.log(`Application is running on: ${await app.getUrl()}`);
   logger.log(`Swagger docs available at: ${await app.getUrl()}/api/docs`);
 }
