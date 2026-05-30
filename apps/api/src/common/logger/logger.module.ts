@@ -1,54 +1,43 @@
 import { Module, Global } from '@nestjs/common';
-import {
-  WinstonModule,
-  utilities as nestWinstonUtilities,
-} from 'nest-winston';
-import * as winston from 'winston';
-import 'winston-daily-rotate-file';
+import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 
 @Global()
 @Module({
   imports: [
-    WinstonModule.forRoot({
-      level: process.env.LOG_LEVEL ?? 'info',
-      transports: [
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.ms(),
-            nestWinstonUtilities.format.nestLike('API', {
-              colors: true,
-              prettyPrint: true,
-              processId: true,
-              appName: true,
-            }),
-          ),
-        }),
-        new winston.transports.DailyRotateFile({
-          filename: 'logs/api-error-%DATE%.log',
-          datePattern: 'YYYY-MM-DD',
-          level: 'error',
-          zippedArchive: true,
-          maxFiles: '30d',
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.json(),
-          ),
-        }),
-        new winston.transports.DailyRotateFile({
-          filename: 'logs/api-combined-%DATE%.log',
-          datePattern: 'YYYY-MM-DD',
-          level: 'info',
-          zippedArchive: true,
-          maxFiles: '14d',
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.json(),
-          ),
-        }),
-      ],
+    PinoLoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.LOG_LEVEL ?? 'info',
+        redact: {
+          paths: ['req.headers.cookie', 'req.headers.authorization'],
+          censor: '[REDACTED]',
+        },
+        transport: {
+          targets: [
+            {
+              target: 'pino-pretty',
+              level: process.env.LOG_LEVEL ?? 'info',
+              options: {
+                colorize: true,
+                translateTime: 'SYS:standard',
+                ignore: 'pid,hostname',
+              },
+            },
+            {
+              target: 'pino/file',
+              level: 'error',
+              options: { destination: './logs/api-error.log', mkdir: true },
+            },
+            {
+              target: 'pino/file',
+              level: 'info',
+              options: { destination: './logs/api-combined.log', mkdir: true },
+            },
+          ],
+        },
+      },
+      exclude: [],
     }),
   ],
-  exports: [WinstonModule],
+  exports: [PinoLoggerModule],
 })
 export class LoggerModule {}

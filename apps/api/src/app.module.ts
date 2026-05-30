@@ -1,21 +1,28 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { LoggerModule } from './common/logger/logger.module';
-import { RequestLoggerMiddleware } from './common/logger/request-logger.middleware';
 import { SocialService } from './social/social.service';
-import { PostsService } from './posts/posts.service';
+import { PostsModule } from './posts/posts.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), PrismaModule, AuthModule, UsersModule, LoggerModule],
+  imports: [
+    ConfigModule.forRoot(),
+    ScheduleModule.forRoot(), // FIX M4: single global scheduler instance
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    LoggerModule,
+    PostsModule,
+    RecommendationsModule,
+  ],
   controllers: [AppController],
-  providers: [SocialService, PostsService],
+  providers: [SocialService],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestLoggerMiddleware).forRoutes('*');
-  }
-}
+export class AppModule {}
+

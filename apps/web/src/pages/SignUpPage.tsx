@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import {
   FlaskConical,
@@ -14,11 +14,14 @@ import {
   Brain,
   Camera,
   Image,
+  Trash2,
+  Upload,
 } from "lucide-react"
 import { Button } from "../components/ui/Button"
 import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { useAuth } from "../contexts/AuthContext"
+import { uploadPublicFile } from "../services/storage"
 
 const DEPARTMENTS = [
   { value: "aeronautics", label: "Aeronautics & Astronautics" },
@@ -115,6 +118,12 @@ export function SignUpPage() {
   const navigate = useNavigate()
   const { signup } = useAuth()
   const [step, setStep] = useState(1)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+  const [isAvatarDragging, setIsAvatarDragging] = useState(false)
+  const [isBannerDragging, setIsBannerDragging] = useState(false)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [bannerFile, setBannerFile] = useState<File | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -140,11 +149,82 @@ export function SignUpPage() {
 
   function handleFileChange(name: string, file: File | null) {
     if (!file) return
+    setError("")
+
+    // 1. File size validation (5MB)
+    const maxSizeBytes = 5 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      setError("File size exceeds the 5MB limit.")
+      return
+    }
+
+    // 2. File type validation (no videos, GIFs allowed)
+    if (!file.type.startsWith("image/") || file.type.startsWith("video/")) {
+      setError("Invalid file type. Only images and GIFs are allowed. Videos are not permitted.")
+      return
+    }
+
+    // Store raw File object for direct Supabase CDN Storage upload on submit
+    if (name === "avatar") {
+      setAvatarFile(file)
+    } else if (name === "banner") {
+      setBannerFile(file)
+    }
+
+    // Keep base64 string for instant visual preview card rendering
     const reader = new FileReader()
     reader.onload = () => {
       setForm((prev) => ({ ...prev, [name]: reader.result as string }))
     }
     reader.readAsDataURL(file)
+  }
+
+  function handleClearFile(name: string, e?: React.MouseEvent) {
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    if (name === "avatar") {
+      setAvatarFile(null)
+    } else if (name === "banner") {
+      setBannerFile(null)
+    }
+    setForm((prev) => ({ ...prev, [name]: "" }))
+  }
+
+  function handleDragOver(e: React.DragEvent, type: "avatar" | "banner") {
+    e.preventDefault()
+    e.stopPropagation()
+    if (type === "avatar") {
+      setIsAvatarDragging(true)
+    } else {
+      setIsBannerDragging(true)
+    }
+  }
+
+  function handleDragLeave(e: React.DragEvent, type: "avatar" | "banner") {
+    e.preventDefault()
+    e.stopPropagation()
+    if (type === "avatar") {
+      setIsAvatarDragging(false)
+    } else {
+      setIsBannerDragging(false)
+    }
+  }
+
+  function handleDrop(e: React.DragEvent, type: "avatar" | "banner") {
+    e.preventDefault()
+    e.stopPropagation()
+    if (type === "avatar") {
+      setIsAvatarDragging(false)
+    } else {
+      setIsBannerDragging(false)
+    }
+
+    const file = e.dataTransfer.files?.[0] || null
+    if (file && file.type.startsWith("image/")) {
+      handleFileChange(type, file)
+    }
   }
 
   function canProceed(): boolean {
@@ -175,10 +255,43 @@ export function SignUpPage() {
 
     setLoading(true)
     try {
-      await signup(form)
-      navigate("/feed")
-    } catch {
-      setError("Something went wrong. Please try again.")
+      let finalAvatarUrl = form.avatar
+      let finalBannerUrl = form.banner
+
+      // Check if we are running in local development mode or if Supabase keys are not set
+      const isDev = import.meta.env.DEV
+      const isSupabaseConfigured = 
+        import.meta.env.VITE_SUPABASE_URL && 
+        import.meta.env.VITE_SUPABASE_URL !== 'https://your-project-id.supabase.co'
+
+      // Only perform direct Supabase uploads if in production and credentials are set
+      if (!isDev && isSupabaseConfigured) {
+        // 1. Perform direct browser uploads to Supabase CDN Storage buckets
+        if (avatarFile) {
+          finalAvatarUrl = await uploadPublicFile("avatars", avatarFile)
+        }
+        if (bannerFile) {
+          finalBannerUrl = await uploadPublicFile("banners", bannerFile)
+        }
+      } else {
+        // In local development, finalAvatarUrl and finalBannerUrl remain as the instant local base64 strings!
+        console.log("Local development mode detected: skipping CDN upload and saving base64 strings directly to database.")
+      }
+
+      // 2. Perform the signup API request with resulting public URLs instead of heavy Base64
+      const success = await signup({
+        ...form,
+        avatar: finalAvatarUrl,
+        banner: finalBannerUrl,
+      })
+
+      if (success) {
+        navigate("/feed")
+      } else {
+        setError("Something went wrong. Please try again.")
+      }
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -385,61 +498,218 @@ export function SignUpPage() {
   }
 
   function renderProfileStep() {
+    const selectedSchool = UNIVERSITIES.find((u) => u.value === form.school)?.label || form.school || "Institution name"
+    const selectedDept = DEPARTMENTS.find((d) => d.value === form.department)?.label || form.department || "Academic department"
+    
+    // Parse interests and hobbies
+    const interestsList = form.interests
+      ? form.interests.split(",").map((i) => i.trim()).filter(Boolean)
+      : []
+    const hobbyList = form.hobby
+      ? form.hobby.split(",").map((h) => h.trim()).filter(Boolean)
+      : []
+
     return (
-      <div className="space-y-5 animate-[fadeIn_0.3s_ease]">
-        <div>
-          <h2 className="font-geist font-semibold text-headline-sm text-on-surface">Profile picture</h2>
+      <div className="space-y-6 animate-[fadeIn_0.3s_ease]">
+        <div className="text-center sm:text-left">
+          <h2 className="font-geist font-semibold text-headline-sm text-on-surface">Customize your profile</h2>
           <p className="text-body-md text-on-surface-variant font-inter mt-0.5">
-            Add a photo so your colleagues can recognise you
+            Preview how your profile will look on Scholarsphere.
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-5">
-          <label className="group relative w-28 h-28 rounded-full border-2 border-dashed border-outline-variant/40 hover:border-primary/50 transition-colors cursor-pointer overflow-hidden">
-            {form.avatar ? (
-              <img src={form.avatar} alt="Preview" className="w-full h-full object-cover" />
+        {/* Twitter-style Live Profile Card Mockup */}
+        <div className="w-full rounded-2xl border border-outline-variant/20 overflow-hidden bg-surface-container-lowest shadow-md transition-shadow hover:shadow-lg">
+          
+          {/* Banner Area */}
+          <div 
+            className={`relative h-32 w-full transition-all duration-300 ${
+              isBannerDragging 
+                ? "bg-primary/20 ring-2 ring-primary ring-dashed scale-[0.99] rounded-t-2xl" 
+                : ""
+            }`}
+            onDragOver={(e) => handleDragOver(e, "banner")}
+            onDragLeave={(e) => handleDragLeave(e, "banner")}
+            onDrop={(e) => handleDrop(e, "banner")}
+          >
+            {form.banner ? (
+              <>
+                <img src={form.banner} alt="Profile banner" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={(e) => handleClearFile("banner", e)}
+                  className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors z-20 hover:scale-105"
+                  title="Remove banner"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-surface-container-low">
-                <Camera size={24} className="text-on-surface-variant/50 group-hover:text-primary/60 transition-colors" />
-                <span className="text-label-sm text-on-surface-variant/50 font-geist font-medium group-hover:text-primary/60 transition-colors">
-                  Upload
-                </span>
+              // Enhanced premium default academic banner pattern
+              <div 
+                className="w-full h-full bg-gradient-to-r from-primary/80 via-primary-container to-primary-fixed flex items-center justify-center cursor-pointer relative"
+                onClick={() => bannerInputRef.current?.click()}
+              >
+                <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:14px_24px]" />
+                <div className="flex flex-col items-center gap-1 text-white/80 transition-transform duration-300 hover:scale-105">
+                  <Image size={20} className="animate-pulse" />
+                  <span className="text-label-sm font-geist font-medium">Upload banner image</span>
+                </div>
               </div>
             )}
+
+            {/* Hidden Input for Banner */}
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => handleFileChange("avatar", e.target.files?.[0] ?? null)}
+              ref={bannerInputRef}
+              onChange={(e) => handleFileChange("banner", e.target.files?.[0] ?? null)}
               className="hidden"
             />
-          </label>
-        </div>
 
-        <div>
-          <h2 className="font-geist font-semibold text-headline-sm text-on-surface">Banner image</h2>
-          <p className="text-body-md text-on-surface-variant font-inter mt-0.5">
-            Give your profile a personal touch
-          </p>
-        </div>
+            {/* Glassmorphic Edit Overlay on Banner when populated */}
+            {form.banner && (
+              <div 
+                className="absolute inset-0 bg-black/40 backdrop-blur-[1px] opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 cursor-pointer text-white"
+                onClick={() => bannerInputRef.current?.click()}
+              >
+                <Camera size={18} />
+                <span className="text-label-md font-geist font-medium">Change banner</span>
+              </div>
+            )}
 
-        <label className="group relative w-full h-32 rounded-xl border-2 border-dashed border-outline-variant/40 hover:border-primary/50 transition-colors cursor-pointer overflow-hidden">
-          {form.banner ? (
-            <img src={form.banner} alt="Banner preview" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-surface-container-low">
-              <Image size={22} className="text-on-surface-variant/50 group-hover:text-primary/60 transition-colors" />
-              <span className="text-label-sm text-on-surface-variant/50 font-geist font-medium group-hover:text-primary/60 transition-colors">
-                Click to upload banner
-              </span>
+            {/* Overlapping Avatar Container */}
+            <div 
+              className={`absolute -bottom-8 left-6 w-20 h-20 sm:w-22 sm:h-22 rounded-full border-4 border-surface-container-lowest bg-surface-container-lowest overflow-hidden shadow-md group transition-all duration-300 ${
+                isAvatarDragging 
+                  ? "ring-2 ring-primary scale-[1.05]" 
+                  : "hover:scale-[1.02]"
+              }`}
+              onDragOver={(e) => handleDragOver(e, "avatar")}
+              onDragLeave={(e) => handleDragLeave(e, "avatar")}
+              onDrop={(e) => handleDrop(e, "avatar")}
+            >
+              {form.avatar ? (
+                <div className="w-full h-full relative">
+                  <img src={form.avatar} alt="Profile avatar" className="w-full h-full object-cover" />
+                  
+                  {/* Glassmorphic Avatar Hover Overlay */}
+                  <div 
+                    className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center cursor-pointer text-white"
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    <Camera size={16} />
+                    <span className="text-[10px] font-geist font-medium mt-0.5">Change</span>
+                  </div>
+
+                  {/* Remove Button for Avatar */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleClearFile("avatar", e)}
+                    className="absolute bottom-1 right-1 p-1 rounded-full bg-black/70 hover:bg-black/90 text-white transition-colors z-20 scale-90"
+                    title="Remove photo"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                </div>
+              ) : (
+                <div 
+                  className="w-full h-full flex flex-col items-center justify-center bg-primary-container text-on-primary-container cursor-pointer transition-colors hover:bg-primary-container/80 relative"
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  {form.name ? (
+                    <span className="text-headline-lg font-geist font-bold tracking-tight">
+                      {form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                    </span>
+                  ) : (
+                    <Camera size={22} className="text-on-primary-container/70" />
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center text-white">
+                    <Camera size={16} />
+                  </div>
+                </div>
+              )}
+
+              {/* Hidden Input for Avatar */}
+              <input
+                type="file"
+                accept="image/*"
+                ref={avatarInputRef}
+                onChange={(e) => handleFileChange("avatar", e.target.files?.[0] ?? null)}
+                className="hidden"
+              />
             </div>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFileChange("banner", e.target.files?.[0] ?? null)}
-            className="hidden"
-          />
-        </label>
+          </div>
+
+          {/* Profile Card Info Fields */}
+          <div className="px-6 pt-11 pb-5 bg-surface-container-lowest">
+            
+            {/* Live Name & Username */}
+            <div className="space-y-0.5">
+              <h3 className="font-geist font-bold text-headline-sm text-on-surface truncate">
+                {form.name || "Your Name"}
+              </h3>
+              <p className="text-body-md text-on-surface-variant/70 font-geist">
+                {form.username ? `@${form.username.replace(/^@/, "")}` : "@username"}
+              </p>
+            </div>
+
+            {/* University & Department Row */}
+            <div className="mt-3.5 space-y-1.5">
+              <div className="flex items-center gap-2 text-body-md text-on-surface-variant font-inter">
+                <GraduationCap size={16} className="text-primary/70 shrink-0" />
+                <span className="truncate font-medium">{selectedSchool}</span>
+              </div>
+              <div className="flex items-center gap-2 text-body-md text-on-surface-variant font-inter">
+                <Users size={16} className="text-primary/70 shrink-0" />
+                <span className="truncate">{selectedDept}</span>
+              </div>
+            </div>
+
+            {/* Live Badges for Interests & Hobbies */}
+            {(interestsList.length > 0 || hobbyList.length > 0) ? (
+              <div className="mt-4 pt-3.5 border-t border-outline-variant/10 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                {interestsList.map((interest, idx) => (
+                  <span 
+                    key={`interest-${idx}`} 
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-geist font-medium bg-primary/10 text-primary border border-primary/10"
+                  >
+                    <Sparkles size={10} className="shrink-0" />
+                    {interest}
+                  </span>
+                ))}
+                {hobbyList.map((hobby, idx) => (
+                  <span 
+                    key={`hobby-${idx}`} 
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-geist font-medium bg-secondary-container text-on-secondary-container border border-secondary-container/10"
+                  >
+                    {hobby}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 pt-3.5 border-t border-outline-variant/10">
+                <p className="text-label-sm text-on-surface-variant/40 font-inter italic">
+                  No interest tags added yet
+                </p>
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        {/* Clear Instructions */}
+        <div className="rounded-xl bg-surface-container-low p-4 border border-outline-variant/15 flex gap-3 items-start">
+          <div className="p-2 rounded-lg bg-primary-container text-on-primary-container shrink-0">
+            <Upload size={16} />
+          </div>
+          <div className="space-y-1">
+            <h4 className="font-geist font-semibold text-title-sm text-on-surface">Tips for a great profile</h4>
+            <p className="text-body-sm text-on-surface-variant font-inter leading-relaxed">
+              Drag and drop files directly onto the preview card or click to browse. Max size 5MB. Recommended banner ratio: 3:1.
+            </p>
+          </div>
+        </div>
 
         <p className="text-body-sm text-on-surface-variant/50 font-inter text-center">
           You can always change these later

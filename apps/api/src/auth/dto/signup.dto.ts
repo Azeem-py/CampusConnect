@@ -6,6 +6,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Match } from '../../common/decorators/match.decorator';
 
 export class SignupDto {
   @ApiProperty({
@@ -86,6 +87,16 @@ export class SignupDto {
   @IsNotEmpty()
   @MinLength(6)
   password!: string;
+
+  @ApiProperty({
+    example: 'secureP@ss123',
+    description: 'Confirm password — must match password',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  @Match('password', { message: 'Passwords do not match' })
+  confirmPassword!: string;
 
   @ApiProperty({
     example: 'data:image/png;base64,...',

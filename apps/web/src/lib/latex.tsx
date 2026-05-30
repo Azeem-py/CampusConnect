@@ -1,6 +1,8 @@
 import { Fragment } from "react"
 import { InlineMath, BlockMath } from "react-katex"
 import katex from "katex"
+import "katex/dist/katex.min.css"
+
 
 export interface Segment {
   type: "text" | "inline" | "block"
@@ -178,6 +180,11 @@ export function renderEnhancedPreview(text: string) {
 
 function renderLatexCommands(text: string): React.ReactNode[] {
   if (!text.includes("\\")) return [text]
+
+  const fullHtml = renderCommandToHtml(text)
+  if (fullHtml) {
+    return [<span key="full" dangerouslySetInnerHTML={{ __html: fullHtml }} />]
+  }
 
   const parts: React.ReactNode[] = []
   let remaining = text

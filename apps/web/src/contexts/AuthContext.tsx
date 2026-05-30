@@ -11,6 +11,7 @@ interface SignUpData {
   interests: string
   hobby: string
   password: string
+  confirmPassword: string
   avatar?: string
   banner?: string
 }
@@ -33,6 +34,7 @@ interface User {
   major: string | null
   graduationYear: number | null
   createdAt: string
+  following?: { id: string }[]
 }
 
 interface AuthContextType {
@@ -74,14 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logoutMutation.mutate()
   }, [logoutMutation])
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
   return (
     <AuthContext.Provider
       value={{
@@ -93,7 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
       }}
     >
-      {children}
+      {isLoading ? (
+        <div className="min-h-screen flex items-center justify-center bg-surface">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : children}
     </AuthContext.Provider>
   )
 }

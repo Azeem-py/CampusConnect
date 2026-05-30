@@ -1,0 +1,253 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api } from './api';
+
+export interface EventData {
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  description: string;
+}
+
+export interface PollData {
+  question: string;
+  options: string[];
+}
+
+export interface CreatePostPayload {
+  content: string;
+  title?: string;
+  status?: 'DRAFT' | 'PUBLISHED';
+  courseCode?: string;
+  event?: EventData | null;
+  poll?: PollData | null;
+}
+
+export interface UpdatePostPayload {
+  title?: string;
+  content?: string;
+  status?: 'DRAFT' | 'PUBLISHED';
+  courseCode?: string;
+  event?: EventData | null;
+  poll?: PollData | null;
+}
+
+export interface PostAuthor {
+  id: string;
+  name: string;
+  username: string;
+  avatar: string | null;
+  reputationScore: number;
+}
+
+export interface PollOptionWithCount {
+  id: string;
+  text: string;
+  _count: { votes: number };
+}
+
+export interface PostEvent {
+  id: string;
+  title: string;
+  date: string;
+  location: string | null;
+  description: string | null;
+}
+
+export interface PostPoll {
+  id: string;
+  question: string;
+  options: PollOptionWithCount[];
+}
+
+export interface Post {
+  id: string;
+  title: string | null;
+  content: string;
+  status: 'DRAFT' | 'PUBLISHED';
+  courseCode: string | null;
+  authorId: string;
+  author: PostAuthor;
+  event: PostEvent | null;
+  poll: PostPoll | null;
+  _count: { votes: number; comments: number };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PostWithComments extends Post {
+  comments: Comment[];
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  postId: string;
+  authorId: string;
+  author: { id: string; name: string; username: string; avatar: string | null };
+  createdAt: string;
+}
+
+export interface PaginatedResponse {
+  posts: Post[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface UpcomingEvent {
+  id: string;
+  title: string;
+  date: string;
+  location: string | null;
+  description: string | null;
+  postId: string;
+  post: {
+    id: string;
+    title: string | null;
+    courseCode: string | null;
+    author: { id: string; name: string; username: string; avatar: string | null };
+  };
+}
+
+const POSTS_KEY = ['posts'];
+const DRAFTS_KEY = ['posts', 'drafts'];
+const EVENTS_KEY = ['events'];
+const postKey = (id: string) => ['posts', id];
+
+export function usePosts(page = 1, limit = 20, followingOf?: string) {
+  return useQuery<PaginatedResponse>({
+    queryKey: [...POSTS_KEY, { page, limit, followingOf }],
+    queryFn: async () => {
+      const { data } = await api.get('/posts', { params: { page, limit, followingOf } });
+      return data;
+    },
+    staleTime: 30_000,
+  });
+}
+
+export function useUserPosts(userId: string | undefined, page = 1, limit = 20, votedBy?: string) {
+  return useQuery<PaginatedResponse>({
+    queryKey: [...POSTS_KEY, 'user', userId, 'voted', votedBy, { page, limit }],
+    queryFn: async () => {
+      const { data } = await api.get('/posts', { params: { page, limit, authorId: userId, votedBy } });
+      return data;
+    },
+    enabled: !!userId || !!votedBy,
+    staleTime: 30_000,
+  });
+}
+
+export function usePost(id: string) {
+  return useQuery<PostWithComments>({
+    queryKey: postKey(id),
+    queryFn: async () => {
+      const { data } = await api.get(`/posts/${id}`);
+      return data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useDrafts() {
+  return useQuery<Post[]>({
+    queryKey: DRAFTS_KEY,
+    queryFn: async () => {
+      const { data } = await api.get('/posts/drafts');
+      return data;
+    },
+    staleTime: 10_000,
+  });
+}
+
+export function useCreatePost() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Post, Error, CreatePostPayload>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/posts', payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+      queryClient.invalidateQueries({ queryKey: DRAFTS_KEY });
+    },
+  });
+}
+
+export function useUpdatePost() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Post, Error, { id: string; payload: UpdatePostPayload }>({
+    mutationFn: async ({ id, payload }) => {
+      const { data } = await api.patch(`/posts/${id}`, payload);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(postKey(data.id), data);
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+      queryClient.invalidateQueries({ queryKey: DRAFTS_KEY });
+    },
+  });
+}
+
+export function usePublishPost() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Post, Error, string>({
+    mutationFn: async (id) => {
+      const { data } = await api.post(`/posts/${id}/publish`);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(postKey(data.id), data);
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+      queryClient.invalidateQueries({ queryKey: DRAFTS_KEY });
+    },
+  });
+}
+
+export function useDeletePost() {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, string>({
+    mutationFn: async (id) => {
+      await api.delete(`/posts/${id}`);
+    },
+    onSuccess: (_data, id) => {
+      queryClient.removeQueries({ queryKey: postKey(id) });
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+      queryClient.invalidateQueries({ queryKey: DRAFTS_KEY });
+    },
+  });
+}
+
+export function useVotePoll() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { voted: boolean; pollOptionId: string | null },
+    Error,
+    { pollId: string; pollOptionId: string }
+  >({
+    mutationFn: async ({ pollId, pollOptionId }) => {
+      const { data } = await api.post(`/polls/${pollId}/vote`, { pollOptionId });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+    },
+  });
+}
+
+export function useUpcomingEvents(limit = 10) {
+  return useQuery<UpcomingEvent[]>({
+    queryKey: [...EVENTS_KEY, { limit }],
+    queryFn: async () => {
+      const { data } = await api.get('/events', { params: { limit } });
+      return data;
+    },
+    staleTime: 60_000,
+  });
+}
