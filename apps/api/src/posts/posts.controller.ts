@@ -43,12 +43,14 @@ export class PostsController {
   @ApiQuery({ name: 'authorId', required: false, example: 'clxyzabc123def456' })
   @ApiQuery({ name: 'votedBy', required: false, example: 'clxyzabc123def456' })
   @ApiQuery({ name: 'followingOf', required: false, example: 'clxyzabc123def456' })
+  @ApiQuery({ name: 'search', required: false, example: '#STA201' })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('authorId') authorId?: string,
     @Query('votedBy') votedBy?: string,
     @Query('followingOf') followingOf?: string,
+    @Query('search') search?: string,
   ) {
     return this.postsService.findAllPublished(
       Number(page) || 1,
@@ -56,6 +58,7 @@ export class PostsController {
       authorId,
       votedBy,
       followingOf,
+      search,
     );
   }
 
@@ -64,6 +67,19 @@ export class PostsController {
   async findDrafts(@Req() req: Request) {
     const userId = (req as any).user.id;
     return this.postsService.findDrafts(userId);
+  }
+
+  @Get('bookmarked')
+  @ApiOperation({ summary: 'List current user\'s bookmarked posts' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 20 })
+  async getBookmarked(
+    @Req() req: Request,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const userId = (req as any).user.id;
+    return this.postsService.findBookmarked(userId, Number(page) || 1, Number(limit) || 20);
   }
 
   @Get('recommended')
@@ -131,5 +147,32 @@ export class PostsController {
   ) {
     const userId = (req as any).user.id;
     return this.postsService.deleteComment(id, commentId, userId);
+  }
+
+  @Post(':id/repost')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Repost a post or undo an existing repost (toggle)' })
+  async repost(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req as any).user.id;
+    return this.postsService.repost(userId, id);
+  }
+
+  @Post(':id/quote')
+  @ApiOperation({ summary: 'Create a quote post with commentary' })
+  async quote(
+    @Param('id') id: string,
+    @Body('content') content: string,
+    @Req() req: Request,
+  ) {
+    const userId = (req as any).user.id;
+    return this.postsService.quote(userId, id, content);
+  }
+
+  @Post(':id/bookmark')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Toggle bookmark status of a post' })
+  async toggleBookmark(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req as any).user.id;
+    return this.postsService.toggleBookmark(userId, id);
   }
 }

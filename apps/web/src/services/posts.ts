@@ -70,7 +70,11 @@ export interface Post {
   author: PostAuthor;
   event: PostEvent | null;
   poll: PostPoll | null;
-  _count: { votes: number; comments: number };
+  votes?: { userId: string; value: number }[];
+  bookmarks?: { userId: string }[];
+  originalPostId?: string | null;
+  originalPost?: Post | null;
+  _count: { votes: number; comments: number; reposts: number };
   createdAt: string;
   updatedAt: string;
 }
@@ -126,11 +130,11 @@ const DRAFTS_KEY = ['posts', 'drafts'];
 const EVENTS_KEY = ['events'];
 const postKey = (id: string) => ['posts', id];
 
-export function usePosts(page = 1, limit = 20, followingOf?: string) {
+export function usePosts(page = 1, limit = 20, followingOf?: string, search?: string) {
   return useQuery<PaginatedResponse>({
-    queryKey: [...POSTS_KEY, { page, limit, followingOf }],
+    queryKey: [...POSTS_KEY, { page, limit, followingOf, search }],
     queryFn: async () => {
-      const { data } = await api.get('/posts', { params: { page, limit, followingOf } });
+      const { data } = await api.get('/posts', { params: { page, limit, followingOf, search } });
       return data;
     },
     staleTime: 30_000,
@@ -181,7 +185,7 @@ export function useVoteSocial() {
   return useMutation<
     { id: string; value: number },
     Error,
-    { postId?: string; commentId?: string; value: 1 | -1 }
+    { postId?: string; commentId?: string; value: 1 | -1 | 0 }
   >({
     mutationFn: async (payload) => {
       const { data } = await api.post('/social/vote', payload);
@@ -326,5 +330,61 @@ export function useTrendingTopics() {
       return data;
     },
     staleTime: 120_000,
+  });
+}
+
+export function useRepostPost() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ reposted: boolean; post: Post | null }, Error, string>({
+    mutationFn: async (postId) => {
+      const { data } = await api.post(`/posts/${postId}/repost`);
+      return data;
+    },
+    onSuccess: (_data, postId) => {
+      queryClient.invalidateQueries({ queryKey: postKey(postId) });
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+    },
+  });
+}
+
+export function useQuotePost() {
+  const queryClient = useQueryClient();
+
+  return useMutation<Post, Error, { postId: string; content: string }>({
+    mutationFn: async ({ postId, content }) => {
+      const { data } = await api.post(`/posts/${postId}/quote`, { content });
+      return data;
+    },
+    onSuccess: (_data, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: postKey(postId) });
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+    },
+  });
+}
+
+export function useToggleBookmark() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ bookmarked: boolean }, Error, string>({
+    mutationFn: async (postId) => {
+      const { data } = await api.post(`/posts/${postId}/bookmark`);
+      return data;
+    },
+    onSuccess: (_data, postId) => {
+      queryClient.invalidateQueries({ queryKey: postKey(postId) });
+      queryClient.invalidateQueries({ queryKey: POSTS_KEY });
+    },
+  });
+}
+
+export function useBookmarkedPosts(page = 1, limit = 20) {
+  return useQuery<PaginatedResponse>({
+    queryKey: [...POSTS_KEY, 'bookmarked', { page, limit }],
+    queryFn: async () => {
+      const { data } = await api.get('/posts/bookmarked', { params: { page, limit } });
+      return data;
+    },
+    staleTime: 30_000,
   });
 }

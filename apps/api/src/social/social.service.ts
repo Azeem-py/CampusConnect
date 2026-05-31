@@ -35,7 +35,24 @@ export class SocialService {
 
       const repDiff = this.calculateReputationDifferential(existingVote?.value ?? 0, value);
 
-      // 3. Upsert the vote
+      // 3. Handle Retraction (value is 0) or Upsert
+      if (value === 0) {
+        if (existingVote) {
+          await tx.vote.delete({
+            where: { id: existingVote.id }
+          });
+        }
+
+        // 4. Update Author's Reputation
+        await tx.user.update({
+          where: { id: target.authorId },
+          data: { reputationScore: { increment: repDiff } }
+        });
+
+        return { id: existingVote?.id, value: 0 };
+      }
+
+      // Upsert the vote (value is 1 or -1)
       const voteResult = await tx.vote.upsert({
         where: {
           userId_postId: postId ? { userId, postId } : undefined,

@@ -20,7 +20,45 @@ export class PostsService {
         },
       },
     },
-    _count: { select: { votes: true, comments: true } },
+    votes: {
+      select: {
+        userId: true,
+        value: true,
+      },
+    },
+    bookmarks: {
+      select: {
+        userId: true,
+      },
+    },
+    originalPost: {
+      include: {
+        author: {
+          select: { id: true, name: true, username: true, avatar: true, reputationScore: true },
+        },
+        event: true,
+        poll: {
+          include: {
+            options: {
+              include: { _count: { select: { votes: true } } },
+            },
+          },
+        },
+        votes: {
+          select: {
+            userId: true,
+            value: true,
+          },
+        },
+        bookmarks: {
+          select: {
+            userId: true,
+          },
+        },
+        _count: { select: { votes: true, comments: true, reposts: true } },
+      },
+    },
+    _count: { select: { votes: true, comments: true, reposts: true } },
   } as const;
 
   async create(authorId: string, dto: CreatePostDto) {
@@ -56,7 +94,14 @@ export class PostsService {
     });
   }
 
-  async findAllPublished(page = 1, limit = 20, authorId?: string, votedBy?: string, followingOf?: string) {
+  async findAllPublished(
+    page = 1,
+    limit = 20,
+    authorId?: string,
+    votedBy?: string,
+    followingOf?: string,
+    search?: string,
+  ) {
     const skip = (page - 1) * limit;
     const where: any = { status: 'PUBLISHED' as const };
     
@@ -81,6 +126,31 @@ export class PostsService {
           },
         },
       };
+    }
+
+    if (search) {
+      const cleanSearch = search.trim();
+      if (cleanSearch) {
+        const isHashtag = cleanSearch.startsWith('#');
+        const searchWord = isHashtag ? cleanSearch.substring(1) : cleanSearch;
+
+        where.OR = [
+          { content: { contains: cleanSearch, mode: 'insensitive' } },
+          { title: { contains: cleanSearch, mode: 'insensitive' } },
+          { courseCode: { contains: cleanSearch, mode: 'insensitive' } },
+          { courseCode: { contains: searchWord, mode: 'insensitive' } },
+          { author: { name: { contains: cleanSearch, mode: 'insensitive' } } },
+          { author: { username: { contains: cleanSearch, mode: 'insensitive' } } },
+        ];
+
+        // If it's a hashtag query, also search for the plain word in content/title to capture non-hashtag references
+        if (isHashtag) {
+          where.OR.push(
+            { content: { contains: searchWord, mode: 'insensitive' } },
+            { title: { contains: searchWord, mode: 'insensitive' } }
+          );
+        }
+      }
     }
 
     const [posts, total] = await Promise.all([
@@ -317,5 +387,106 @@ export class PostsService {
       return new Date(`${dateStr}T${timeStr}:00`);
     }
     return new Date(`${dateStr}T00:00:00`);
+  }
+
+  async repost(userId: string, postId: string) {
+    const originalPost = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!originalPost) throw new NotFoundException('Original post not found');
+
+    // Check if simple repost already exists for this user + originalPostId
+    const existing = await this.prisma.post.findFirst({
+      where: {
+        authorId: userId,
+        originalPostId: postId,
+        content: '',
+      },
+    });
+
+    if (existing) {
+      // Toggle off: Delete the existing simple repost
+      await this.prisma.post.delete({ where: { id: existing.id } });
+      return { reposted: false, post: null };
+    }
+
+    // Create new simple repost
+    const newRepost = await this.prisma.post.create({
+      data: {
+        authorId: userId,
+        originalPostId: postId,
+        content: '',
+        status: 'PUBLISHED',
+      },
+      include: this.postInclude,
+    });
+
+    return { reposted: true, post: newRepost };
+  }
+
+  async quote(userId: string, postId: string, content: string) {
+    const originalPost = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!originalPost) throw new NotFoundException('Original post not found');
+
+    if (!content || !content.trim()) {
+      throw new BadRequestException('Quote post commentary cannot be empty');
+    }
+
+    // Create quote post
+    return this.prisma.post.create({
+      data: {
+        authorId: userId,
+        originalPostId: postId,
+        content: content.trim(),
+        status: 'PUBLISHED',
+      },
+      include: this.postInclude,
+    });
+  }
+
+  async toggleBookmark(userId: string, postId: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+
+    const existingBookmark = await this.prisma.bookmark.findUnique({
+      where: {
+        userId_postId: { userId, postId },
+      },
+    });
+
+    if (existingBookmark) {
+      await this.prisma.bookmark.delete({
+        where: { id: existingBookmark.id },
+      });
+      return { bookmarked: false };
+    }
+
+    await this.prisma.bookmark.create({
+      data: { userId, postId },
+    });
+    return { bookmarked: true };
+  }
+
+  async findBookmarked(userId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const where = {
+      status: 'PUBLISHED' as const,
+      bookmarks: {
+        some: {
+          userId,
+        },
+      },
+    };
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: this.postInclude,
+      }),
+      this.prisma.post.count({ where }),
+    ]);
+
+    return { posts, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 }

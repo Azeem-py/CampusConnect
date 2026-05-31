@@ -12,8 +12,8 @@ export class VoteDto {
   @IsString()
   commentId?: string;
 
-  @ApiProperty({ example: 1, description: '1 for upvote, -1 for downvote' })
+  @ApiProperty({ example: 1, description: '1 for upvote, -1 for downvote, 0 to retract' })
   @IsInt()
-  @IsIn([1, -1])
-  value!: 1 | -1;
+  @IsIn([1, -1, 0])
+  value!: 1 | -1 | 0;
 }

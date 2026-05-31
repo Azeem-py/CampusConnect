@@ -95,6 +95,17 @@ describe('KnnService', () => {
       expect(matrixService.getMatrix).toHaveBeenCalledTimes(2);
     });
 
+    it('invalidates cache when matrix is invalidated (Bug #3 sync)', async () => {
+      await service.getNeighbors('u1');
+      
+      // Update lastInvalidatedAt on matrix service mock to be in the future (strictly greater)
+      (matrixService as any).lastInvalidatedAt = Date.now() + 1000;
+      
+      // The next call to getNeighbors should trigger a fresh getMatrix call
+      await service.getNeighbors('u1');
+      expect(matrixService.getMatrix).toHaveBeenCalledTimes(2);
+    });
+
     it('evicts oldest entries when MAX_CACHE_ENTRIES (500) is exceeded', async () => {
       // Fill the cache beyond the 500-entry limit using unique user IDs.
       // We add 501 entries by calling getNeighbors for 501 different users

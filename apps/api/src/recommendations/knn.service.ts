@@ -60,7 +60,12 @@ export class KnnService {
     matrix?: InteractionMatrix,
   ): Promise<NeighborEntry[]> {
     const cached = this.neighborCache.get(userId);
-    if (cached && Date.now() - cached.builtAt < this.CACHE_TTL_MS) {
+    const lastInvalidatedAt = this.matrixService.lastInvalidatedAt ?? 0;
+    if (
+      cached &&
+      cached.builtAt >= lastInvalidatedAt &&
+      Date.now() - cached.builtAt < this.CACHE_TTL_MS
+    ) {
       return cached.neighbors;
     }
 
@@ -89,9 +94,33 @@ export class KnnService {
     const userVec = matrix.get(userId);
     if (!userVec || userVec.size === 0) return [];
 
-    const similarities: NeighborEntry[] = [];
+    // 1. Build a local inverted index mapping: postId -> userIds
+    const postToUsers = new Map<string, string[]>();
     matrix.forEach((otherVec, otherId) => {
-      if (otherId === userId) return;
+      otherVec.forEach((_, pid) => {
+        if (!postToUsers.has(pid)) postToUsers.set(pid, []);
+        postToUsers.get(pid)!.push(otherId);
+      });
+    });
+
+    // 2. Identify candidate users who have rated at least one post in common with target user
+    const candidateUserIds = new Set<string>();
+    userVec.forEach((_, pid) => {
+      const usersWhoInteracted = postToUsers.get(pid);
+      if (usersWhoInteracted) {
+        usersWhoInteracted.forEach((otherId) => {
+          if (otherId !== userId) {
+            candidateUserIds.add(otherId);
+          }
+        });
+      }
+    });
+
+    // 3. Only calculate cosine similarity for overlapping candidate users
+    const similarities: NeighborEntry[] = [];
+    candidateUserIds.forEach((otherId) => {
+      const otherVec = matrix.get(otherId);
+      if (!otherVec) return;
       const sim = this.cosineSimilarity(userVec, otherVec);
       if (sim > 0) similarities.push({ userId: otherId, similarity: sim });
     });

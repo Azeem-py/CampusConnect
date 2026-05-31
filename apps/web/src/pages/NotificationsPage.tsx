@@ -349,7 +349,7 @@ export function NotificationsPage() {
           )}
         </main>
 
-        <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4 pt-2">
+        <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4 pt-2 sticky top-4 h-[calc(100vh-2rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <div className="bg-surface-container-lowest border border-outline-variant/15 rounded-xl p-4">
             <h3 className="font-geist font-semibold text-title-md text-on-surface mb-2">
               Notification Settings

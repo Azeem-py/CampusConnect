@@ -161,3 +161,22 @@ export function useUserProfile(userId: string | undefined) {
   });
 }
 
+export interface SuggestedScholar {
+  id: string;
+  name: string;
+  username: string;
+  title: string;
+  avatar?: string;
+}
+
+export function useSuggestedScholars() {
+  return useQuery<SuggestedScholar[]>({
+    queryKey: ['suggestedScholars'],
+    queryFn: async () => {
+      const { data } = await api.get('/users/suggested');
+      return data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+}
+

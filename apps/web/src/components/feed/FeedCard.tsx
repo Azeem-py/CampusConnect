@@ -1,11 +1,11 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Calendar, Vote as VoteIcon, Check, Trash2, Loader2, ChevronUp, ChevronDown } from "lucide-react"
 import { Avatar } from "../ui/Avatar"
 import { Tag } from "../ui/Tag"
 import { cn, formatDistanceToNow } from "../../lib/utils"
 import { renderEnhancedPreview } from "../../lib/latex"
-import { useVotePoll, usePost, useCreateComment, useDeleteComment, useVoteSocial, type PostEvent, type PostPoll } from "../../services/posts"
+import { useVotePoll, usePost, useCreateComment, useDeleteComment, useVoteSocial, useRepostPost, useQuotePost, useToggleBookmark, type PostEvent, type PostPoll } from "../../services/posts"
 import { useAuth } from "../../contexts/AuthContext"
 import { useFollowUser, useUnfollowUser } from "../../services/auth"
 
@@ -29,6 +29,10 @@ interface FeedCardProps {
   variant?: "default" | "announcement" | "discussion"
   event?: PostEvent | null
   poll?: PostPoll | null
+  votes?: { userId: string; value: number }[]
+  bookmarks?: { userId: string }[]
+  originalPostId?: string | null
+  originalPost?: any | null
 }
 
 function getAvatarUrl(name: string) {
@@ -46,13 +50,80 @@ export function FeedCard({
   variant = "default",
   event,
   poll,
+  votes = [],
+  bookmarks = [],
+  originalPostId,
+  originalPost,
 }: FeedCardProps) {
   const navigate = useNavigate()
+  const { user: currentUser } = useAuth()
   const [liked, setLiked] = useState(false)
   const [bookmarked, setBookmarked] = useState(false)
   const [reposted, setReposted] = useState(false)
-  const [likes, setLikes] = useState(initialStats.likes)
-  const [shares, setShares] = useState(initialStats.shares ?? 0)
+
+  const isSimpleRepost = !!originalPostId && !!originalPost && (!content || content.trim() === "")
+
+  const displayAuthor = isSimpleRepost ? {
+    id: originalPost.author.id,
+    name: originalPost.author.name,
+    handle: `@${originalPost.author.username}`,
+    avatar: originalPost.author.avatar ?? undefined,
+  } : author
+
+  const displayTimestamp = isSimpleRepost ? formatDistanceToNow(new Date(originalPost.createdAt)) : timestamp
+  const displayContent = isSimpleRepost ? originalPost.content : content
+  const displayEvent = isSimpleRepost ? originalPost.event : event
+  const displayPoll = isSimpleRepost ? originalPost.poll : poll
+  const displayLikes = isSimpleRepost ? (originalPost.votes?.filter((v: any) => v.value === 1).length ?? 0) : initialStats.likes
+  const displayComments = isSimpleRepost ? (originalPost._count?.comments ?? 0) : initialStats.comments
+  const displayShares = isSimpleRepost ? (originalPost._count?.reposts ?? 0) : (initialStats.shares ?? 0)
+  const displayId = isSimpleRepost ? originalPost.id : id
+  const displayVotes = isSimpleRepost ? originalPost.votes : votes
+  const displayBookmarks = isSimpleRepost ? (originalPost.bookmarks ?? []) : bookmarks
+
+  const [likes, setLikes] = useState(displayLikes)
+  const [shares, setShares] = useState(displayShares)
+
+  const repostMutation = useRepostPost()
+  const quoteMutation = useQuotePost()
+  const toggleBookmark = useToggleBookmark()
+  
+  const [isRepostMenuOpen, setIsRepostMenuOpen] = useState(false)
+  const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false)
+  const [quoteCommentary, setQuoteCommentary] = useState("")
+
+  // Sync likes and liked status reactively when user or votes list loads
+  useEffect(() => {
+    if (currentUser?.id && displayVotes) {
+      const isLiked = displayVotes.some((v: any) => v.userId === currentUser.id && v.value === 1)
+      setLiked(isLiked)
+    }
+  }, [currentUser?.id, displayVotes])
+
+  // Sync likes count when displayLikes change
+  useEffect(() => {
+    setLikes(displayLikes)
+  }, [displayLikes])
+
+  // Sync shares count when displayShares change
+  useEffect(() => {
+    setShares(displayShares)
+  }, [displayShares])
+
+  // Sync reposted state when user loaded
+  useEffect(() => {
+    if (isSimpleRepost && currentUser?.id && author.id === currentUser.id) {
+      setReposted(true)
+    }
+  }, [isSimpleRepost, currentUser?.id, author.id])
+
+  // Sync bookmarked status reactively when user or bookmarks list loads
+  useEffect(() => {
+    if (currentUser?.id && displayBookmarks) {
+      const isBookmarked = displayBookmarks.some((b: any) => b.userId === currentUser.id)
+      setBookmarked(isBookmarked)
+    }
+  }, [currentUser?.id, displayBookmarks])
 
   // Interactive Comments State & Logic
   const [showComments, setShowComments] = useState(false)
@@ -103,7 +174,6 @@ export function FeedCard({
   }
 
   // Followers & Following state
-  const { user: currentUser } = useAuth()
   const followUser = useFollowUser()
   const unfollowUser = useUnfollowUser()
 
@@ -136,64 +206,110 @@ export function FeedCard({
   }
 
   function handleLike() {
-    if (!id || voteSocial.isPending) return
+    const targetPostId = displayId || id
+    if (!targetPostId || voteSocial.isPending) return
     const nextLiked = !liked
     // Optimistic UI updates
     setLiked(nextLiked)
-    setLikes((c) => c + (nextLiked ? 1 : -1))
+    setLikes((c: number) => c + (nextLiked ? 1 : -1))
 
     voteSocial.mutate(
-      { postId: id, value: nextLiked ? 1 : -1 },
+      { postId: targetPostId, value: nextLiked ? 1 : 0 },
       {
         onError: () => {
           // Revert on error
           setLiked(!nextLiked)
-          setLikes((c) => c + (nextLiked ? -1 : 1))
+          setLikes((c: number) => c + (nextLiked ? -1 : 1))
         },
       }
     )
   }
 
-  function handleRepost() {
-    setReposted((p) => {
-      setShares((c) => c + (p ? -1 : 1))
-      return !p
+  const handleSimpleRepost = () => {
+    const targetPostId = displayId || id
+    if (!targetPostId || repostMutation.isPending) return
+    setIsRepostMenuOpen(false)
+
+    const nextReposted = !reposted
+    setReposted(nextReposted)
+    setShares((c: number) => c + (nextReposted ? 1 : -1))
+
+    repostMutation.mutate(targetPostId, {
+      onError: () => {
+        setReposted(!nextReposted)
+        setShares((c: number) => c + (nextReposted ? -1 : 1))
+      },
     })
   }
 
+  const handleQuoteSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const targetPostId = displayId || id
+    if (!targetPostId || !quoteCommentary.trim() || quoteMutation.isPending) return
+
+    quoteMutation.mutate(
+      { postId: targetPostId, content: quoteCommentary.trim() },
+      {
+        onSuccess: () => {
+          setIsQuoteDialogOpen(false)
+          setQuoteCommentary("")
+        },
+      }
+    )
+  }
+
   function handleBookmark() {
-    setBookmarked((p) => !p)
+    const targetPostId = displayId || id
+    if (!targetPostId || toggleBookmark.isPending) return
+    const nextBookmarked = !bookmarked
+    
+    // Optimistic UI updates
+    setBookmarked(nextBookmarked)
+    
+    toggleBookmark.mutate(targetPostId, {
+      onError: () => {
+        // Revert on error
+        setBookmarked(!nextBookmarked)
+      }
+    })
   }
 
   return (
     <div className="bg-white border border-gray-200/80 rounded-xl p-4 space-y-3 transition-all duration-200 hover:border-gray-300/80 hover:shadow-sm">
+      {isSimpleRepost && (
+        <div className="flex items-center gap-1.5 text-[12px] text-gray-500 font-geist pb-1.5 border-b border-gray-100">
+          <Repeat2 size={14} className="text-green-600 stroke-[2.5]" />
+          <span className="font-semibold text-gray-700">{author.name}</span> reposted
+        </div>
+      )}
+
       <div className="flex items-start justify-between">
         <div 
-          onClick={() => author.id && navigate(`/profile?userId=${author.id}`)}
+          onClick={() => displayAuthor.id && navigate(`/profile?userId=${displayAuthor.id}`)}
           className="flex items-center gap-3 cursor-pointer group/author"
         >
           <Avatar 
-            name={author.name} 
-            src={author.avatar || getAvatarUrl(author.name)} 
+            name={displayAuthor.name} 
+            src={displayAuthor.avatar || getAvatarUrl(displayAuthor.name)} 
             size="md" 
             className="group-hover/author:opacity-90 transition-opacity" 
           />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-geist font-semibold text-[15px] text-gray-900 group-hover/author:underline group-hover/author:text-primary">
-                {author.name}
+                {displayAuthor.name}
               </span>
-              {departmentTag && (
+              {departmentTag && !isSimpleRepost && (
                 <Tag variant="department">{departmentTag}</Tag>
               )}
             </div>
             <span className="text-[13px] text-gray-500 font-inter group-hover/author:text-gray-600">
-              {author.handle} · {timestamp}
+              {displayAuthor.handle} · {displayTimestamp}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {!isSelf && author.id && (
+          {!isSelf && displayAuthor.id && !isSimpleRepost && (
             <button
               onClick={handleFollowToggle}
               disabled={followUser.isPending || unfollowUser.isPending}
@@ -213,7 +329,7 @@ export function FeedCard({
         </div>
       </div>
 
-      {departmentName && (
+      {departmentName && !isSimpleRepost && (
         <div className="flex items-center gap-1.5 text-[12px] text-gray-500 font-geist">
           {departmentTag && variant !== "default" && (
             <span
@@ -233,47 +349,76 @@ export function FeedCard({
         </div>
       )}
 
-      {content && (
+      {displayContent && (
         <div className="text-[14px] text-gray-800 font-inter leading-relaxed whitespace-pre-wrap break-words">
-          {renderEnhancedPreview(content)}
+          {renderEnhancedPreview(displayContent)}
+        </div>
+      )}
+
+      {/* Render Nested Original Post Preview (For Quote Posts) */}
+      {originalPost && !isSimpleRepost && (
+        <div 
+          onClick={(e) => {
+            e.stopPropagation()
+            navigate(`/profile?userId=${originalPost.author.id}`)
+          }}
+          className="mt-2 p-3.5 bg-gray-50 border border-gray-200/70 rounded-xl hover:bg-gray-100/50 transition-colors duration-150 cursor-pointer space-y-2 select-none"
+        >
+          <div className="flex items-center gap-2">
+            <Avatar 
+              name={originalPost.author.name} 
+              src={originalPost.author.avatar || getAvatarUrl(originalPost.author.name)} 
+              size="sm" 
+            />
+            <span className="font-geist font-semibold text-[13px] text-gray-900 leading-none">
+              {originalPost.author.name}
+            </span>
+            <span className="text-[11px] text-gray-500 font-inter">
+              @{originalPost.author.username} · {formatDistanceToNow(new Date(originalPost.createdAt))}
+            </span>
+          </div>
+          {originalPost.content && (
+            <div className="text-[13px] text-gray-700 font-inter leading-relaxed line-clamp-3">
+              {renderEnhancedPreview(originalPost.content)}
+            </div>
+          )}
         </div>
       )}
 
       {/* Render Associated Event */}
-      {event && (
+      {displayEvent && (
         <div className="mt-3 p-3 bg-blue-50/50 rounded-lg border border-blue-200/50">
           <div className="flex items-center gap-1.5 text-[11px] font-geist font-semibold text-blue-700 uppercase tracking-wide mb-1.5">
             <Calendar size={13} />
             Event Details
           </div>
-          <p className="text-[14px] font-geist font-semibold text-gray-900">{event.title}</p>
+          <p className="text-[14px] font-geist font-semibold text-gray-900">{displayEvent.title}</p>
           <div className="mt-1 space-y-0.5 text-[12px] text-gray-600 font-inter">
             <p>
-              📅 {new Date(event.date).toLocaleDateString("en-US", {
+              📅 {new Date(displayEvent.date).toLocaleDateString("en-US", {
                 weekday: "short", month: "short", day: "numeric",
                 hour: "numeric", minute: "2-digit"
               })}
             </p>
-            {event.location && <p>📍 {event.location}</p>}
+            {displayEvent.location && <p>📍 {displayEvent.location}</p>}
           </div>
-          {event.description && (
-            <p className="mt-1 text-[12px] text-gray-500 font-inter leading-relaxed">{event.description}</p>
+          {displayEvent.description && (
+            <p className="mt-1 text-[12px] text-gray-500 font-inter leading-relaxed">{displayEvent.description}</p>
           )}
         </div>
       )}
 
-      {/* Render Associated Poll */}
-      {poll && (() => {
-        const totalVotes = poll.options.reduce((sum, opt) => sum + opt._count.votes, 0)
+      {displayPoll && (() => {
+        const totalVotes = displayPoll.options.reduce((sum: number, opt: any) => sum + opt._count.votes, 0)
         return (
           <div className="mt-3 p-3.5 bg-amber-50/55 rounded-lg border border-amber-200/50 space-y-2.5">
             <div className="flex items-center gap-1.5 text-[11px] font-geist font-semibold text-amber-700 uppercase tracking-wide">
               <VoteIcon size={13} />
               Interactive Poll
             </div>
-            <p className="text-[14px] font-geist font-medium text-gray-900 leading-snug">{poll.question}</p>
+            <p className="text-[14px] font-geist font-medium text-gray-900 leading-snug">{displayPoll.question}</p>
             <div className="space-y-2">
-              {poll.options.map((option) => {
+              {displayPoll.options.map((option: any) => {
                 const votesCount = option._count.votes + (votedOptionId === option.id ? 1 : 0)
                 const finalTotal = totalVotes + (votedOptionId ? 1 : 0)
                 const pct = finalTotal > 0 ? Math.round((votesCount / finalTotal) * 100) : 0
@@ -318,7 +463,7 @@ export function FeedCard({
         <button
           onClick={handleLike}
           className={cn(
-            "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5",
+            "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5 cursor-pointer select-none",
             liked ? "text-red-500" : "text-gray-400 hover:text-red-500"
           )}
         >
@@ -333,22 +478,56 @@ export function FeedCard({
           )}
         >
           <MessageCircle size={16} fill={showComments ? "currentColor" : "none"} />
-          {initialStats.comments}
+          {displayComments}
         </button>
-        <button
-          onClick={handleRepost}
-          className={cn(
-            "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5",
-            reposted ? "text-green-600" : "text-gray-400 hover:text-green-600"
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsRepostMenuOpen(!isRepostMenuOpen)
+            }}
+            className={cn(
+              "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5 cursor-pointer select-none",
+              reposted ? "text-green-600" : "text-gray-400 hover:text-green-600"
+            )}
+          >
+            <Repeat2 size={16} className={cn(reposted && "stroke-[2.5]")} />
+            {shares}
+          </button>
+
+          {isRepostMenuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setIsRepostMenuOpen(false)} />
+              <div className="absolute left-0 mt-1 w-40 bg-white border border-gray-200/80 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in slide-in-from-top-1 duration-100">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleSimpleRepost()
+                  }}
+                  className="w-full text-left px-4 py-2 text-[13px] font-geist font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Repeat2 size={15} className="text-green-600" />
+                  {reposted ? "Undo Repost" : "Repost"}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsRepostMenuOpen(false)
+                    setIsQuoteDialogOpen(true)
+                  }}
+                  className="w-full text-left px-4 py-2 text-[13px] font-geist font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <Repeat2 size={15} className="text-blue-600 rotate-90" />
+                  Quote Post
+                </button>
+              </div>
+            </>
           )}
-        >
-          <Repeat2 size={16} />
-          {shares}
-        </button>
+        </div>
         <button
           onClick={handleBookmark}
           className={cn(
-            "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5 ml-auto",
+            "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5 ml-auto cursor-pointer select-none",
             bookmarked ? "text-blue-600" : "text-gray-400 hover:text-blue-600"
           )}
         >
@@ -634,6 +813,82 @@ export function FeedCard({
             </div>
           )}
 
+        </div>
+      )}
+
+      {isQuoteDialogOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsQuoteDialogOpen(false);
+          }}
+        >
+          <div 
+            className="bg-white border border-gray-200/80 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-[16px] font-bold text-gray-900 font-geist">Quote Post</h3>
+              <button 
+                type="button"
+                onClick={() => setIsQuoteDialogOpen(false)}
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <form onSubmit={handleQuoteSubmit} className="p-5 space-y-4 flex flex-col overflow-y-auto">
+              <textarea
+                rows={4}
+                value={quoteCommentary}
+                onChange={(e) => setQuoteCommentary(e.target.value)}
+                placeholder="Add a comment..."
+                className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-[14px] text-gray-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/80 transition-all duration-200 placeholder-gray-400 font-inter resize-none"
+                autoFocus
+              />
+
+              {/* Nested Post Preview */}
+              <div className="p-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl select-none">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Avatar name={displayAuthor.name} src={displayAuthor.avatar} size="sm" />
+                  <span className="font-geist font-semibold text-[13px] text-gray-900 leading-none">{displayAuthor.name}</span>
+                  <span className="text-[11px] text-gray-500 font-inter">{displayAuthor.handle} · {displayTimestamp}</span>
+                </div>
+                {displayContent && (
+                  <p className="text-[13px] text-gray-600 font-inter leading-relaxed line-clamp-3">
+                    {displayContent}
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-3.5">
+                <button
+                  type="button"
+                  onClick={() => setIsQuoteDialogOpen(false)}
+                  className="px-4 py-1.5 rounded-lg text-[13px] font-geist font-semibold text-gray-500 hover:bg-gray-50 transition-all duration-150 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!quoteCommentary.trim() || quoteMutation.isPending}
+                  className={cn(
+                    "px-5 py-1.5 rounded-lg text-[13px] font-geist font-semibold transition-all duration-150 cursor-pointer select-none",
+                    quoteCommentary.trim() && !quoteMutation.isPending
+                      ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm active:scale-[0.98]"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  )}
+                >
+                  Post Quote
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -53,13 +53,27 @@ export class TfidfService {
 
     // 1. Incorporate interacted posts if they exist
     if (this.postVectors.size > 0 && interactedPostIds.length > 0) {
+      const postInteractionAccum: TermVector = new Map();
       interactedPostIds.forEach((postId) => {
         const vec = this.postVectors.get(postId);
         if (!vec) return;
         vec.forEach((weight, term) => {
-          profile.set(term, (profile.get(term) ?? 0) + weight);
+          postInteractionAccum.set(term, (postInteractionAccum.get(term) ?? 0) + weight);
         });
       });
+
+      // Calculate L2 norm of the accumulated vector to scale-normalise it
+      let normSq = 0;
+      postInteractionAccum.forEach((w) => {
+        normSq += w * w;
+      });
+      const norm = Math.sqrt(normSq);
+
+      if (norm > 0) {
+        postInteractionAccum.forEach((w, term) => {
+          profile.set(term, w / norm);
+        });
+      }
     }
 
     // 2. Incorporate explicit interests & hobbies
@@ -76,7 +90,7 @@ export class TfidfService {
     }
 
     // Give high importance to explicit user choices
-    // We can assign a fixed weight boost (e.g. 1.5 per term) to prioritize user-selected tags.
+    // We assign a fixed weight boost (+1.5) relative to the scale-normalised L2 vector.
     rawTokens.forEach((token) => {
       profile.set(token, (profile.get(token) ?? 0) + 1.5);
     });
@@ -146,7 +160,9 @@ export class TfidfService {
 
     // Step 2: IDF
     const idfMap = new Map<string, number>();
-    df.forEach((docCount, term) => idfMap.set(term, Math.log(N / docCount)));
+    df.forEach((docCount, term) =>
+      idfMap.set(term, Math.log((N + 1) / (docCount + 1)) + 1),
+    );
 
     // Step 3: TF-IDF vectors — built into a LOCAL map first
     const vectors = new Map<string, TermVector>();
@@ -183,7 +199,6 @@ export class TfidfService {
   private tokenize(text: string): string[] {
     return text
       .toLowerCase()
-      .replace(/\\[a-z]+/g, ' ')
       .replace(/[^a-z0-9\s]/g, ' ')
       .split(/\s+/)
       .filter((t) => t.length > 2 && !STOP_WORDS.has(t));

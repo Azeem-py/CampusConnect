@@ -21,6 +21,7 @@ export class InteractionMatrixService {
   private cache: InteractionMatrix | null = null;
   private cacheBuiltAt = 0;
   private readonly TTL_MS = 5 * 60 * 1_000; // 5 minutes
+  public lastInvalidatedAt = 0;
 
   /**
    * FIX C1 — Cache stampede protection.
@@ -45,6 +46,7 @@ export class InteractionMatrixService {
   /** Force-clears the cache so the next call to getMatrix() triggers a rebuild. */
   invalidate(): void {
     this.cache = null;
+    this.lastInvalidatedAt = Date.now();
     // Note: an in-progress rebuild will still complete and cache its result,
     // but the NEXT call after that will see cache=null and rebuild again.
   }
@@ -52,15 +54,26 @@ export class InteractionMatrixService {
   // ─── Private Helpers ────────────────────────────────────────────────────────
 
   private async rebuild(): Promise<InteractionMatrix> {
-    const [votes, comments, pollVotes] = await Promise.all([
+    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90-day sliding window
+
+    let [votes, comments, pollVotes] = await Promise.all([
       this.prisma.vote.findMany({
-        where: { postId: { not: null } },
+        where: {
+          postId: { not: null },
+          createdAt: { gte: cutoff },
+        },
         select: { userId: true, postId: true, value: true },
       }),
       this.prisma.comment.findMany({
+        where: {
+          createdAt: { gte: cutoff },
+        },
         select: { authorId: true, postId: true },
       }),
       this.prisma.pollVote.findMany({
+        where: {
+          createdAt: { gte: cutoff },
+        },
         select: {
           userId: true,
           poll: {
@@ -69,6 +82,31 @@ export class InteractionMatrixService {
         },
       }),
     ]);
+
+    // Safe granular fallback: if a specific table has 0 recent interactions, re-query without cutoff date
+    if (votes.length === 0) {
+      votes = await this.prisma.vote.findMany({
+        where: { postId: { not: null } },
+        select: { userId: true, postId: true, value: true },
+      });
+    }
+
+    if (comments.length === 0) {
+      comments = await this.prisma.comment.findMany({
+        select: { authorId: true, postId: true },
+      });
+    }
+
+    if (pollVotes.length === 0) {
+      pollVotes = await this.prisma.pollVote.findMany({
+        select: {
+          userId: true,
+          poll: {
+            select: { postId: true },
+          },
+        },
+      });
+    }
 
     const matrix: InteractionMatrix = new Map();
 

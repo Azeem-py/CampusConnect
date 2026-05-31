@@ -158,12 +158,14 @@ export class RecommendationService implements OnModuleInit {
 
       const posts = await this.prisma.post.findMany({
         where: { status: 'PUBLISHED' },
+        orderBy: { createdAt: 'desc' },
+        take: 300,
         select: {
           id: true,
           createdAt: true,
           authorId: true,
           author: { select: { department: true } },
-          votes: { select: { id: true } },
+          _count: { select: { votes: true } },
         },
       });
 
@@ -172,7 +174,7 @@ export class RecommendationService implements OnModuleInit {
       const scored = posts.map((post) => {
         const tfidfScore = this.tfidf.scorePost(profileVector, post.id);
         const isSameDept = dept && post.author.department === dept ? 1.0 : 0.0;
-        const votesCount = post.votes.length;
+        const votesCount = post._count.votes;
         const recency = this.recencyBoost(post.createdAt);
 
         // Score formula: balance interests, department relevance, popularity (votes), and recency
@@ -229,12 +231,17 @@ export class RecommendationService implements OnModuleInit {
   private async getCandidatesWithMeta(
     interactedPostIds: string[],
   ): Promise<Array<{ id: string; authorId: string; createdAt: Date }>> {
-    const interactedSet = new Set(interactedPostIds);
+    const excludeIds = interactedPostIds.slice(-500);
     const posts = await this.prisma.post.findMany({
-      where: { status: 'PUBLISHED' },
+      where: {
+        status: 'PUBLISHED',
+        id: { notIn: excludeIds },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 300,
       select: { id: true, authorId: true, createdAt: true },
     });
-    return posts.filter((p) => !interactedSet.has(p.id));
+    return posts;
   }
 
   private async getUserProfileAndFollows(userId: string): Promise<{
@@ -269,5 +276,5 @@ export class RecommendationService implements OnModuleInit {
  * one module-level sigmoid function.
  */
 function sigmoid(x: number): number {
-  return 1 / (1 + Math.exp(-x));
+  return 1 / (1 + Math.exp(-x)) - 0.5;
 }

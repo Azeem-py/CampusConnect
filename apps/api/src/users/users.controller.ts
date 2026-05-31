@@ -99,6 +99,16 @@ export class UsersController {
     return this.usersService.unfollowUser(followerId, followingId);
   }
 
+  @Get('suggested')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get statistically suggested scholars similar to the current user' })
+  @ApiCookieAuth('token')
+  @ApiResponse({ status: 200, description: 'Suggested scholars retrieved successfully' })
+  async getSuggestedScholars(@Req() req: Request) {
+    const userId = (req as any).user.id;
+    return this.usersService.getSuggestedScholars(userId);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get a user profile by ID' })

@@ -31,6 +31,7 @@ model User {
   votes           Vote[]
   pollVotes       PollVote[]
   comments        Comment[]
+  bookmarks       Bookmark[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   followers       User[]           @relation("UserFollows")
@@ -62,8 +63,13 @@ model Post {
   poll       Poll?
   votes      Vote[]
   comments   Comment[]
+  bookmarks  Bookmark[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+
+  originalPostId  String?
+  originalPost    Post?            @relation("PostReposts", fields: [originalPostId], references: [id], onDelete: Cascade)
+  reposts         Post[]           @relation("PostReposts")
 
   @@index([authorId])
   @@index([status])
@@ -162,4 +168,17 @@ model Vote {
 enum Role {
   STUDENT
   BUSINESS
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
 }

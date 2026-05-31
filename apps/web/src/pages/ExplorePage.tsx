@@ -38,12 +38,21 @@ function FeedSkeleton() {
 export function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get("query") || "")
-  const { data, isLoading, error } = usePosts()
-  const { data: trendingTopics = [] } = useTrendingTopics()
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery)
 
   useEffect(() => {
     setSearchQuery(searchParams.get("query") || "")
   }, [searchParams])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  const { data, isLoading, error } = usePosts(1, 20, undefined, debouncedSearchQuery)
+  const { data: trendingTopics = [] } = useTrendingTopics()
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
@@ -52,21 +61,7 @@ export function ExplorePage() {
   }
 
   const trendingTags = trendingTopics.slice(0, 5).map((t) => t.label)
-
-  const allPosts = data?.posts || []
-
-  const filteredPosts = allPosts.filter((post) => {
-    const query = searchQuery.toLowerCase().trim()
-    if (!query) return true
-
-    return (
-      post.content.toLowerCase().includes(query) ||
-      (post.title && post.title.toLowerCase().includes(query)) ||
-      post.author.name?.toLowerCase().includes(query) ||
-      post.author.username.toLowerCase().includes(query) ||
-      (post.courseCode && post.courseCode.toLowerCase().includes(query))
-    )
-  })
+  const posts = data?.posts || []
 
   return (
     <div className="min-h-screen bg-surface pb-16 lg:pb-0">
@@ -130,14 +125,14 @@ export function ExplorePage() {
                 {error instanceof Error ? error.message : "Please try again later."}
               </p>
             </div>
-          ) : filteredPosts.length === 0 ? (
+          ) : posts.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl border border-gray-200/80 p-8">
               <p className="text-gray-500 font-geist font-medium">No results found.</p>
               <p className="text-gray-400 text-sm mt-1">Try adjusting your search query.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredPosts.map((post) => {
+              {posts.map((post) => {
                 const variant = post.event ? "announcement" : post.poll ? "discussion" : "default"
                 return (
                   <FeedCard
@@ -156,10 +151,14 @@ export function ExplorePage() {
                     stats={{
                       likes: post._count.votes,
                       comments: post._count.comments,
+                      shares: post._count.reposts,
                     }}
                     variant={variant}
                     event={post.event}
                     poll={post.poll}
+                    votes={post.votes}
+                    originalPost={post.originalPost}
+                    originalPostId={post.originalPostId}
                   />
                 )
               })}
@@ -167,7 +166,7 @@ export function ExplorePage() {
           )}
         </main>
 
-        <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4 pt-2">
+        <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4 pt-2 sticky top-4 h-[calc(100vh-2rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <ScholarsWidget />
           <EventsWidget />
         </aside>

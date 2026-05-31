@@ -16,7 +16,7 @@ export function Sidebar() {
   const { user } = useAuth()
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 shrink-0 gap-2 py-4">
+    <aside className="hidden lg:flex flex-col w-64 shrink-0 gap-2 py-4 sticky top-4 h-[calc(100vh-2rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <div className="flex items-center gap-3 px-4 mb-2">
         <Avatar src={user?.avatar ?? undefined} name={user?.name ?? "User"} size="md" />
         <div>

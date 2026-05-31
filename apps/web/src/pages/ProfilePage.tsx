@@ -8,7 +8,7 @@ import { Tag } from "../components/ui/Tag"
 import { FeedTabs } from "../components/feed/FeedTabs"
 import { FeedCard } from "../components/feed/FeedCard"
 import { useAuth } from "../contexts/AuthContext"
-import { useUserPosts } from "../services/posts"
+import { useUserPosts, useBookmarkedPosts } from "../services/posts"
 import { useUpdateProfile, useUserProfile, useFollowUser, useUnfollowUser } from "../services/auth"
 
 function formatJoinDate(dateString: string) {
@@ -70,12 +70,16 @@ export function ProfilePage() {
   const [bannerPreview, setBannerPreview] = useState(currentUser?.banner || "")
 
   // Fetch posts based on tab
-  const { data: postsData, isLoading: postsLoading } = useUserPosts(
+  const savedQuery = useBookmarkedPosts(1, 20)
+  const postsQuery = useUserPosts(
     activeTab === "saved" ? undefined : displayedUser?.id,
     1,
     20,
-    activeTab === "saved" ? displayedUser?.id : undefined
+    undefined
   )
+
+  const postsData = activeTab === "saved" ? savedQuery.data : postsQuery.data
+  const postsLoading = activeTab === "saved" ? savedQuery.isLoading : postsQuery.isLoading
 
   const updateProfileMutation = useUpdateProfile()
 
@@ -298,14 +302,19 @@ export function ProfilePage() {
                   stats={{
                     likes: post._count.votes,
                     comments: post._count.comments,
+                    shares: post._count.reposts,
                   }}
+                  votes={post.votes}
+                  bookmarks={post.bookmarks}
+                  originalPost={post.originalPost}
+                  originalPostId={post.originalPostId}
                 />
               ))
             )}
           </div>
         </main>
 
-        <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4 pt-2">
+        <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4 pt-2 sticky top-4 h-[calc(100vh-2rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {displayedUser.school && (
             <div className="bg-surface-container-lowest border border-outline-variant/15 rounded-lg p-4 space-y-4">
               <div>

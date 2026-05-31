@@ -106,10 +106,14 @@ export function HomePage() {
                     stats={{
                       likes: post._count.votes,
                       comments: post._count.comments,
+                      shares: post._count.reposts,
                     }}
                     variant={variant}
                     event={post.event}
                     poll={post.poll}
+                    votes={post.votes}
+                    originalPost={post.originalPost}
+                    originalPostId={post.originalPostId}
                   />
                 )
               })}
@@ -117,7 +121,7 @@ export function HomePage() {
           )}
         </main>
 
-        <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4 pt-2">
+        <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4 pt-2 sticky top-4 h-[calc(100vh-2rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <TrendingWidget />
           <ScholarsWidget />
         </aside>
