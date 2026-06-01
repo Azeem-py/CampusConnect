@@ -344,15 +344,15 @@ function RenderButton({
     <button
       onClick={() => onInsert(sym.insert)}
       className={cn(
-        "flex items-center rounded-lg border border-gray-200 bg-white transition-colors",
-        "hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700",
-        "active:bg-blue-100",
+        "flex items-center rounded-xl border border-outline-variant/15 bg-surface-container-lowest text-on-surface transition-all duration-150",
+        "hover:border-primary/25 hover:bg-primary/5 hover:text-primary hover:shadow-sm",
+        "active:scale-95 active:bg-primary/8",
         variant === "symbol" &&
           "aspect-square justify-center text-[15px] font-mono leading-none",
         variant === "template" &&
-          "justify-center px-1.5 py-2 text-[13px] font-serif",
+          "justify-center px-2 py-2.5 text-[13px] font-serif",
         variant === "formula" &&
-          "justify-start px-3 py-2.5 text-[12px] font-geist font-medium",
+          "justify-start px-3.5 py-3 text-label-md font-geist font-medium",
       )}
       title={sym.description ?? sym.insert}
     >
@@ -371,17 +371,17 @@ export function MathKeyboard({ onInsert }: MathKeyboardProps) {
   const activeCategory = CATEGORIES.find((c) => c.id === activeTab) ?? CATEGORIES[0]
 
   return (
-    <div className="border-t border-gray-200 bg-gray-50/80 animate-in slide-in-from-top-1">
-      <div className="flex items-center gap-1 px-3 pt-2 pb-1 overflow-x-auto scrollbar-none border-b border-gray-100">
+    <div className="border-t border-outline-variant/12 glass-toolbar animate-slide-up">
+      <div className="flex items-center gap-1 px-3 pt-2.5 pb-1.5 overflow-x-auto scrollbar-thin-styled border-b border-outline-variant/10">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveTab(cat.id)}
             className={cn(
-              "px-3 py-1.5 text-[12px] font-geist font-medium rounded-md transition-colors whitespace-nowrap shrink-0",
+              "px-3 py-1.5 text-label-sm font-geist font-medium rounded-lg transition-all duration-150 whitespace-nowrap shrink-0",
               activeTab === cat.id
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100",
+                ? "bg-primary/10 text-primary ring-1 ring-primary/15"
+                : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high",
             )}
           >
             {cat.label}
@@ -391,7 +391,7 @@ export function MathKeyboard({ onInsert }: MathKeyboardProps) {
 
       <div
         className={cn(
-          "grid gap-1 p-3 max-h-[180px] overflow-y-auto",
+          "grid gap-1.5 p-3 max-h-[200px] overflow-y-auto scrollbar-thin-styled",
           activeCategory.variant === "symbol" && "grid-cols-8 sm:grid-cols-10 md:grid-cols-12",
           activeCategory.variant === "template" && "grid-cols-5 sm:grid-cols-6 md:grid-cols-8",
           activeCategory.variant === "formula" && "grid-cols-3 sm:grid-cols-4 md:grid-cols-5",

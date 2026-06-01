@@ -79,8 +79,27 @@ export class UsersService {
       },
       include: {
         following: {
-          select: { id: true }
-        }
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            school: true,
+            department: true,
+            major: true,
+          },
+        },
+        followers: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            school: true,
+            department: true,
+            major: true,
+          },
+        },
       }
     });
 
@@ -106,8 +125,27 @@ export class UsersService {
       },
       include: {
         following: {
-          select: { id: true }
-        }
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            school: true,
+            department: true,
+            major: true,
+          },
+        },
+        followers: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            school: true,
+            department: true,
+            major: true,
+          },
+        },
       }
     });
 

@@ -488,37 +488,66 @@ export function FeedCard({
             }}
             className={cn(
               "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5 cursor-pointer select-none",
-              reposted ? "text-green-600" : "text-gray-400 hover:text-green-600"
+              reposted ? "text-green-600 font-semibold" : "text-gray-400 hover:text-green-600"
             )}
           >
-            <Repeat2 size={16} className={cn(reposted && "stroke-[2.5]")} />
+            <Repeat2 size={16} className={cn(reposted && "stroke-[2.5] scale-110")} />
             {shares}
           </button>
 
           {isRepostMenuOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setIsRepostMenuOpen(false)} />
-              <div className="absolute left-0 mt-1 w-40 bg-white border border-gray-200/80 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in slide-in-from-top-1 duration-100">
+              <div className="fixed inset-0 z-20" onClick={() => setIsRepostMenuOpen(false)} />
+              <div className="absolute left-0 mt-2 w-72 bg-surface-container-lowest/95 backdrop-blur-md border border-outline-variant/60 rounded-xl shadow-xl z-30 p-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                {/* Repost Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
                     handleSimpleRepost()
                   }}
-                  className="w-full text-left px-4 py-2 text-[13px] font-geist font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                  className="w-full text-left p-2.5 rounded-lg hover:bg-surface-container-high/80 flex items-start gap-3 cursor-pointer transition-all duration-150 group/repost"
                 >
-                  <Repeat2 size={15} className="text-green-600" />
-                  {reposted ? "Undo Repost" : "Repost"}
+                  <div className={cn(
+                    "p-2 rounded-lg transition-all duration-200",
+                    reposted 
+                      ? "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400" 
+                      : "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400"
+                  )}>
+                    <Repeat2 size={16} className="group-hover/repost:rotate-180 transition-transform duration-300" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-geist font-semibold text-on-surface leading-snug">
+                      {reposted ? "Undo Repost" : "Repost"}
+                    </p>
+                    <p className="text-[11px] font-inter text-on-surface-variant/80 mt-0.5 leading-normal">
+                      {reposted ? "Remove this post from your profile feed." : "Share this post instantly with your followers."}
+                    </p>
+                  </div>
                 </button>
+
+                {/* Subtle Divider */}
+                <div className="h-px bg-outline-variant/30 my-1.5" />
+
+                {/* Quote Post Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
                     setIsRepostMenuOpen(false)
                     setIsQuoteDialogOpen(true)
                   }}
-                  className="w-full text-left px-4 py-2 text-[13px] font-geist font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+                  className="w-full text-left p-2.5 rounded-lg hover:bg-surface-container-high/80 flex items-start gap-3 cursor-pointer transition-all duration-150 group/quote"
                 >
-                  <Repeat2 size={15} className="text-blue-600 rotate-90" />
-                  Quote Post
+                  <div className="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
+                    <Repeat2 size={16} className="rotate-90 group-hover/quote:scale-110 transition-transform" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-geist font-semibold text-on-surface leading-snug">
+                      Quote Post
+                    </p>
+                    <p className="text-[11px] font-inter text-on-surface-variant/80 mt-0.5 leading-normal">
+                      Add your thoughts, latex, or code before sharing.
+                    </p>
+                  </div>
                 </button>
               </div>
             </>
@@ -825,16 +854,16 @@ export function FeedCard({
           }}
         >
           <div 
-            className="bg-white border border-gray-200/80 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+            className="bg-surface-container-lowest border border-outline-variant/60 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-[16px] font-bold text-gray-900 font-geist">Quote Post</h3>
+            <div className="px-5 py-4 border-b border-outline-variant/30 flex items-center justify-between">
+              <h3 className="text-[16px] font-bold text-on-surface font-geist">Quote Post</h3>
               <button 
                 type="button"
                 onClick={() => setIsQuoteDialogOpen(false)}
-                className="p-1 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors"
+                className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
               </button>
@@ -847,30 +876,30 @@ export function FeedCard({
                 value={quoteCommentary}
                 onChange={(e) => setQuoteCommentary(e.target.value)}
                 placeholder="Add a comment..."
-                className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-[14px] text-gray-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/80 transition-all duration-200 placeholder-gray-400 font-inter resize-none"
+                className="w-full bg-surface-container-low/50 border border-outline-variant/40 rounded-xl px-4 py-3 text-[14px] text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:border-primary/80 transition-all duration-200 placeholder:text-on-surface-variant/50 font-inter resize-none"
                 autoFocus
               />
 
               {/* Nested Post Preview */}
-              <div className="p-3.5 bg-gray-50/50 border border-gray-200/80 rounded-xl select-none">
-                <div className="flex items-center gap-2 mb-1.5">
+              <div className="p-3.5 bg-surface-container border border-outline-variant/40 rounded-xl select-none space-y-2">
+                <div className="flex items-center gap-2">
                   <Avatar name={displayAuthor.name} src={displayAuthor.avatar} size="sm" />
-                  <span className="font-geist font-semibold text-[13px] text-gray-900 leading-none">{displayAuthor.name}</span>
-                  <span className="text-[11px] text-gray-500 font-inter">{displayAuthor.handle} · {displayTimestamp}</span>
+                  <span className="font-geist font-semibold text-[13px] text-on-surface leading-none">{displayAuthor.name}</span>
+                  <span className="text-[11px] text-on-surface-variant/80 font-inter">{displayAuthor.handle} · {displayTimestamp}</span>
                 </div>
                 {displayContent && (
-                  <p className="text-[13px] text-gray-600 font-inter leading-relaxed line-clamp-3">
+                  <p className="text-[13px] text-on-surface-variant font-inter leading-relaxed line-clamp-3">
                     {displayContent}
                   </p>
                 )}
               </div>
 
               {/* Actions */}
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-3.5">
+              <div className="pt-3.5 border-t border-outline-variant/30 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsQuoteDialogOpen(false)}
-                  className="px-4 py-1.5 rounded-lg text-[13px] font-geist font-semibold text-gray-500 hover:bg-gray-50 transition-all duration-150 cursor-pointer"
+                  className="px-4 py-2 rounded-lg text-[13px] font-geist font-semibold text-on-surface-variant hover:bg-surface-container-high transition-all duration-150 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -878,10 +907,10 @@ export function FeedCard({
                   type="submit"
                   disabled={!quoteCommentary.trim() || quoteMutation.isPending}
                   className={cn(
-                    "px-5 py-1.5 rounded-lg text-[13px] font-geist font-semibold transition-all duration-150 cursor-pointer select-none",
+                    "px-5 py-2 rounded-lg text-[13px] font-geist font-semibold transition-all duration-150 cursor-pointer select-none",
                     quoteCommentary.trim() && !quoteMutation.isPending
-                      ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm active:scale-[0.98]"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      ? "bg-primary text-on-primary hover:bg-primary/95 shadow-sm active:scale-[0.98]"
+                      : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed border border-outline-variant/20"
                   )}
                 >
                   Post Quote

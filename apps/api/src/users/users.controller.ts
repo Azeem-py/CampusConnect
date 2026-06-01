@@ -53,7 +53,26 @@ export class UsersController {
       where: { id: userId },
       include: {
         following: {
-          select: { id: true },
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            school: true,
+            department: true,
+            major: true,
+          },
+        },
+        followers: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            school: true,
+            department: true,
+            major: true,
+          },
         },
       },
     });
@@ -120,7 +139,26 @@ export class UsersController {
       where: { id },
       include: {
         following: {
-          select: { id: true },
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            school: true,
+            department: true,
+            major: true,
+          },
+        },
+        followers: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatar: true,
+            school: true,
+            department: true,
+            major: true,
+          },
         },
       },
     });

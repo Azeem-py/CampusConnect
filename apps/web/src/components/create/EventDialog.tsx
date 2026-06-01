@@ -33,13 +33,13 @@ export function EventDialog({ open, onClose, onSave, initial }: EventDialogProps
 
   return (
     <Dialog open={open} onClose={onClose} title="Add Event">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-label-md font-geist font-medium text-on-surface mb-1">Event title *</label>
+          <label className="block text-label-md font-geist font-semibold text-on-surface mb-1.5">Event title *</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all duration-200 placeholder:text-on-surface-variant/40"
             placeholder="e.g. Data Science Symposium"
             autoFocus
           />
@@ -47,49 +47,49 @@ export function EventDialog({ open, onClose, onSave, initial }: EventDialogProps
 
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="block text-label-md font-geist font-medium text-on-surface mb-1">Date *</label>
+            <label className="block text-label-md font-geist font-semibold text-on-surface mb-1.5">Date *</label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all duration-200"
             />
           </div>
           <div className="flex-1">
-            <label className="block text-label-md font-geist font-medium text-on-surface mb-1">Time</label>
+            <label className="block text-label-md font-geist font-semibold text-on-surface mb-1.5">Time</label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all duration-200"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-label-md font-geist font-medium text-on-surface mb-1">Location</label>
+          <label className="block text-label-md font-geist font-semibold text-on-surface mb-1.5">Location</label>
           <input
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all duration-200 placeholder:text-on-surface-variant/40"
             placeholder="e.g. Student Union · Room 201"
           />
         </div>
 
         <div>
-          <label className="block text-label-md font-geist font-medium text-on-surface mb-1">Description</label>
+          <label className="block text-label-md font-geist font-semibold text-on-surface mb-1.5">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors resize-none"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-surface text-body-md font-inter focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all duration-200 resize-none placeholder:text-on-surface-variant/40"
             placeholder="Optional details about the event..."
           />
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={!title.trim() || !date.trim()}>Add Event</Button>
+        <div className="flex justify-end gap-3 pt-3 border-t border-outline-variant/10">
+          <Button type="button" variant="ghost" onClick={onClose} className="px-4">Cancel</Button>
+          <Button type="submit" disabled={!title.trim() || !date.trim()} className="px-5">Add Event</Button>
         </div>
       </form>
     </Dialog>

@@ -212,6 +212,77 @@
       transform: translateY(0);
     }
   }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+@layer utilities {
+  .glass-toolbar {
+    background: color-mix(in srgb, var(--color-surface-container) 85%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out both;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out both;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent 25%, color-mix(in srgb, var(--color-primary) 6%, transparent) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .scrollbar-thin-styled {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-outline-variant) 40%, transparent) transparent;
+  }
+
+  .scrollbar-thin-styled::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-thin-styled::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin-styled::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-outline-variant) 40%, transparent);
+    border-radius: 999px;
+  }
 }
 
 .dark {

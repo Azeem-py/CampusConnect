@@ -1,5 +1,5 @@
 import { createContext, useContext, useCallback, type ReactNode } from "react"
-import { useCurrentUser, useLogin, useSignup, useLogout } from "../services/auth"
+import { useCurrentUser, useLogin, useSignup, useLogout, type User } from "../services/auth"
 
 interface SignUpData {
   name: string
@@ -14,27 +14,6 @@ interface SignUpData {
   confirmPassword: string
   avatar?: string
   banner?: string
-}
-
-interface User {
-  id: string
-  name: string
-  username: string
-  email: string
-  phone: string | null
-  department: string | null
-  school: string | null
-  interests: string | null
-  hobby: string | null
-  role: string
-  avatar: string | null
-  banner: string | null
-  reputationScore: number
-  bio: string | null
-  major: string | null
-  graduationYear: number | null
-  createdAt: string
-  following?: { id: string }[]
 }
 
 interface AuthContextType {

@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import cookieParser from 'cookie-parser';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
@@ -12,6 +13,10 @@ async function bootstrap() {
   });
 
   app.useLogger(app.get(Logger));
+
+  // Increase payload limit for Base64 image uploads in development/fallbacks
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ limit: '10mb', extended: true }));
 
   // Global validation pipe for strict DTO handling
   app.useGlobalPipes(

@@ -1,14 +1,17 @@
 import { useRef, useState, useCallback } from "react"
 import { isSimpleRenderableCommand, renderCommandToHtml } from "../lib/latex"
 
-function nodeToMarkdown(node: Node): string {
+function nodeToMarkdown(node: Node, insideList = false): string {
   if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? ""
   if (!(node instanceof HTMLElement)) return ""
 
   if (node.getAttribute("data-source")) return node.getAttribute("data-source") ?? ""
 
   const tag = node.tagName.toLowerCase()
-  const inner = Array.from(node.childNodes).map(nodeToMarkdown).join("")
+  const isListTag = tag === "ol" || tag === "ul" || tag === "li"
+  const inner = Array.from(node.childNodes)
+    .map((c) => nodeToMarkdown(c, insideList || isListTag))
+    .join("")
 
   switch (tag) {
     case "b":
@@ -30,20 +33,20 @@ function nodeToMarkdown(node: Node): string {
     case "ul":
       return Array.from(node.children)
         .filter((c) => c.tagName === "LI")
-        .map((li) => `- ${nodeToMarkdown(li)}`)
+        .map((li) => `- ${nodeToMarkdown(li, true)}`)
         .join("\n")
     case "ol":
       return Array.from(node.children)
         .filter((c) => c.tagName === "LI")
-        .map((li, i) => `${i + 1}. ${nodeToMarkdown(li)}`)
+        .map((li, i) => `${i + 1}. ${nodeToMarkdown(li, true)}`)
         .join("\n")
     case "li":
       return inner
     case "div":
     case "p":
-      return `${inner}\n\n`
+      return insideList ? inner : `${inner}\n\n`
     case "br":
-      return "\n"
+      return insideList ? "" : "\n"
     default:
       return inner
   }
@@ -58,7 +61,7 @@ export function useContentEditable() {
   const extractPlainContent = useCallback((): string => {
     const div = editorRef.current
     if (!div) return ""
-    return Array.from(div.childNodes).map(nodeToMarkdown).join("")
+    return Array.from(div.childNodes).map((c) => nodeToMarkdown(c)).join("")
   }, [])
 
   const doRenderPass = useCallback(() => {

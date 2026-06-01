@@ -146,7 +146,6 @@ function renderInlineContent(text: string, key: number | string) {
 
 export function renderEnhancedPreview(text: string) {
   const blocks = text.split(/\n\n+/)
-  if (blocks.length === 1) return renderInlineContent(text, 0)
 
   return blocks.map((block, i) => {
     const lines = block.split("\n")
@@ -174,9 +173,22 @@ export function renderEnhancedPreview(text: string) {
       )
     }
 
+    if (lines.length === 1) {
+      return (
+        <div key={i} className="min-h-[1em]">
+          {renderInlineContent(block, i)}
+        </div>
+      )
+    }
+
     return (
       <div key={i} className="min-h-[1em]">
-        {renderInlineContent(block, i)}
+        {lines.map((line, j) => (
+          <Fragment key={j}>
+            {j > 0 && <br />}
+            {renderInlineContent(line, `${i}-${j}`)}
+          </Fragment>
+        ))}
       </div>
     )
   })

@@ -1,21 +1,24 @@
 import { useState, useCallback } from "react"
 import {
-  X, Hash, Calendar, Vote, Bold, Italic, Underline, Strikethrough,
+  ArrowLeft, Hash, Calendar, Vote, Bold, Italic, Underline, Strikethrough,
   Link as LinkIcon, List, ListOrdered, Sigma, Image, Paperclip, Eye,
-  XCircle,
+  XCircle, Send,
 } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { Avatar } from "../components/ui/Avatar"
 import { Button } from "../components/ui/Button"
+import { Sidebar } from "../components/layout/Sidebar"
 import { renderEnhancedPreview } from "../lib/latex"
 import { MathKeyboard } from "../components/create/MathKeyboard"
 import { EventDialog, type EventData } from "../components/create/EventDialog"
 import { PollDialog, type PollData } from "../components/create/PollDialog"
 import { useContentEditable } from "../hooks/useContentEditable"
 import { useCreatePost } from "../services/posts"
+import { useAuth } from "../contexts/AuthContext"
 
 export function CreatePostPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const createPost = useCreatePost()
   const [showKeyboard, setShowKeyboard] = useState(false)
   const [showEventDialog, setShowEventDialog] = useState(false)
@@ -60,68 +63,95 @@ export function CreatePostPage() {
   const handleBulletList = useCallback(() => exec("insertUnorderedList"), [exec])
   const handleNumberedList = useCallback(() => exec("insertOrderedList"), [exec])
 
+  const charCount = plainContent.length
+
   return (
-    <div className="min-h-screen bg-white text-gray-900 antialiased flex flex-col">
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 w-full border-b border-gray-200/80 flex justify-between items-center px-4 h-16 z-50">
-        <Link
-          to="/feed"
-          className="flex items-center gap-2 cursor-pointer active:opacity-70 no-underline"
-        >
-          <X size={20} className="text-gray-400 hover:text-blue-600 transition-colors" />
-          <span className="text-[14px] font-geist font-medium text-gray-400 hidden md:inline">
-            Cancel
-          </span>
-        </Link>
+    <div className="min-h-[calc(100vh-3.5rem)] bg-surface pb-16 lg:pb-0">
+      <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
+        {/* ─── Sidebar ─── */}
+        <Sidebar />
 
-        <span className="text-[20px] font-geist font-bold text-blue-700">
-          Scholarsphere
-        </span>
+        {/* ─── Page Content ─── */}
+        <div className="flex-1 min-w-0">
+          {/* ─── Contextual Action Bar ─── */}
+          <div className="sticky top-14 z-40 glass-toolbar border border-outline-variant/15 rounded-xl mb-5">
+            <div className="flex items-center justify-between h-14 px-4 lg:px-5">
+              <Link
+                to="/feed"
+                className="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors no-underline group"
+              >
+                <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                <span className="text-label-md font-geist font-medium hidden sm:inline">
+                  Back to Feed
+                </span>
+              </Link>
 
-        <div className="flex items-center gap-3">
+              <h1 className="text-title-md font-geist font-semibold text-on-surface">
+                Create Post
+              </h1>
+
+              <div className="flex items-center gap-3">
+                {createPost.isError && (
+                  <span className="text-label-sm text-error font-geist max-w-[180px] text-right leading-tight hidden sm:inline">
+                    {createPost.error?.message || 'Failed to post'}
+                  </span>
+                )}
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="font-semibold px-5 gap-2"
+                  disabled={isEmpty || createPost.isPending}
+                  loading={createPost.isPending}
+                  onClick={handlePost}
+                  icon={<Send size={15} />}
+                >
+                  Publish
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* ─── Mobile Error Banner ─── */}
           {createPost.isError && (
-            <span className="text-[12px] text-red-500 font-geist max-w-[200px] text-right leading-tight">
+            <div className="sm:hidden mb-4 px-3 py-2 rounded-lg bg-error-container text-on-error-container text-label-sm font-geist">
               {createPost.error?.message || 'Failed to post'}
-            </span>
+            </div>
           )}
-          <Button
-            variant="primary"
-            size="md"
-            className="text-white text-[15px] font-semibold px-5"
-            disabled={isEmpty || createPost.isPending}
-            loading={createPost.isPending}
-            onClick={handlePost}
-          >
-            Post
-          </Button>
-        </div>
-      </header>
 
-      <main className="flex-grow w-full max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-6">
-        <section className="flex-1 flex flex-col gap-4">
-          <div className="flex flex-wrap gap-2 items-center">
-            <Avatar name="You" size="md" />
+          {/* ─── Main Content ─── */}
+          <div className="flex flex-col lg:flex-row gap-6 animate-slide-up">
+        {/* ─── Editor Column ─── */}
+        <section className="flex-1 flex flex-col gap-5 min-w-0">
+          {/* Meta Chips Row */}
+          <div className="flex flex-wrap gap-2.5 items-center">
+            <Avatar
+              name={user?.name ?? "You"}
+              src={user?.avatar ?? undefined}
+              size="md"
+              className="ring-2 ring-primary/10"
+            />
 
-            <button className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full border border-gray-200 hover:border-blue-400 transition-colors text-[13px] font-geist font-medium text-blue-600">
-              <Hash size={16} />
+            <button className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-primary/8 rounded-full border border-primary/15 hover:border-primary/30 hover:bg-primary/12 transition-all text-label-md font-geist font-medium text-primary">
+              <Hash size={14} />
               CS-412
             </button>
 
             {eventData ? (
               <button
                 onClick={() => setEventData(null)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 rounded-full border border-blue-300 text-[13px] font-geist font-medium text-blue-700 hover:bg-blue-200 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-surface-tint/10 rounded-full border border-surface-tint/25 text-label-md font-geist font-medium text-surface-tint hover:bg-surface-tint/15 transition-all group"
                 title="Remove event"
               >
-                <Calendar size={16} />
+                <Calendar size={14} />
                 Event Added
-                <XCircle size={14} />
+                <XCircle size={13} className="opacity-60 group-hover:opacity-100 transition-opacity" />
               </button>
             ) : (
               <button
                 onClick={() => setShowEventDialog(true)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-200 hover:border-blue-400 transition-colors text-[13px] font-geist font-medium text-gray-500"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-surface-container rounded-full border border-outline-variant/20 hover:border-primary/30 hover:bg-primary/5 transition-all text-label-md font-geist font-medium text-on-surface-variant hover:text-primary"
               >
-                <Calendar size={16} />
+                <Calendar size={14} />
                 Add Event
               </button>
             )}
@@ -129,71 +159,75 @@ export function CreatePostPage() {
             {pollData ? (
               <button
                 onClick={() => setPollData(null)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-100 rounded-full border border-amber-300 text-[13px] font-geist font-medium text-amber-700 hover:bg-amber-200 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-tertiary/10 rounded-full border border-tertiary/25 text-label-md font-geist font-medium text-tertiary hover:bg-tertiary/15 transition-all group"
                 title="Remove poll"
               >
-                <Vote size={16} />
+                <Vote size={14} />
                 Poll Added
-                <XCircle size={14} />
+                <XCircle size={13} className="opacity-60 group-hover:opacity-100 transition-opacity" />
               </button>
             ) : (
               <button
                 onClick={() => setShowPollDialog(true)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-50 rounded-full border border-gray-200 hover:border-blue-400 transition-colors text-[13px] font-geist font-medium text-gray-500"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-surface-container rounded-full border border-outline-variant/20 hover:border-primary/30 hover:bg-primary/5 transition-all text-label-md font-geist font-medium text-on-surface-variant hover:text-primary"
               >
-                <Vote size={16} />
+                <Vote size={14} />
                 Add Poll
               </button>
             )}
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200/80 flex flex-col shadow-sm flex-grow">
-            <div className="flex items-center gap-1 p-2 border-b border-gray-100 bg-gray-50/50 overflow-x-auto">
-              <button onClick={handleBold} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors" title="Bold (Ctrl+B)">
-                <Bold size={16} />
-              </button>
-              <button onClick={handleItalic} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors" title="Italic (Ctrl+I)">
-                <Italic size={16} />
-              </button>
-              <button onClick={handleUnderline} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors" title="Underline (Ctrl+U)">
-                <Underline size={16} />
-              </button>
-              <button onClick={handleStrikethrough} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors" title="Strikethrough (Ctrl+Shift+S)">
-                <Strikethrough size={16} />
-              </button>
+          {/* Editor Card */}
+          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/15 flex flex-col shadow-sm hover:shadow-md transition-shadow duration-300 flex-grow overflow-hidden">
+            {/* Formatting Toolbar */}
+            <div className="flex items-center gap-0.5 px-3 py-2 border-b border-outline-variant/12 glass-toolbar overflow-x-auto scrollbar-thin-styled">
+              <ToolbarBtn onClick={handleBold} title="Bold (Ctrl+B)">
+                <Bold size={15} />
+              </ToolbarBtn>
+              <ToolbarBtn onClick={handleItalic} title="Italic (Ctrl+I)">
+                <Italic size={15} />
+              </ToolbarBtn>
+              <ToolbarBtn onClick={handleUnderline} title="Underline (Ctrl+U)">
+                <Underline size={15} />
+              </ToolbarBtn>
+              <ToolbarBtn onClick={handleStrikethrough} title="Strikethrough">
+                <Strikethrough size={15} />
+              </ToolbarBtn>
 
-              <div className="w-px h-6 bg-gray-200 mx-1" />
+              <div className="w-px h-5 bg-outline-variant/20 mx-1.5 shrink-0" />
 
-              <button onClick={handleLink} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors" title="Link (Ctrl+K)">
-                <LinkIcon size={16} />
-              </button>
-              <button onClick={handleBulletList} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors" title="Bullet List">
-                <List size={16} />
-              </button>
-              <button onClick={handleNumberedList} className="p-1.5 rounded hover:bg-gray-200 text-gray-500 transition-colors" title="Numbered List">
-                <ListOrdered size={16} />
-              </button>
+              <ToolbarBtn onClick={handleLink} title="Insert Link (Ctrl+K)">
+                <LinkIcon size={15} />
+              </ToolbarBtn>
+              <ToolbarBtn onClick={handleBulletList} title="Bullet List">
+                <List size={15} />
+              </ToolbarBtn>
+              <ToolbarBtn onClick={handleNumberedList} title="Numbered List">
+                <ListOrdered size={15} />
+              </ToolbarBtn>
 
-              <div className="w-px h-6 bg-gray-200 mx-1" />
+              <div className="w-px h-5 bg-outline-variant/20 mx-1.5 shrink-0" />
 
               <button
                 onClick={() => setShowKeyboard((prev) => !prev)}
                 className={[
-                  "inline-flex items-center gap-1 px-2 py-1 rounded transition-colors ml-auto border",
+                  "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all text-label-md font-geist font-medium ml-auto shrink-0",
                   showKeyboard
-                    ? "bg-blue-100 text-blue-700 border-blue-300"
-                    : "bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200",
+                    ? "bg-primary/12 text-primary ring-1 ring-primary/20"
+                    : "text-on-surface-variant hover:bg-surface-container-high hover:text-primary",
                 ].join(" ")}
-                title="Insert Math/LaTeX"
+                title="Math/LaTeX Keyboard"
               >
-                <Sigma size={18} />
-                <span className="text-[13px] font-geist font-medium hidden sm:inline">Math Keyboard</span>
+                <Sigma size={16} className={showKeyboard ? "rotate-0" : ""} />
+                <span className="hidden sm:inline">Math</span>
               </button>
             </div>
 
+            {/* Math Keyboard */}
             {showKeyboard && <MathKeyboard onInsert={insertAtCursor} />}
 
-            <div className="p-4 flex-grow flex flex-col min-h-[400px]">
+            {/* Content Editable Area */}
+            <div className="p-5 flex-grow flex flex-col min-h-[350px] lg:min-h-[420px]">
               <div
                 ref={editorRef}
                 contentEditable
@@ -201,89 +235,115 @@ export function CreatePostPage() {
                 onInput={handleInput}
                 onKeyDown={handleKeyDown}
                 onMouseDown={handleMouseDown}
-                className="w-full flex-grow resize-none border-none focus:outline-none focus:ring-0 bg-transparent text-[16px] text-gray-900 font-jetbrains-mono leading-relaxed p-0 whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:text-gray-300"
+                className="w-full flex-grow resize-none border-none focus:outline-none focus:ring-0 bg-transparent text-body-lg text-on-surface font-jetbrains-mono leading-relaxed p-0 whitespace-pre-wrap break-words empty:before:content-[attr(data-placeholder)] empty:before:text-on-surface-variant/40 empty:before:font-inter empty:before:text-body-lg"
                 data-placeholder="What are your thoughts or findings? Start typing here... Use $$...$$ for LaTeX"
                 role="textbox"
                 aria-multiline="true"
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 border-t border-gray-100 bg-gray-50/50">
-              <div className="flex gap-2">
-                <button className="text-blue-600 hover:bg-gray-100 p-1.5 rounded transition-colors" title="Add Image">
-                  <Image size={18} />
-                </button>
-                <button className="text-blue-600 hover:bg-gray-100 p-1.5 rounded transition-colors" title="Add File">
-                  <Paperclip size={18} />
-                </button>
+            {/* Editor Footer */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-outline-variant/12 glass-toolbar">
+              <div className="flex gap-1">
+                <ToolbarBtn title="Add Image">
+                  <Image size={16} className="text-primary/70" />
+                </ToolbarBtn>
+                <ToolbarBtn title="Attach File">
+                  <Paperclip size={16} className="text-primary/70" />
+                </ToolbarBtn>
               </div>
-              <span className="text-[12px] font-mono text-gray-400">
-                Markdown supported
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-label-sm font-mono text-on-surface-variant/50 select-none tabular-nums">
+                  {charCount > 0 ? `${charCount.toLocaleString()} chars` : "Markdown & LaTeX supported"}
+                </span>
+              </div>
             </div>
           </div>
         </section>
 
-        <aside className="w-full lg:w-[400px] flex flex-col gap-4">
-          <h2 className="flex items-center gap-1.5 text-[18px] font-geist font-semibold text-gray-900">
-            <Eye size={20} className="text-gray-400" />
+        {/* ─── Live Preview Column ─── */}
+        <aside className="w-full lg:w-[380px] xl:w-[400px] flex flex-col gap-4 lg:sticky lg:top-[7.5rem] lg:h-[calc(100vh-8.5rem)]">
+          <h2 className="flex items-center gap-2 text-title-md font-geist font-semibold text-on-surface">
+            <div className="p-1.5 rounded-lg bg-primary/8">
+              <Eye size={16} className="text-primary" />
+            </div>
             Live Preview
           </h2>
 
-          <div className="bg-white rounded-xl border border-gray-200/80 p-4 shadow-sm h-full max-h-[600px] overflow-y-auto">
-            <div className="flex items-center gap-2 mb-4">
-              <Avatar name="You" size="sm" />
+          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/15 p-5 shadow-sm flex-1 overflow-y-auto scrollbar-thin-styled">
+            {/* Author Header */}
+            <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-outline-variant/10">
+              <Avatar
+                name={user?.name ?? "You"}
+                src={user?.avatar ?? undefined}
+                size="sm"
+                className="ring-1 ring-outline-variant/10"
+              />
               <div>
-                <div className="text-[13px] font-geist font-bold text-gray-900">You</div>
-                <div className="text-[11px] font-mono text-gray-400">Just now</div>
+                <div className="text-title-sm font-geist font-semibold text-on-surface leading-none">
+                  {user?.name ?? "You"}
+                </div>
+                <div className="text-label-sm font-inter text-on-surface-variant mt-0.5">
+                  Just now
+                </div>
               </div>
             </div>
 
-            <div className="text-[16px] text-gray-800 font-inter leading-relaxed space-y-3">
+            {/* Preview Content */}
+            <div className="text-body-lg text-on-surface font-inter leading-relaxed space-y-3">
               {isEmpty ? (
-                <p className="text-gray-400 italic">
-                  Start typing to see your preview...
-                </p>
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center mb-3">
+                    <Eye size={20} className="text-on-surface-variant/40" />
+                  </div>
+                  <p className="text-on-surface-variant/50 text-body-md font-inter">
+                    Start typing to see your preview...
+                  </p>
+                </div>
               ) : (
                 renderEnhancedPreview(plainContent)
               )}
             </div>
 
+            {/* Event Preview */}
             {eventData && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-1.5 text-[12px] font-geist font-semibold text-blue-700 uppercase tracking-wide mb-2">
-                  <Calendar size={14} />
+              <div className="mt-5 p-4 bg-surface-container-low rounded-xl border-l-3 border-primary relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/3 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <div className="flex items-center gap-1.5 text-label-sm font-geist font-semibold text-primary uppercase tracking-wider mb-2.5 relative">
+                  <Calendar size={13} />
                   Event
                 </div>
-                <p className="text-[14px] font-geist font-semibold text-gray-900">{eventData.title}</p>
-                <div className="mt-1.5 space-y-0.5 text-[13px] text-gray-600 font-inter">
+                <p className="text-title-sm font-geist font-semibold text-on-surface relative">{eventData.title}</p>
+                <div className="mt-2 space-y-1 text-body-sm text-on-surface-variant font-inter relative">
                   <p>
-                    {new Date(eventData.date).toLocaleDateString("en-US", {
+                    📅 {new Date(eventData.date).toLocaleDateString("en-US", {
                       weekday: "short", month: "short", day: "numeric",
                     })}{eventData.time ? ` · ${new Date(`2000-01-01T${eventData.time}`).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` : ""}
                   </p>
                   {eventData.location && <p>📍 {eventData.location}</p>}
                 </div>
                 {eventData.description && (
-                  <p className="mt-1.5 text-[13px] text-gray-500 font-inter">{eventData.description}</p>
+                  <p className="mt-2 text-body-sm text-on-surface-variant/80 font-inter leading-relaxed relative">{eventData.description}</p>
                 )}
               </div>
             )}
 
+            {/* Poll Preview */}
             {pollData && (
-              <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
-                <div className="flex items-center gap-1.5 text-[12px] font-geist font-semibold text-amber-700 uppercase tracking-wide mb-2">
-                  <Vote size={14} />
+              <div className="mt-5 p-4 bg-surface-container-low rounded-xl border-l-3 border-tertiary relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-tertiary/3 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <div className="flex items-center gap-1.5 text-label-sm font-geist font-semibold text-tertiary uppercase tracking-wider mb-2.5 relative">
+                  <Vote size={13} />
                   Poll
                 </div>
-                <p className="text-[14px] font-geist font-semibold text-gray-900 mb-2">{pollData.question}</p>
-                <div className="space-y-1.5">
+                <p className="text-title-sm font-geist font-semibold text-on-surface mb-3 relative">{pollData.question}</p>
+                <div className="space-y-2 relative">
                   {pollData.options.map((option, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-amber-200/60 text-[13px] font-inter text-gray-700"
+                      className="flex items-center gap-2.5 px-3.5 py-2.5 bg-surface-container-lowest rounded-xl border border-outline-variant/15 text-body-sm font-inter text-on-surface hover:border-primary/20 transition-colors"
                     >
-                      <div className="w-4 h-4 rounded-full border-2 border-amber-300 shrink-0" />
+                      <div className="w-4 h-4 rounded-full border-2 border-outline-variant/40 shrink-0" />
                       {option}
                     </div>
                   ))}
@@ -292,7 +352,9 @@ export function CreatePostPage() {
             )}
           </div>
         </aside>
-      </main>
+          </div>
+        </div>
+      </div>
 
       <EventDialog
         open={showEventDialog}
@@ -308,5 +370,26 @@ export function CreatePostPage() {
         initial={pollData ?? undefined}
       />
     </div>
+  )
+}
+
+/* ─── Toolbar Button Component ─── */
+function ToolbarBtn({
+  onClick,
+  title,
+  children,
+}: {
+  onClick?: () => void
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="p-2 rounded-lg text-on-surface-variant/70 hover:text-on-surface hover:bg-surface-container-high/80 active:scale-95 transition-all duration-150 shrink-0"
+      title={title}
+    >
+      {children}
+    </button>
   )
 }

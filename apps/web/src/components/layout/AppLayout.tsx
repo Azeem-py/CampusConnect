@@ -8,7 +8,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const { user, logout } = useAuth()
   const isLanding = location.pathname === "/"
-  const hideShell = isLanding || location.pathname === "/create" || location.pathname === "/login" || location.pathname === "/signup"
+  const hideShell = isLanding || location.pathname === "/login" || location.pathname === "/signup"
 
   if (hideShell) {
     return <>{children}</>

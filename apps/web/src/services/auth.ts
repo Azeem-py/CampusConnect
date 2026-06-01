@@ -16,7 +16,17 @@ interface SignUpData {
   banner?: string;
 }
 
-interface User {
+export interface ConnectionUser {
+  id: string;
+  name: string;
+  username: string;
+  avatar: string | null;
+  school: string | null;
+  department: string | null;
+  major: string | null;
+}
+
+export interface User {
   id: string;
   name: string;
   username: string;
@@ -34,7 +44,8 @@ interface User {
   major: string | null;
   graduationYear: number | null;
   createdAt: string;
-  following?: { id: string }[];
+  following?: ConnectionUser[];
+  followers?: ConnectionUser[];
 }
 
 const CURRENT_USER_KEY = ['currentUser'];
@@ -129,8 +140,10 @@ export function useFollowUser() {
       const { data } = await api.post(`/users/${followingId}/follow`);
       return data as User;
     },
-    onSuccess: (updatedUser) => {
+    onSuccess: (updatedUser, _followingId) => {
       queryClient.setQueryData(CURRENT_USER_KEY, updatedUser);
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 }
@@ -143,8 +156,10 @@ export function useUnfollowUser() {
       const { data } = await api.post(`/users/${followingId}/unfollow`);
       return data as User;
     },
-    onSuccess: (updatedUser) => {
+    onSuccess: (updatedUser, _followingId) => {
       queryClient.setQueryData(CURRENT_USER_KEY, updatedUser);
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 }
