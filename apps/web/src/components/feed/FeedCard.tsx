@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Calendar, Vote as VoteIcon, Check, Trash2, Loader2, ChevronUp, ChevronDown, Share2, Copy } from "lucide-react"
+import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Calendar, Vote as VoteIcon, Check, Trash2, Loader2, ChevronUp, ChevronDown, Share2, Copy, AlertTriangle, User as UserIcon } from "lucide-react"
 import { Avatar } from "../ui/Avatar"
 import { Tag } from "../ui/Tag"
 import { cn, formatDistanceToNow } from "../../lib/utils"
@@ -8,6 +8,7 @@ import { renderEnhancedPreview } from "../../lib/latex"
 import { useVotePoll, usePost, useCreateComment, useDeleteComment, useVoteSocial, useRepostPost, useQuotePost, useToggleBookmark, type PostEvent, type PostPoll } from "../../services/posts"
 import { useAuth } from "../../contexts/AuthContext"
 import { useFollowUser, useUnfollowUser } from "../../services/auth"
+import { ReportDialog } from "../ui/ReportDialog"
 
 interface FeedCardProps {
   id?: string
@@ -101,6 +102,12 @@ export function FeedCard({
   const [quoteCommentary, setQuoteCommentary] = useState("")
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
+  const [reportTargetType, setReportTargetType] = useState<"POST" | "USER">("POST")
+  const [isLocallyHidden, setIsLocallyHidden] = useState(false)
+  const [reportedCommentId, setReportedCommentId] = useState<string | null>(null)
+  const [locallyHiddenCommentIds, setLocallyHiddenCommentIds] = useState<string[]>([])
 
   // Sync likes and liked status reactively when user or votes list loads
   useEffect(() => {
@@ -247,7 +254,9 @@ export function FeedCard({
       { postId: targetPostId, value: nextLiked ? 1 : 0 },
       {
         onError: () => {
-          // Revert on error
+          // If offline, do NOT revert the UI because Workbox Background Sync will retry it!
+          if (!navigator.onLine) return
+          // Revert on real server errors
           setLiked(!nextLiked)
           setLikes((c: number) => c + (nextLiked ? -1 : 1))
         },
@@ -266,6 +275,8 @@ export function FeedCard({
 
     repostMutation.mutate(targetPostId, {
       onError: () => {
+        // If offline, do NOT revert the UI because Workbox Background Sync will retry it!
+        if (!navigator.onLine) return
         setReposted(!nextReposted)
         setShares((c: number) => c + (nextReposted ? -1 : 1))
       },
@@ -298,10 +309,23 @@ export function FeedCard({
     
     toggleBookmark.mutate(targetPostId, {
       onError: () => {
+        // If offline, do NOT revert the UI because Workbox Background Sync will retry it!
+        if (!navigator.onLine) return
         // Revert on error
         setBookmarked(!nextBookmarked)
       }
     })
+  }
+
+  if (isLocallyHidden) {
+    return (
+      <div className="bg-gray-50/60 dark:bg-gray-950/20 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-4 text-center select-none animate-in fade-in duration-300">
+        <p className="text-[12.5px] font-geist font-semibold text-red-500/80 dark:text-red-400 flex items-center justify-center gap-1.5">
+          <AlertTriangle size={14} className="stroke-[2.5]" />
+          This content has been reported and hidden. Thank you for keeping CampusConnect safe!
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -369,12 +393,52 @@ export function FeedCard({
               {isFollowing ? "Following" : "Follow"}
             </button>
           )}
-          <button 
-            onClick={(e) => e.stopPropagation()} 
-            className="text-gray-400 hover:text-gray-600 p-1"
-          >
-            <MoreHorizontal size={16} />
-          </button>
+          <div className="relative">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsMoreMenuOpen(!isMoreMenuOpen)
+              }} 
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100/50"
+            >
+              <MoreHorizontal size={16} />
+            </button>
+
+            {isMoreMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setIsMoreMenuOpen(false); }} />
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-30 p-1 animate-in fade-in slide-in-from-top-2 duration-200 select-none">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setReportTargetType("POST")
+                      setIsReportDialogOpen(true)
+                      setIsMoreMenuOpen(false)
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400 flex items-center gap-2 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-gray-700 dark:text-gray-300 border-none bg-transparent"
+                  >
+                    <AlertTriangle size={14} className="text-red-500" />
+                    <span>Report Post</span>
+                  </button>
+
+                  {!isSelf && displayAuthor.id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setReportTargetType("USER")
+                        setIsReportDialogOpen(true)
+                        setIsMoreMenuOpen(false)
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400 flex items-center gap-2 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-gray-700 dark:text-gray-300 border-none bg-transparent"
+                    >
+                      <UserIcon size={14} className="text-red-500" />
+                      <span>Report Profile</span>
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -884,6 +948,15 @@ export function FeedCard({
           ) : postDetails?.comments && postDetails.comments.length > 0 ? (
             <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
               {postDetails.comments.map((comment) => {
+                if (locallyHiddenCommentIds.includes(comment.id)) {
+                  return (
+                    <div key={comment.id} className="p-2.5 rounded-lg bg-gray-50/60 dark:bg-gray-950/20 border border-dashed border-gray-200 dark:border-gray-800 text-[11px] font-geist font-semibold text-red-500/80 dark:text-red-400 flex items-center gap-1.5 select-none animate-in fade-in duration-305">
+                      <AlertTriangle size={12} className="stroke-[2.5]" />
+                      This comment has been reported and hidden from view.
+                    </div>
+                  )
+                }
+
                 const score = comment.votes?.reduce((sum, v) => sum + v.value, 0) || 0
                 const userVote = comment.votes?.find((v) => v.userId === currentUser?.id)?.value || 0
                 const isCommentAuthor = currentUser?.id === comment.authorId
@@ -982,6 +1055,16 @@ export function FeedCard({
                           >
                             Reply
                           </button>
+                          {!isCommentAuthor && (
+                            <button
+                              onClick={() => {
+                                setReportedCommentId(comment.id)
+                              }}
+                              className="text-[11px] font-geist font-medium text-gray-400 hover:text-red-500 transition-colors cursor-pointer py-0.5 select-none bg-transparent border-none"
+                            >
+                              Report
+                            </button>
+                          )}
                         </div>
 
                         {/* Reply Form */}
@@ -1099,6 +1182,18 @@ export function FeedCard({
                                 <div className="text-[12px] text-gray-700 font-inter leading-relaxed whitespace-pre-wrap break-words">
                                   {renderEnhancedPreview(reply.content)}
                                 </div>
+                                {!isReplyAuthor && (
+                                  <div className="flex items-center gap-3 pt-0.5">
+                                    <button
+                                      onClick={() => {
+                                        setReportedCommentId(reply.id)
+                                      }}
+                                      className="text-[10px] font-geist font-medium text-gray-400 hover:text-red-500 transition-colors cursor-pointer py-0.5 select-none bg-transparent border-none"
+                                    >
+                                      Report
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )
@@ -1261,6 +1356,25 @@ export function FeedCard({
           </div>
         </div>
       )}
+
+      <ReportDialog
+        isOpen={isReportDialogOpen || !!reportedCommentId}
+        onClose={() => {
+          setIsReportDialogOpen(false)
+          setReportedCommentId(null)
+        }}
+        postId={reportTargetType === "POST" && !reportedCommentId ? displayId || id : undefined}
+        reportedUserId={reportTargetType === "USER" && !reportedCommentId ? displayAuthor.id : undefined}
+        commentId={reportedCommentId || undefined}
+        onSuccess={() => {
+          if (reportedCommentId) {
+            setLocallyHiddenCommentIds((prev) => [...prev, reportedCommentId])
+            setReportedCommentId(null)
+          } else {
+            setIsLocallyHidden(true)
+          }
+        }}
+      />
     </div>
   )
 }

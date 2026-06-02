@@ -3,7 +3,7 @@ export interface User {
   email: string;
   name: string;
   username: string;
-  role: 'STUDENT' | 'BUSINESS';
+  role: 'STUDENT' | 'BUSINESS' | 'ADMIN';
   avatar?: string | null;
   banner?: string | null;
   reputationScore: number;

@@ -28,6 +28,8 @@ import { useAuth } from "../contexts/AuthContext"
 import { useUserPosts, useBookmarkedPosts } from "../services/posts"
 import { useUpdateProfile, useUserProfile, useFollowUser, useUnfollowUser, type ConnectionUser } from "../services/auth"
 import { uploadPublicFile } from "../services/storage"
+import { AlertTriangle } from "lucide-react"
+import { ReportDialog } from "../components/ui/ReportDialog"
 
 function formatJoinDate(dateString: string) {
   const date = new Date(dateString)
@@ -134,6 +136,8 @@ export function ProfilePage() {
 
   const [activeTab, setActiveTab] = useState("posts")
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const navigate = useNavigate()
@@ -463,9 +467,46 @@ export function ProfilePage() {
                   className="border-2 border-surface shadow-md" 
                 />
                 <div className="flex items-center gap-2">
-                  <button className="p-2 rounded-lg border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container transition-colors">
-                    <MoreHorizontal size={16} />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                      className="p-2 rounded-lg border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"
+                    >
+                      <MoreHorizontal size={16} />
+                    </button>
+                    {isMoreMenuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-20" onClick={() => setIsMoreMenuOpen(false)} />
+                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-30 p-1 animate-in fade-in slide-in-from-top-2 duration-200 select-none">
+                          {isOwnProfile ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(window.location.href)
+                                alert("Profile link copied!")
+                                setIsMoreMenuOpen(false)
+                              }}
+                              className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-gray-700 dark:text-gray-300 border-none bg-transparent"
+                            >
+                              <span>Copy Profile Link</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsReportDialogOpen(true)
+                                setIsMoreMenuOpen(false)
+                              }}
+                              className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400 flex items-center gap-2 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-gray-700 dark:text-gray-300 border-none bg-transparent"
+                            >
+                              <AlertTriangle size={14} className="text-red-500" />
+                              <span>Report Profile</span>
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
                   {isOwnProfile ? (
                     <Button variant="secondary" size="sm" onClick={handleOpenEditModal}>
                       Edit Profile
@@ -1218,6 +1259,15 @@ export function ProfilePage() {
           </div>
         </div>
       )}
+
+      <ReportDialog
+        isOpen={isReportDialogOpen}
+        onClose={() => setIsReportDialogOpen(false)}
+        reportedUserId={displayedUser?.id}
+        onSuccess={() => {
+          alert("Profile has been reported to administration.")
+        }}
+      />
     </div>
   )
 }

@@ -689,7 +689,10 @@ export class PostsService {
     const posts = await this.prisma.post.findMany({
       where: {
         status: 'PUBLISHED',
-        courseCode: { not: null, not: '' },
+        AND: [
+          { courseCode: { not: null } },
+          { courseCode: { not: '' } },
+        ],
       },
       select: {
         courseCode: true,

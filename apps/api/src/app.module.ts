@@ -11,6 +11,7 @@ import { TrendingService } from './social/trending.service';
 import { SocialController } from './social/social.controller';
 import { PostsModule } from './posts/posts.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
+import { ModerationModule } from './moderation/moderation.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
     LoggerModule,
     PostsModule,
     RecommendationsModule,
+    ModerationModule,
   ],
   controllers: [AppController, SocialController],
   providers: [SocialService, TrendingService],

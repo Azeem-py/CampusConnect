@@ -1,4 +1,4 @@
-import { PrismaClient, Role, PostStatus } from '@prisma/client';
+import { PrismaClient, Role, PostStatus, ReportReason, ReportStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -8,6 +8,7 @@ async function main() {
 
   // 1. Clean up database
   console.log('Cleaning up existing data...');
+  await prisma.report.deleteMany({});
   await prisma.pollVote.deleteMany({});
   await prisma.pollOption.deleteMany({});
   await prisma.poll.deleteMany({});
@@ -191,6 +192,19 @@ async function main() {
       avatar: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=150&auto=format&fit=crop&q=80',
       banner: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&auto=format&fit=crop&q=80',
       reputationScore: 190,
+    },
+    {
+      email: 'admin@campusconnect.edu',
+      name: 'System Admin',
+      username: 'admin',
+      password: passwordHash,
+      role: Role.ADMIN,
+      school: 'Massachusetts Institute of Technology',
+      department: 'Administration',
+      bio: 'Official CampusConnect Moderation & Security Team.',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80',
+      reputationScore: 999,
     },
   ];
 
@@ -795,6 +809,44 @@ is what really reveals the underlying additive prime distribution. It\'s astonis
     }
   }
   console.log('Interactive poll votes seeded successfully.');
+
+  // 9. Seed Reports
+  console.log('Seeding moderation reports...');
+  if (aliceQuantumPost) {
+    await prisma.report.create({
+      data: {
+        reporterId: createdUsers['bob_cs'].id,
+        reason: ReportReason.SPAM,
+        description: 'Looks like marketing spam for non-Abelian anyon accelerators!',
+        status: ReportStatus.PENDING,
+        postId: aliceQuantumPost.id,
+      },
+    });
+  }
+
+  const firstComment = allCommentRecords[0];
+  if (firstComment) {
+    await prisma.report.create({
+      data: {
+        reporterId: createdUsers['charlie_math'].id,
+        reason: ReportReason.HARASSMENT,
+        description: 'Using aggressive questioning tactics in deep learning debates!',
+        status: ReportStatus.PENDING,
+        commentId: firstComment.id,
+      },
+    });
+  }
+
+  await prisma.report.create({
+    data: {
+      reporterId: createdUsers['grace_eecs'].id,
+      reason: ReportReason.HARASSMENT,
+      description: 'Henry is posting suspicious game-theory models that feel like phishing attempts.',
+      status: ReportStatus.PENDING,
+      reportedUserId: createdUsers['henry_econ'].id,
+    },
+  });
+  console.log('Sample moderation reports seeded successfully.');
 
   console.log('--- DATABASE SEEDING COMPLETED SUCCESSFULLY ---');
   console.log(`Seeded:

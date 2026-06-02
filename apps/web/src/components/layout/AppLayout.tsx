@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom"
 import { useAuth } from "../../contexts/AuthContext"
 import { Avatar } from "../ui/Avatar"
 import { BottomNav } from "./BottomNav"
+import { OfflineBanner } from "./OfflineBanner"
+import { PWARegister } from "./PWARegister"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
@@ -11,7 +13,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hideShell = isLanding || location.pathname === "/login" || location.pathname === "/signup"
 
   if (hideShell) {
-    return <>{children}</>
+    return (
+      <>
+        {children}
+        <OfflineBanner />
+        <PWARegister />
+      </>
+    )
   }
 
   return (
@@ -21,7 +29,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <FlaskConical size={22} className="text-primary" />
           <span className="font-geist font-bold text-title-lg text-on-surface hidden sm:inline">
-            Scholarsphere
+            CampusConnect
           </span>
           </Link>
 
@@ -53,6 +61,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </header>
       {children}
       <BottomNav />
+      <OfflineBanner />
+      <PWARegister />
     </>
   )
 }

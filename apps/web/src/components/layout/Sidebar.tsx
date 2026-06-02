@@ -1,4 +1,4 @@
-import { Home, Compass, Bell, User, Plus, Settings } from "lucide-react"
+import { Home, Compass, Bell, User, Plus, Settings, Shield } from "lucide-react"
 import { NavLink, Link } from "react-router-dom"
 import { cn } from "../../lib/utils"
 import { Avatar } from "../ui/Avatar"
@@ -16,6 +16,11 @@ const navItems = [
 export function Sidebar() {
   const { user } = useAuth()
 
+  const items = [...navItems]
+  if (user?.role === "ADMIN") {
+    items.push({ to: "/moderation", icon: Shield, label: "Moderation" })
+  }
+
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 gap-2 py-4 sticky top-4 h-[calc(100vh-2rem)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       <div className="flex items-center gap-3 px-4 mb-2">
@@ -31,7 +36,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-col gap-1 px-2">
-        {navItems.map((item) => (
+        {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

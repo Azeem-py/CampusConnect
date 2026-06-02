@@ -11,6 +11,7 @@ import { CreatePostPage } from "./pages/CreatePostPage"
 import { NotificationsPage } from "./pages/NotificationsPage"
 import { SettingsPage } from "./pages/SettingsPage"
 import { PostDetailPage } from "./pages/PostDetailPage"
+import { ModerationPage } from "./pages/ModerationPage"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -46,6 +47,7 @@ function App() {
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/post/:id" element={<ProtectedRoute><PostDetailPage /></ProtectedRoute>} />
+            <Route path="/moderation" element={<ProtectedRoute><ModerationPage /></ProtectedRoute>} />
           </Routes>
         </AppLayout>
       </AuthProvider>

@@ -43,6 +43,9 @@ model User {
   bookmarks       Bookmark[]
   notifications   Notification[]   @relation("UserNotifications")
   sentNotifications Notification[] @relation("NotificationSender")
+  reportsCreated  Report[]         @relation("ReporterRelation")
+  reportsAgainst  Report[]         @relation("ReportedUserRelation")
+  reportsResolved Report[]         @relation("ResolverRelation")
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   followers       User[]           @relation("UserFollows")
@@ -78,6 +81,7 @@ model Post {
   images     String[]   @default([])
   tags       Tag[]      @relation("PostTags")
   notifications Notification[]
+  reports    Report[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
@@ -157,6 +161,7 @@ model Comment {
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
   notifications Notification[]
+  reports    Report[]
 
   @@index([postId])
   @@index([authorId])
@@ -183,6 +188,7 @@ model Vote {
 enum Role {
   STUDENT
   BUSINESS
+  ADMIN
 }
 
 model Bookmark {
@@ -229,4 +235,48 @@ enum NotificationType {
   REPOST
   FOLLOW
   SYSTEM
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  INAPPROPRIATE_CONTENT
+  INTELLECTUAL_PROPERTY
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String
+  reporter       User         @relation("ReporterRelation", fields: [reporterId], references: [id])
+  reason         ReportReason
+  description    String?      @db.Text
+  status         ReportStatus @default(PENDING)
+  
+  postId         String?
+  post           Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId      String?
+  comment        Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reportedUserId String?
+  reportedUser   User?        @relation("ReportedUserRelation", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  resolverId     String?
+  resolver       User?        @relation("ResolverRelation", fields: [resolverId], references: [id])
+  resolutionNote String?      @db.Text
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([reporterId])
+  @@index([postId])
+  @@index([commentId])
+  @@index([reportedUserId])
+  @@index([status])
 }
