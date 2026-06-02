@@ -407,7 +407,7 @@ export function FeedCard({
             {isMoreMenuOpen && (
               <>
                 <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setIsMoreMenuOpen(false); }} />
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl z-30 p-1 animate-in fade-in slide-in-from-top-2 duration-200 select-none">
+                <div className="absolute right-0 mt-2 w-48 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl z-30 p-1 animate-in fade-in slide-in-from-top-2 duration-200 select-none">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
@@ -415,7 +415,7 @@ export function FeedCard({
                       setIsReportDialogOpen(true)
                       setIsMoreMenuOpen(false)
                     }}
-                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400 flex items-center gap-2 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-gray-700 dark:text-gray-300 border-none bg-transparent"
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-error/10 hover:text-error dark:hover:bg-error/15 flex items-center gap-2 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-on-surface border-none bg-transparent"
                   >
                     <AlertTriangle size={14} className="text-red-500" />
                     <span>Report Post</span>
@@ -429,7 +429,7 @@ export function FeedCard({
                         setIsReportDialogOpen(true)
                         setIsMoreMenuOpen(false)
                       }}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400 flex items-center gap-2 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-gray-700 dark:text-gray-300 border-none bg-transparent"
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-error/10 hover:text-error dark:hover:bg-error/15 flex items-center gap-2 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-on-surface border-none bg-transparent"
                     >
                       <UserIcon size={14} className="text-red-500" />
                       <span>Report Profile</span>
