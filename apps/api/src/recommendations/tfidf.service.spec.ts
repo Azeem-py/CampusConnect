@@ -122,5 +122,34 @@ describe('TfidfService', () => {
       const scoreCS      = service.scorePost(profile, 'p2'); // deep learning
       expect(scorePhysics).toBeGreaterThan(scoreCS);
     });
+
+    it('scores a post with matching hashtags higher', () => {
+      const postsWithTags = [
+        {
+          id: 'p1',
+          title: 'Quantum Physics',
+          content: 'Intro to quantum particles.',
+          courseCode: 'PHYS-101',
+          tags: ['quantum', 'particles'],
+          author: { department: 'Physics', major: 'Physics' },
+        },
+        {
+          id: 'p2',
+          title: 'Deep Learning NLP',
+          content: 'Transformer models are powerful.',
+          courseCode: 'CS-412',
+          tags: ['ai', 'transformers'],
+          author: { department: 'Computer Science', major: 'Computer Science' },
+        },
+      ];
+      const tagService = new TfidfService(makePrisma(postsWithTags));
+      return tagService.buildCorpus().then(() => {
+        const profile = tagService.buildUserProfile([], 'transformers', null);
+        const scoreP1 = tagService.scorePost(profile, 'p1');
+        const scoreP2 = tagService.scorePost(profile, 'p2');
+        expect(scoreP2).toBeGreaterThan(scoreP1);
+        expect(scoreP2).toBeGreaterThan(0);
+      });
+    });
   });
 });

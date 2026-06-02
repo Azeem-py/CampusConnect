@@ -130,6 +130,7 @@ export class TfidfService {
         title: true,
         content: true,
         courseCode: true,
+        tags: true,
         author: { select: { department: true, major: true } },
       },
     });
@@ -141,13 +142,14 @@ export class TfidfService {
     const rawTf = new Map<string, Map<string, number>>();
     const df = new Map<string, number>();
 
-    posts.forEach(({ id, title, content, courseCode, author }) => {
+    posts.forEach(({ id, title, content, courseCode, tags, author }) => {
       const text = [
         title ?? '',
         content,
         courseCode ?? '',
         author.department ?? '',
         author.major ?? '',
+        (tags ?? []).map((t: any) => typeof t === 'string' ? t : t.name).join(' '),
       ].join(' ');
 
       const termCounts = new Map<string, number>();

@@ -31,6 +31,7 @@ export class PostsService {
         userId: true,
       },
     },
+    tags: true,
     originalPost: {
       include: {
         author: {
@@ -55,6 +56,7 @@ export class PostsService {
             userId: true,
           },
         },
+        tags: true,
         _count: { select: { votes: true, comments: true, reposts: true } },
       },
     },
@@ -80,7 +82,10 @@ export class PostsService {
         }
       : undefined;
 
-    return this.prisma.post.create({
+    const extractedTags = this.extractHashtags(dto.content);
+    const mergedTags = Array.from(new Set([...(dto.tags ?? []), ...extractedTags]));
+
+    const post = await this.prisma.post.create({
       data: {
         title: dto.title ?? null,
         content: dto.content,
@@ -89,9 +94,43 @@ export class PostsService {
         authorId,
         event: eventData ? { create: eventData } : undefined,
         poll: pollData ? { create: pollData } : undefined,
+        images: dto.images ?? [],
+        tags: {
+          connectOrCreate: mergedTags.map((tag) => ({
+            where: { name: tag },
+            create: { name: tag },
+          })),
+        },
       },
       include: this.postInclude,
     });
+
+    // Handle mentions
+    const mentionedUsernames = this.extractMentions(dto.content);
+    if (mentionedUsernames.length > 0 && post.status === 'PUBLISHED') {
+      const mentionedUsers = await this.prisma.user.findMany({
+        where: {
+          username: { in: mentionedUsernames },
+          isDeactivated: false,
+        },
+        select: { id: true },
+      });
+
+      for (const targetUser of mentionedUsers) {
+        if (targetUser.id !== authorId) {
+          await this.prisma.notification.create({
+            data: {
+              recipientId: targetUser.id,
+              type: 'MENTION',
+              actorId: authorId,
+              postId: post.id,
+            },
+          });
+        }
+      }
+    }
+
+    return post;
   }
 
   async findAllPublished(
@@ -101,9 +140,16 @@ export class PostsService {
     votedBy?: string,
     followingOf?: string,
     search?: string,
+    sort: 'latest' | 'top' = 'latest',
+    period: 'all' | 'week' | 'month' = 'all',
   ) {
     const skip = (page - 1) * limit;
-    const where: any = { status: 'PUBLISHED' as const };
+    const where: any = {
+      status: 'PUBLISHED' as const,
+      author: {
+        isDeactivated: false,
+      },
+    };
     
     if (authorId) {
       where.authorId = authorId;
@@ -113,7 +159,7 @@ export class PostsService {
       where.votes = {
         some: {
           userId: votedBy,
-          value: 1, // Only retrieve upvotes/likes
+          value: 1,
         },
       };
     }
@@ -125,6 +171,16 @@ export class PostsService {
             id: followingOf,
           },
         },
+      };
+    }
+
+    if (period === 'week') {
+      where.createdAt = {
+        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      };
+    } else if (period === 'month') {
+      where.createdAt = {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
       };
     }
 
@@ -143,7 +199,6 @@ export class PostsService {
           { author: { username: { contains: cleanSearch, mode: 'insensitive' } } },
         ];
 
-        // If it's a hashtag query, also search for the plain word in content/title to capture non-hashtag references
         if (isHashtag) {
           where.OR.push(
             { content: { contains: searchWord, mode: 'insensitive' } },
@@ -151,6 +206,29 @@ export class PostsService {
           );
         }
       }
+    }
+
+    if (sort === 'top') {
+      const allPosts = await this.prisma.post.findMany({
+        where,
+        include: this.postInclude,
+      });
+
+      const scored = allPosts
+        .map((post) => ({
+          post,
+          score:
+            (post._count?.votes ?? 0) * 2 +
+            (post._count?.comments ?? 0) * 3 +
+            (post._count?.reposts ?? 0) * 4 +
+            1,
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      const total = scored.length;
+      const paged = scored.slice(skip, skip + limit).map((entry) => entry.post);
+
+      return { posts: paged, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
 
     const [posts, total] = await Promise.all([
@@ -172,7 +250,11 @@ export class PostsService {
    */
   async findManyByIds(ids: string[]) {
     return this.prisma.post.findMany({
-      where: { id: { in: ids }, status: 'PUBLISHED' },
+      where: {
+        id: { in: ids },
+        status: 'PUBLISHED',
+        author: { isDeactivated: false },
+      },
       include: this.postInclude,
     });
   }
@@ -217,15 +299,35 @@ export class PostsService {
   }
 
   async update(id: string, userId: string, dto: UpdatePostDto) {
-    const post = await this.prisma.post.findUnique({ where: { id } });
+    const post = await this.prisma.post.findUnique({
+      where: { id },
+      include: { tags: true },
+    });
     if (!post) throw new NotFoundException('Post not found');
     if (post.authorId !== userId) throw new ForbiddenException('You can only edit your own posts');
 
-    const updateData: Record<string, unknown> = {};
+    const updateData: Record<string, any> = {};
     if (dto.title !== undefined) updateData.title = dto.title;
     if (dto.content !== undefined) updateData.content = dto.content;
     if (dto.status !== undefined) updateData.status = dto.status;
     if (dto.courseCode !== undefined) updateData.courseCode = dto.courseCode;
+    if (dto.images !== undefined) updateData.images = dto.images;
+
+    if (dto.tags !== undefined || dto.content !== undefined) {
+      const content = dto.content !== undefined ? dto.content : post.content;
+      const existingTagNames = post.tags.map((t) => t.name);
+      const explicitTags = dto.tags !== undefined ? dto.tags : existingTagNames;
+      const extractedTags = this.extractHashtags(content);
+      const mergedTags = Array.from(new Set([...explicitTags, ...extractedTags]));
+
+      updateData.tags = {
+        set: [],
+        connectOrCreate: mergedTags.map((tag) => ({
+          where: { name: tag },
+          create: { name: tag },
+        })),
+      };
+    }
 
     if (dto.event !== undefined) {
       if (dto.event === null) {
@@ -284,11 +386,50 @@ export class PostsService {
       }
     }
 
-    return this.prisma.post.update({
+    const updatedPost = await this.prisma.post.update({
       where: { id },
       data: updateData,
       include: this.postInclude,
     });
+
+    // Handle mentions
+    const finalContent = dto.content !== undefined ? dto.content : post.content;
+    const mentionedUsernames = this.extractMentions(finalContent);
+    if (mentionedUsernames.length > 0 && (dto.status === 'PUBLISHED' || post.status === 'PUBLISHED')) {
+      const mentionedUsers = await this.prisma.user.findMany({
+        where: {
+          username: { in: mentionedUsernames },
+          isDeactivated: false,
+        },
+        select: { id: true },
+      });
+
+      for (const targetUser of mentionedUsers) {
+        if (targetUser.id !== userId) {
+          const existingNotif = await this.prisma.notification.findFirst({
+            where: {
+              recipientId: targetUser.id,
+              type: 'MENTION',
+              actorId: userId,
+              postId: id,
+            },
+          });
+
+          if (!existingNotif) {
+            await this.prisma.notification.create({
+              data: {
+                recipientId: targetUser.id,
+                type: 'MENTION',
+                actorId: userId,
+                postId: id,
+              },
+            });
+          }
+        }
+      }
+    }
+
+    return updatedPost;
   }
 
   async publish(id: string, userId: string) {
@@ -357,7 +498,7 @@ export class PostsService {
       if (parentComment.postId !== postId) throw new BadRequestException('Parent comment does not belong to this post');
     }
 
-    return this.prisma.comment.create({
+    const comment = await this.prisma.comment.create({
       data: {
         content: dto.content,
         postId,
@@ -370,6 +511,34 @@ export class PostsService {
         },
       },
     });
+
+    // Handle mentions in comments
+    const mentionedUsernames = this.extractMentions(dto.content);
+    if (mentionedUsernames.length > 0) {
+      const mentionedUsers = await this.prisma.user.findMany({
+        where: {
+          username: { in: mentionedUsernames },
+          isDeactivated: false,
+        },
+        select: { id: true },
+      });
+
+      for (const targetUser of mentionedUsers) {
+        if (targetUser.id !== authorId) {
+          await this.prisma.notification.create({
+            data: {
+              recipientId: targetUser.id,
+              type: 'MENTION',
+              actorId: authorId,
+              postId,
+              commentId: comment.id,
+            },
+          });
+        }
+      }
+    }
+
+    return comment;
   }
 
   async deleteComment(postId: string, commentId: string, userId: string) {
@@ -387,6 +556,32 @@ export class PostsService {
       return new Date(`${dateStr}T${timeStr}:00`);
     }
     return new Date(`${dateStr}T00:00:00`);
+  }
+
+  private extractHashtags(text: string): string[] {
+    const hashtagRegex = /#([a-zA-Z0-9_-]+)/g;
+    const matches: string[] = [];
+    let match;
+    while ((match = hashtagRegex.exec(text)) !== null) {
+      const tag = match[1].toLowerCase().trim();
+      if (tag && !matches.includes(tag)) {
+        matches.push(tag);
+      }
+    }
+    return matches;
+  }
+
+  private extractMentions(text: string): string[] {
+    const mentionRegex = /@([a-zA-Z0-9_-]+)/g;
+    const matches: string[] = [];
+    let match;
+    while ((match = mentionRegex.exec(text)) !== null) {
+      const username = match[1].trim();
+      if (username && !matches.includes(username)) {
+        matches.push(username);
+      }
+    }
+    return matches;
   }
 
   async repost(userId: string, postId: string) {
@@ -488,5 +683,19 @@ export class PostsService {
     ]);
 
     return { posts, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async findDistinctCourseCodes() {
+    const posts = await this.prisma.post.findMany({
+      where: {
+        status: 'PUBLISHED',
+        courseCode: { not: null, not: '' },
+      },
+      select: {
+        courseCode: true,
+      },
+      distinct: ['courseCode'],
+    });
+    return posts.map((p) => p.courseCode).filter(Boolean);
   }
 }

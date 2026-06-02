@@ -573,6 +573,8 @@ export function ProfilePage() {
                   }}
                   votes={post.votes}
                   bookmarks={post.bookmarks}
+                  images={post.images}
+                  tags={post.tags}
                   originalPost={post.originalPost}
                   originalPostId={post.originalPostId}
                 />

@@ -34,6 +34,7 @@ export interface CreatePostDto {
     question: string;
     options: string[];
   } | null;
+  tags?: string[];
 }
 
 export interface UpdatePostDto {
@@ -52,6 +53,7 @@ export interface UpdatePostDto {
     question: string;
     options: string[];
   } | null;
+  tags?: string[];
 }
 
 export interface CreateCommentDto {
@@ -84,4 +86,23 @@ export interface UpdateProfileDto {
   avatar?: string | null;
   banner?: string | null;
 }
+
+export interface UpdatePasswordDto {
+  currentPassword?: string;
+  newPassword?: string;
+}
+
+export interface UpdateEmailDto {
+  email?: string;
+  currentPassword?: string;
+}
+
+export interface UpdatePreferencesDto {
+  emailNotifications?: boolean;
+  pushNotifications?: boolean;
+  weeklyDigest?: boolean;
+  profilePrivacy?: 'PUBLIC' | 'CAMPUS_ONLY' | 'PRIVATE';
+  showReputation?: boolean;
+}
+
 

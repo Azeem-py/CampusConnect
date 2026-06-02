@@ -1,10 +1,11 @@
-import { Controller, Get, Patch, Post, Param, Body, Req, UseGuards, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Param, Body, Query, Req, Res, UseGuards, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiBody } from '@nestjs/swagger';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdatePasswordDto, UpdateEmailDto, UpdatePreferencesDto } from './dto/update-settings.dto';
 
 @ApiTags('Users')
 @Controller('api/v1/users')
@@ -128,6 +129,15 @@ export class UsersController {
     return this.usersService.getSuggestedScholars(userId);
   }
 
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Search scholars by name or username for mentions' })
+  @ApiCookieAuth('token')
+  @ApiResponse({ status: 200, description: 'Matching scholars list retrieved successfully' })
+  async searchScholars(@Query('q') q: string) {
+    return this.usersService.searchScholars(q || '');
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get a user profile by ID' })
@@ -166,5 +176,57 @@ export class UsersController {
     if (!user) throw new NotFoundException('User not found');
     const { password: _, refreshTokenHash: __, ...userWithoutSensitive } = user;
     return userWithoutSensitive;
+  }
+
+  @Patch('me/password')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Change current user password' })
+  @ApiCookieAuth('token')
+  @ApiBody({ type: UpdatePasswordDto })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Incorrect current password or invalid new password' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updatePassword(@Body() dto: UpdatePasswordDto, @Req() req: Request) {
+    const userId = (req as any).user.id;
+    return this.usersService.updatePassword(userId, dto);
+  }
+
+  @Patch('me/email')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Change current user email address' })
+  @ApiCookieAuth('token')
+  @ApiBody({ type: UpdateEmailDto })
+  @ApiResponse({ status: 200, description: 'Email updated successfully' })
+  @ApiResponse({ status: 400, description: 'Incorrect password or email already taken' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateEmail(@Body() dto: UpdateEmailDto, @Req() req: Request) {
+    const userId = (req as any).user.id;
+    return this.usersService.updateEmail(userId, dto);
+  }
+
+  @Patch('me/preferences')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update notification and privacy preferences' })
+  @ApiCookieAuth('token')
+  @ApiBody({ type: UpdatePreferencesDto })
+  @ApiResponse({ status: 200, description: 'Preferences updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updatePreferences(@Body() dto: UpdatePreferencesDto, @Req() req: Request) {
+    const userId = (req as any).user.id;
+    return this.usersService.updatePreferences(userId, dto);
+  }
+
+  @Post('me/deactivate')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Deactivate current user account' })
+  @ApiCookieAuth('token')
+  @ApiResponse({ status: 200, description: 'Account deactivated successfully. Tokens cleared.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deactivateAccount(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const userId = (req as any).user.id;
+    const result = await this.usersService.deactivateAccount(userId);
+    res.clearCookie('token', { path: '/' });
+    res.clearCookie('refreshToken', { path: '/' });
+    return result;
   }
 }

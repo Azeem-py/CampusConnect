@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Sidebar } from "../components/layout/Sidebar"
 import { PostComposer } from "../components/feed/PostComposer"
 import { FeedTabs } from "../components/feed/FeedTabs"
+import { FeedSubTabs } from "../components/feed/FeedSubTabs"
 import { FeedCard } from "../components/feed/FeedCard"
 import { TrendingWidget } from "../components/widgets/TrendingWidget"
 import { ScholarsWidget } from "../components/widgets/ScholarsWidget"
@@ -12,6 +13,12 @@ import { useAuth } from "../contexts/AuthContext"
 const tabs = [
   { id: "for-you", label: "For You" },
   { id: "following", label: "Following" },
+]
+
+const timeTabs = [
+  { id: "latest", label: "Latest" },
+  { id: "week", label: "This Week" },
+  { id: "month", label: "This Month" },
 ]
 
 function FeedSkeleton() {
@@ -45,12 +52,19 @@ function FeedSkeleton() {
 export function HomePage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("for-you")
+  const [timeRange, setTimeRange] = useState<"latest" | "week" | "month">("latest")
+
+  const sort = timeRange === "latest" ? "latest" : "top"
+  const period = timeRange === "latest" ? "all" : timeRange
   
   // Fetch posts. If activeTab is "following", pass user.id to query only followed posts
   const { data, isLoading, error } = usePosts(
-    1, 
-    20, 
-    activeTab === "following" ? user?.id : undefined
+    1,
+    20,
+    activeTab === "following" ? user?.id : undefined,
+    undefined,
+    sort,
+    period,
   )
 
   const posts = data?.posts || []
@@ -64,6 +78,7 @@ export function HomePage() {
           <PostComposer />
 
           <FeedTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
+          <FeedSubTabs tabs={timeTabs} active={timeRange} onChange={(id) => setTimeRange(id as "latest" | "week" | "month")} />
 
           {isLoading ? (
             <FeedSkeleton />
@@ -112,6 +127,8 @@ export function HomePage() {
                     event={post.event}
                     poll={post.poll}
                     votes={post.votes}
+                    images={post.images}
+                    tags={post.tags}
                     originalPost={post.originalPost}
                     originalPostId={post.originalPostId}
                   />

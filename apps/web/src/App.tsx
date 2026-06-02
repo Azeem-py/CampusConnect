@@ -9,6 +9,8 @@ import { ExplorePage } from "./pages/ExplorePage"
 import { ProfilePage } from "./pages/ProfilePage"
 import { CreatePostPage } from "./pages/CreatePostPage"
 import { NotificationsPage } from "./pages/NotificationsPage"
+import { SettingsPage } from "./pages/SettingsPage"
+import { PostDetailPage } from "./pages/PostDetailPage"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -42,6 +44,8 @@ function App() {
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreatePostPage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/post/:id" element={<ProtectedRoute><PostDetailPage /></ProtectedRoute>} />
           </Routes>
         </AppLayout>
       </AuthProvider>

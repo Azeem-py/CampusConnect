@@ -157,6 +157,8 @@ export function ExplorePage() {
                     event={post.event}
                     poll={post.poll}
                     votes={post.votes}
+                    images={post.images}
+                    tags={post.tags}
                     originalPost={post.originalPost}
                     originalPostId={post.originalPostId}
                   />

@@ -88,6 +88,7 @@ describe('UsersService - getSuggestedScholars', () => {
           id: {
             notIn: ['u1', 'u2'],
           },
+          isDeactivated: false,
         },
         select: expect.any(Object),
       });

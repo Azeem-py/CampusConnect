@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react"
+import { Link } from "react-router-dom"
 import {
   Bell,
   Heart,
@@ -357,9 +358,11 @@ export function NotificationsPage() {
             <p className="text-body-sm text-on-surface-variant font-inter leading-relaxed">
               You're receiving notifications for likes, follows, comments, and mentions.
             </p>
-            <button className="mt-3 text-label-sm text-primary font-geist font-medium hover:underline">
-              Manage preferences →
-            </button>
+            <Link to="/settings">
+              <button className="mt-3 text-label-sm text-primary font-geist font-medium hover:underline cursor-pointer">
+                Manage preferences →
+              </button>
+            </Link>
           </div>
         </aside>
       </div>

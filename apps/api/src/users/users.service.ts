@@ -1,7 +1,9 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpgradeBusinessDto } from '@campus-connect/types';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdatePasswordDto, UpdateEmailDto, UpdatePreferencesDto } from './dto/update-settings.dto';
 import { InteractionMatrixService } from '../recommendations/interaction-matrix.service';
 
 @Injectable()
@@ -175,6 +177,7 @@ export class UsersService {
         id: {
           notIn: [userId, ...Array.from(followedIds)],
         },
+        isDeactivated: false,
       },
       select: {
         id: true,
@@ -294,6 +297,98 @@ export class UsersService {
     scoredScholars.sort((a, b) => b.score - a.score);
 
     return scoredScholars.slice(0, 5).map(({ score: _, ...rest }) => rest);
+  }
+
+  async searchScholars(query: string) {
+    const clean = query.trim();
+    if (!clean) return [];
+    return this.prisma.user.findMany({
+      where: {
+        isDeactivated: false,
+        OR: [
+          { name: { contains: clean, mode: 'insensitive' } },
+          { username: { contains: clean, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        avatar: true,
+        department: true,
+        major: true,
+      },
+      take: 10,
+    });
+  }
+
+  async updatePassword(userId: string, dto: UpdatePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new BadRequestException('User not found');
+
+    const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return { message: 'Password updated successfully' };
+  }
+
+  async updateEmail(userId: string, dto: UpdateEmailDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new BadRequestException('User not found');
+
+    const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (existing && existing.id !== userId) {
+      throw new BadRequestException('An account with this email already exists');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { email: dto.email },
+    });
+
+    const { password: _, refreshTokenHash: __, ...userWithoutSensitive } = updatedUser;
+    return userWithoutSensitive;
+  }
+
+  async updatePreferences(userId: string, dto: UpdatePreferencesDto) {
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: dto,
+    });
+
+    const { password: _, refreshTokenHash: __, ...userWithoutSensitive } = updatedUser;
+    return userWithoutSensitive;
+  }
+
+  async deactivateAccount(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        isDeactivated: true,
+        refreshTokenHash: null,
+      },
+    });
+
+    return { message: 'Account deactivated successfully' };
   }
 }
 

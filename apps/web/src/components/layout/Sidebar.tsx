@@ -1,4 +1,4 @@
-import { Home, Compass, Bell, User, Plus } from "lucide-react"
+import { Home, Compass, Bell, User, Plus, Settings } from "lucide-react"
 import { NavLink, Link } from "react-router-dom"
 import { cn } from "../../lib/utils"
 import { Avatar } from "../ui/Avatar"
@@ -10,6 +10,7 @@ const navItems = [
   { to: "/explore", icon: Compass, label: "Explore" },
   { to: "/notifications", icon: Bell, label: "Alerts" },
   { to: "/profile", icon: User, label: "Profile" },
+  { to: "/settings", icon: Settings, label: "Settings" },
 ]
 
 export function Sidebar() {

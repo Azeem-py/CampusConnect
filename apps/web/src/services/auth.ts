@@ -46,6 +46,12 @@ export interface User {
   createdAt: string;
   following?: ConnectionUser[];
   followers?: ConnectionUser[];
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  weeklyDigest: boolean;
+  profilePrivacy: 'PUBLIC' | 'CAMPUS_ONLY' | 'PRIVATE';
+  showReputation: boolean;
+  isDeactivated: boolean;
 }
 
 const CURRENT_USER_KEY = ['currentUser'];
@@ -132,6 +138,75 @@ export function useUpdateProfile() {
   });
 }
 
+export interface UpdatePasswordPayload {
+  currentPassword?: string;
+  newPassword?: string;
+}
+
+export function useUpdatePassword() {
+  return useMutation<{ message: string }, Error, UpdatePasswordPayload>({
+    mutationFn: async (payload) => {
+      const { data } = await api.patch('/users/me/password', payload);
+      return data;
+    },
+  });
+}
+
+export interface UpdateEmailPayload {
+  email?: string;
+  currentPassword?: string;
+}
+
+export function useUpdateEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation<User, Error, UpdateEmailPayload>({
+    mutationFn: async (payload) => {
+      const { data } = await api.patch('/users/me/email', payload);
+      return data as User;
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(CURRENT_USER_KEY, updatedUser);
+    },
+  });
+}
+
+export interface UpdatePreferencesPayload {
+  emailNotifications?: boolean;
+  pushNotifications?: boolean;
+  weeklyDigest?: boolean;
+  profilePrivacy?: 'PUBLIC' | 'CAMPUS_ONLY' | 'PRIVATE';
+  showReputation?: boolean;
+}
+
+export function useUpdatePreferences() {
+  const queryClient = useQueryClient();
+
+  return useMutation<User, Error, UpdatePreferencesPayload>({
+    mutationFn: async (payload) => {
+      const { data } = await api.patch('/users/me/preferences', payload);
+      return data as User;
+    },
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(CURRENT_USER_KEY, updatedUser);
+    },
+  });
+}
+
+export function useDeactivateAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation<{ message: string }, Error, void>({
+    mutationFn: async () => {
+      const { data } = await api.post('/users/me/deactivate');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(CURRENT_USER_KEY, null);
+    },
+  });
+}
+
 export function useFollowUser() {
   const queryClient = useQueryClient();
 
@@ -192,6 +267,27 @@ export function useSuggestedScholars() {
       return data;
     },
     staleTime: 2 * 60 * 1000,
+  });
+}
+
+export interface SearchedScholar {
+  id: string;
+  name: string | null;
+  username: string;
+  avatar: string | null;
+  department: string | null;
+  major: string | null;
+}
+
+export function useSearchScholars(query: string, enabled = true) {
+  return useQuery<SearchedScholar[]>({
+    queryKey: ['users', 'search', query],
+    queryFn: async () => {
+      const { data } = await api.get('/users/search', { params: { q: query } });
+      return data;
+    },
+    enabled: !!query.trim() && enabled,
+    staleTime: 60_000,
   });
 }
 

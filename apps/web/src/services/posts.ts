@@ -21,6 +21,8 @@ export interface CreatePostPayload {
   courseCode?: string;
   event?: EventData | null;
   poll?: PollData | null;
+  images?: string[];
+  tags?: string[];
 }
 
 export interface UpdatePostPayload {
@@ -30,6 +32,7 @@ export interface UpdatePostPayload {
   courseCode?: string;
   event?: EventData | null;
   poll?: PollData | null;
+  tags?: string[];
 }
 
 export interface PostAuthor {
@@ -70,6 +73,8 @@ export interface Post {
   author: PostAuthor;
   event: PostEvent | null;
   poll: PostPoll | null;
+  images: string[];
+  tags?: { id: string; name: string }[];
   votes?: { userId: string; value: number }[];
   bookmarks?: { userId: string }[];
   originalPostId?: string | null;
@@ -130,11 +135,18 @@ const DRAFTS_KEY = ['posts', 'drafts'];
 const EVENTS_KEY = ['events'];
 const postKey = (id: string) => ['posts', id];
 
-export function usePosts(page = 1, limit = 20, followingOf?: string, search?: string) {
+export function usePosts(
+  page = 1,
+  limit = 20,
+  followingOf?: string,
+  search?: string,
+  sort: 'latest' | 'top' = 'latest',
+  period: 'all' | 'week' | 'month' = 'all',
+) {
   return useQuery<PaginatedResponse>({
-    queryKey: [...POSTS_KEY, { page, limit, followingOf, search }],
+    queryKey: [...POSTS_KEY, { page, limit, followingOf, search, sort, period }],
     queryFn: async () => {
-      const { data } = await api.get('/posts', { params: { page, limit, followingOf, search } });
+      const { data } = await api.get('/posts', { params: { page, limit, followingOf, search, sort, period } });
       return data;
     },
     staleTime: 30_000,
@@ -386,5 +398,16 @@ export function useBookmarkedPosts(page = 1, limit = 20) {
       return data;
     },
     staleTime: 30_000,
+  });
+}
+
+export function useCourseCodes() {
+  return useQuery<string[]>({
+    queryKey: ['posts', 'course-codes'],
+    queryFn: async () => {
+      const { data } = await api.get('/posts/course-codes');
+      return data;
+    },
+    staleTime: 300_000,
   });
 }

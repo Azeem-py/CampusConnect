@@ -75,6 +75,7 @@ export class TrendingService {
         content: true,
         courseCode: true,
         createdAt: true,
+        tags: true,
         _count: {
           select: {
             votes: true,
@@ -123,6 +124,16 @@ export class TrendingService {
       const courseCodeRegex = /\b([a-zA-Z]{3,4}\d{3})\b/g;
       while ((match = courseCodeRegex.exec(post.content)) !== null) {
         tags.add(`#${match[1].toUpperCase()}`);
+      }
+
+      // 4. Custom post hashtags (e.g. #React, #MachineLearning)
+      if (post.tags && post.tags.length > 0) {
+        post.tags.forEach((t: any) => {
+          const clean = (typeof t === 'string' ? t : t.name).trim();
+          if (clean) {
+            tags.add(clean.startsWith('#') ? clean : `#${clean}`);
+          }
+        });
       }
 
       // Accumulate scores for each unique tag in the post

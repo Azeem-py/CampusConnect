@@ -26,12 +26,23 @@ model User {
   banner            String?          @db.Text
   refreshTokenHash  String?
   reputationScore   Int              @default(0)
+  
+  // Settings & Preferences
+  emailNotifications Boolean          @default(true)
+  pushNotifications  Boolean          @default(true)
+  weeklyDigest       Boolean          @default(true)
+  profilePrivacy     String           @default("PUBLIC") // PUBLIC, CAMPUS_ONLY, PRIVATE
+  showReputation     Boolean          @default(true)
+  isDeactivated      Boolean          @default(false)
+
   posts           Post[]
   businessProfile BusinessProfile?
   votes           Vote[]
   pollVotes       PollVote[]
   comments        Comment[]
   bookmarks       Bookmark[]
+  notifications   Notification[]   @relation("UserNotifications")
+  sentNotifications Notification[] @relation("NotificationSender")
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   followers       User[]           @relation("UserFollows")
@@ -64,6 +75,9 @@ model Post {
   votes      Vote[]
   comments   Comment[]
   bookmarks  Bookmark[]
+  images     String[]   @default([])
+  tags       Tag[]      @relation("PostTags")
+  notifications Notification[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
@@ -142,6 +156,7 @@ model Comment {
   parentId  String?
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   Comment[] @relation("CommentReplies")
+  notifications Notification[]
 
   @@index([postId])
   @@index([authorId])
@@ -181,4 +196,37 @@ model Bookmark {
   @@unique([userId, postId])
   @@index([userId])
   @@index([postId])
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  posts     Post[]   @relation("PostTags")
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  recipientId String
+  recipient   User             @relation("UserNotifications", fields: [recipientId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  actorId     String?
+  actor       User?            @relation("NotificationSender", fields: [actorId], references: [id], onDelete: Cascade)
+  postId      String?
+  post        Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
+  commentId   String?
+  comment     Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  unread      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+
+  @@index([recipientId])
+}
+
+enum NotificationType {
+  MENTION
+  LIKE
+  COMMENT
+  REPOST
+  FOLLOW
+  SYSTEM
 }

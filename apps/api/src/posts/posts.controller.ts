@@ -44,6 +44,8 @@ export class PostsController {
   @ApiQuery({ name: 'votedBy', required: false, example: 'clxyzabc123def456' })
   @ApiQuery({ name: 'followingOf', required: false, example: 'clxyzabc123def456' })
   @ApiQuery({ name: 'search', required: false, example: '#STA201' })
+  @ApiQuery({ name: 'sort', required: false, enum: ['latest', 'top'], description: 'Sort order: latest (by date) or top (by engagement score)' })
+  @ApiQuery({ name: 'period', required: false, enum: ['all', 'week', 'month'], description: 'Time period filter: all time, past week, or past month' })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -51,7 +53,15 @@ export class PostsController {
     @Query('votedBy') votedBy?: string,
     @Query('followingOf') followingOf?: string,
     @Query('search') search?: string,
+    @Query('sort') sort?: string,
+    @Query('period') period?: string,
   ) {
+    const validSorts = ['latest', 'top'] as const;
+    const validPeriods = ['all', 'week', 'month'] as const;
+
+    const resolvedSort = validSorts.includes(sort as any) ? (sort as 'latest' | 'top') : 'latest';
+    const resolvedPeriod = validPeriods.includes(period as any) ? (period as 'all' | 'week' | 'month') : 'all';
+
     return this.postsService.findAllPublished(
       Number(page) || 1,
       Number(limit) || 20,
@@ -59,6 +69,8 @@ export class PostsController {
       votedBy,
       followingOf,
       search,
+      resolvedSort,
+      resolvedPeriod,
     );
   }
 
@@ -95,6 +107,12 @@ export class PostsController {
       .map((id) => posts.find((p) => p.id === id))
       .filter(Boolean);
     return { posts: ordered, total: ordered.length };
+  }
+
+  @Get('course-codes')
+  @ApiOperation({ summary: 'Get all distinct course codes used across published posts' })
+  async findDistinctCourseCodes() {
+    return this.postsService.findDistinctCourseCodes();
   }
 
   @Get(':id')

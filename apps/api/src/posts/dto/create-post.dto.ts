@@ -66,6 +66,12 @@ export class CreatePostDto {
   @IsString()
   courseCode?: string;
 
+  @ApiPropertyOptional({ type: [String], example: ['data:image/png;base64,...'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
+
   @ApiPropertyOptional({ type: EventDto })
   @IsOptional()
   @ValidateNested()
@@ -77,4 +83,10 @@ export class CreatePostDto {
   @ValidateNested()
   @Type(() => PollDto)
   poll?: PollDto;
+
+  @ApiPropertyOptional({ type: [String], example: ['ai', 'nextjs'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

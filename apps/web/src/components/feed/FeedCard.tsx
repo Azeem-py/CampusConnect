@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Calendar, Vote as VoteIcon, Check, Trash2, Loader2, ChevronUp, ChevronDown } from "lucide-react"
+import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Calendar, Vote as VoteIcon, Check, Trash2, Loader2, ChevronUp, ChevronDown, Share2, Copy } from "lucide-react"
 import { Avatar } from "../ui/Avatar"
 import { Tag } from "../ui/Tag"
 import { cn, formatDistanceToNow } from "../../lib/utils"
@@ -33,6 +33,9 @@ interface FeedCardProps {
   bookmarks?: { userId: string }[]
   originalPostId?: string | null
   originalPost?: any | null
+  images?: string[]
+  tags?: (string | { id: string; name: string })[]
+  isDetailPage?: boolean
 }
 
 function getAvatarUrl(name: string) {
@@ -54,6 +57,9 @@ export function FeedCard({
   bookmarks = [],
   originalPostId,
   originalPost,
+  images = [],
+  tags = [],
+  isDetailPage = false,
 }: FeedCardProps) {
   const navigate = useNavigate()
   const { user: currentUser } = useAuth()
@@ -80,6 +86,8 @@ export function FeedCard({
   const displayId = isSimpleRepost ? originalPost.id : id
   const displayVotes = isSimpleRepost ? originalPost.votes : votes
   const displayBookmarks = isSimpleRepost ? (originalPost.bookmarks ?? []) : bookmarks
+  const displayImages = isSimpleRepost ? (originalPost.images ?? []) : (images ?? [])
+  const displayTags = isSimpleRepost ? (originalPost.tags ?? []) : (tags ?? [])
 
   const [likes, setLikes] = useState(displayLikes)
   const [shares, setShares] = useState(displayShares)
@@ -91,6 +99,8 @@ export function FeedCard({
   const [isRepostMenuOpen, setIsRepostMenuOpen] = useState(false)
   const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false)
   const [quoteCommentary, setQuoteCommentary] = useState("")
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
 
   // Sync likes and liked status reactively when user or votes list loads
   useEffect(() => {
@@ -205,6 +215,26 @@ export function FeedCard({
     )
   }
 
+  // Lightbox index and arrow keyboard controls
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (lightboxIndex === null || !displayImages || displayImages.length === 0) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxIndex(null)
+      if (e.key === "ArrowLeft") {
+        setLightboxIndex((prev) => (prev! - 1 + displayImages.length) % displayImages.length)
+      }
+      if (e.key === "ArrowRight") {
+        setLightboxIndex((prev) => (prev! + 1) % displayImages.length)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [lightboxIndex, displayImages])
+
   function handleLike() {
     const targetPostId = displayId || id
     if (!targetPostId || voteSocial.isPending) return
@@ -275,7 +305,17 @@ export function FeedCard({
   }
 
   return (
-    <div className="bg-white border border-gray-200/80 rounded-xl p-4 space-y-3 transition-all duration-200 hover:border-gray-300/80 hover:shadow-sm">
+    <div 
+      onClick={() => {
+        if (!isDetailPage && displayId) {
+          navigate(`/post/${displayId}`)
+        }
+      }}
+      className={cn(
+        "bg-white border border-gray-200/80 rounded-xl p-4 space-y-3 transition-all duration-200",
+        !isDetailPage ? "hover:border-gray-300/80 hover:shadow-sm cursor-pointer" : ""
+      )}
+    >
       {isSimpleRepost && (
         <div className="flex items-center gap-1.5 text-[12px] text-gray-500 font-geist pb-1.5 border-b border-gray-100">
           <Repeat2 size={14} className="text-green-600 stroke-[2.5]" />
@@ -285,7 +325,10 @@ export function FeedCard({
 
       <div className="flex items-start justify-between">
         <div 
-          onClick={() => displayAuthor.id && navigate(`/profile?userId=${displayAuthor.id}`)}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (displayAuthor.id) navigate(`/profile?userId=${displayAuthor.id}`)
+          }}
           className="flex items-center gap-3 cursor-pointer group/author"
         >
           <Avatar 
@@ -311,7 +354,10 @@ export function FeedCard({
         <div className="flex items-center gap-2">
           {!isSelf && displayAuthor.id && !isSimpleRepost && (
             <button
-              onClick={handleFollowToggle}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleFollowToggle()
+              }}
               disabled={followUser.isPending || unfollowUser.isPending}
               className={cn(
                 "px-3.5 py-1 text-[12px] font-geist font-semibold rounded-full transition-all duration-150 cursor-pointer select-none",
@@ -323,7 +369,10 @@ export function FeedCard({
               {isFollowing ? "Following" : "Follow"}
             </button>
           )}
-          <button className="text-gray-400 hover:text-gray-600 p-1">
+          <button 
+            onClick={(e) => e.stopPropagation()} 
+            className="text-gray-400 hover:text-gray-600 p-1"
+          >
             <MoreHorizontal size={16} />
           </button>
         </div>
@@ -348,13 +397,79 @@ export function FeedCard({
           <span>{departmentName}</span>
         </div>
       )}
-
       {displayContent && (
         <div className="text-[14px] text-gray-800 font-inter leading-relaxed whitespace-pre-wrap break-words">
           {renderEnhancedPreview(displayContent)}
         </div>
       )}
 
+      {/* Real-time Clickable Hashtag List */}
+      {displayTags && displayTags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {displayTags.map((tagObj: any) => {
+            const tag = typeof tagObj === "string" ? tagObj : tagObj.name
+            return (
+              <span
+                key={tag}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigate(`/explore?query=${encodeURIComponent('#' + tag)}`)
+                }}
+                className="text-[13px] font-semibold font-geist text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
+              >
+                #{tag}
+              </span>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Render Attached Image Gallery Grid */}
+      {displayImages && displayImages.length > 0 && (
+        <div className={cn(
+          "grid gap-2 rounded-xl overflow-hidden mt-3 border border-gray-200/50",
+          displayImages.length === 1 ? "grid-cols-1" : "grid-cols-2"
+        )}>
+          {displayImages.slice(0, 4).map((src: string, index: number) => {
+            const total = displayImages.length
+            let gridClass = "h-[160px]"
+            if (total === 1) {
+              gridClass = "w-full max-h-[360px] object-cover"
+            } else if (total === 3 && index === 0) {
+              gridClass = "row-span-2 col-span-1 h-full min-h-[240px]"
+            } else if (total === 3) {
+              gridClass = "col-span-1 h-[116px]"
+            }
+
+            return (
+              <div 
+                key={index} 
+                className={cn(
+                  "relative overflow-hidden cursor-pointer group bg-gray-50", 
+                  gridClass
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxIndex(index);
+                }}
+              >
+                <img 
+                  src={src} 
+                  alt={`Attachment ${index + 1}`} 
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" 
+                />
+                
+                {total > 4 && index === 3 && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center text-white font-geist font-bold text-lg select-none">
+                    +{total - 3}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+ 
       {/* Render Nested Original Post Preview (For Quote Posts) */}
       {originalPost && !isSimpleRepost && (
         <div 
@@ -380,6 +495,31 @@ export function FeedCard({
           {originalPost.content && (
             <div className="text-[13px] text-gray-700 font-inter leading-relaxed line-clamp-3">
               {renderEnhancedPreview(originalPost.content)}
+            </div>
+          )}
+          {originalPost.images && originalPost.images.length > 0 && (
+            <div className={cn(
+              "grid gap-1 rounded-lg overflow-hidden mt-2 border border-gray-200/40",
+              originalPost.images.length === 1 ? "grid-cols-1" : "grid-cols-2"
+            )}>
+              {originalPost.images.slice(0, 4).map((src: string, index: number) => {
+                const total = originalPost.images.length
+                let gridClass = "h-20"
+                if (total === 1) gridClass = "w-full max-h-36 object-cover"
+                else if (total === 3 && index === 0) gridClass = "row-span-2 col-span-1 h-full min-h-[82px]"
+                else if (total === 3) gridClass = "col-span-1 h-[40px]"
+
+                return (
+                  <div key={index} className={cn("relative overflow-hidden bg-gray-100", gridClass)}>
+                    <img src={src} alt={`Attachment ${index + 1}`} className="w-full h-full object-cover" />
+                    {total > 4 && index === 3 && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-geist font-bold text-xs">
+                        +{total - 3}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -428,7 +568,10 @@ export function FeedCard({
                   <button
                     key={option.id}
                     disabled={votePoll.isPending}
-                    onClick={() => handleVote(option.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleVote(option.id)
+                    }}
                     className={cn(
                       "relative w-full text-left p-2.5 rounded-lg border border-amber-200/50 bg-white font-inter text-[13px] text-gray-800 transition-all duration-200 overflow-hidden flex items-center justify-between",
                       isSelected ? "border-amber-500 ring-1 ring-amber-500" : "hover:border-amber-400"
@@ -461,7 +604,10 @@ export function FeedCard({
 
       <div className="flex items-center gap-5 pt-1 border-t border-gray-100">
         <button
-          onClick={handleLike}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleLike()
+          }}
           className={cn(
             "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5 cursor-pointer select-none",
             liked ? "text-red-500" : "text-gray-400 hover:text-red-500"
@@ -471,7 +617,18 @@ export function FeedCard({
           {likes}
         </button>
         <button
-          onClick={() => setShowComments((prev) => !prev)}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (isDetailPage) {
+              const commentInput = document.getElementById("post-detail-comment-input")
+              if (commentInput) {
+                commentInput.scrollIntoView({ behavior: "smooth" })
+                commentInput.focus()
+              }
+            } else {
+              setShowComments((prev) => !prev)
+            }
+          }}
           className={cn(
             "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5 cursor-pointer select-none",
             showComments ? "text-blue-600 font-semibold" : "text-gray-400 hover:text-blue-600"
@@ -554,7 +711,10 @@ export function FeedCard({
           )}
         </div>
         <button
-          onClick={handleBookmark}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleBookmark()
+          }}
           className={cn(
             "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5 ml-auto cursor-pointer select-none",
             bookmarked ? "text-blue-600" : "text-gray-400 hover:text-blue-600"
@@ -562,9 +722,124 @@ export function FeedCard({
         >
           <Bookmark size={16} fill={bookmarked ? "currentColor" : "none"} />
         </button>
+
+        {/* Dedicated Social Media Share Dropdown Menu */}
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsShareMenuOpen(!isShareMenuOpen)
+            }}
+            className={cn(
+              "flex items-center gap-1.5 text-[13px] font-geist transition-colors py-1.5 cursor-pointer select-none text-gray-400 hover:text-blue-600",
+              isShareMenuOpen && "text-blue-600 font-semibold"
+            )}
+          >
+            <Share2 size={16} />
+          </button>
+
+          {isShareMenuOpen && (() => {
+            const postUrl = `${window.location.origin}/post/${displayId || id}`
+            const shareText = `Check out this academic discussion on Scholarsphere: "${displayContent ? (displayContent.substring(0, 80) + '...') : ''}"`
+            
+            const handleCopyLink = (e: React.MouseEvent) => {
+              e.stopPropagation()
+              navigator.clipboard.writeText(postUrl)
+              setShareCopied(true)
+              setTimeout(() => setShareCopied(false), 2000)
+            }
+
+            return (
+              <>
+                <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setIsShareMenuOpen(false); }} />
+                <div className="absolute right-0 mt-2 w-52 bg-surface-container-lowest/95 backdrop-blur-md border border-outline-variant/60 rounded-xl shadow-xl z-30 p-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* Copy Link Option */}
+                  <button
+                    onClick={handleCopyLink}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container-high/80 flex items-center gap-2.5 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-on-surface"
+                  >
+                    <div className={cn(
+                      "p-1.5 rounded-md transition-all duration-200",
+                      shareCopied ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-500"
+                    )}>
+                      {shareCopied ? <Check size={14} className="stroke-[2.5]" /> : <Copy size={14} />}
+                    </div>
+                    <span>{shareCopied ? "Link Copied!" : "Copy Link"}</span>
+                  </button>
+
+                  <div className="h-px bg-outline-variant/30 my-1" />
+
+                  {/* Share on WhatsApp */}
+                  <a
+                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + postUrl)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => { e.stopPropagation(); setIsShareMenuOpen(false); }}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container-high/80 flex items-center gap-2.5 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-on-surface"
+                  >
+                    <div className="p-1.5 rounded-md bg-green-50 text-green-600 flex items-center justify-center w-[26px] h-[26px]">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-green-600">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.855.002-2.633-1.02-5.107-2.88-6.97C16.59 1.955 14.12 1.95 11.998 1.95c-5.438 0-9.863 4.419-9.867 9.856-.001 1.764.47 3.49 1.365 5.031L2.43 21.57l4.217-1.102zM18.06 14.9c-.33-.165-1.937-.954-2.235-1.063-.298-.11-.515-.165-.73.165-.213.33-.828 1.063-1.014 1.28-.186.213-.373.242-.702.077-1.393-.698-2.436-1.226-3.415-2.9-0.256-.44-.085-.68.08-.843.148-.147.33-.385.495-.578.165-.193.22-.33.33-.55.11-.22.055-.413-.028-.578-.083-.165-.73-1.76-1-.242-.263-.64-.55-.88-.755-.89-.204-.01-.438-.012-.673-.012-.235 0-.618.088-.94.44-.324.352-1.237 1.21-1.237 2.948s1.264 3.41 1.44 3.655c.176.244 2.487 3.792 6.027 5.32 2.378 1.025 3.3.82 4.482.71.693-.064 2.235-.913 2.55-1.797.314-.883.314-1.637.22-1.796-.094-.16-.37-.245-.7-.41z" />
+                      </svg>
+                    </div>
+                    <span>WhatsApp</span>
+                  </a>
+
+                  {/* Share on Facebook */}
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => { e.stopPropagation(); setIsShareMenuOpen(false); }}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container-high/80 flex items-center gap-2.5 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-on-surface"
+                  >
+                    <div className="p-1.5 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center w-[26px] h-[26px]">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-blue-600">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                      </svg>
+                    </div>
+                    <span>Facebook</span>
+                  </a>
+
+                  {/* Share on Twitter / X */}
+                  <a
+                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(postUrl)}&text=${encodeURIComponent(shareText)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => { e.stopPropagation(); setIsShareMenuOpen(false); }}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container-high/80 flex items-center gap-2.5 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-on-surface"
+                  >
+                    <div className="p-1.5 rounded-md bg-black text-white flex items-center justify-center w-[26px] h-[26px]">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-white">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                    </div>
+                    <span>Twitter / X</span>
+                  </a>
+
+                  {/* Share on Snapchat */}
+                  <a
+                    href={`https://www.snapchat.com/share?url=${encodeURIComponent(postUrl)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => { e.stopPropagation(); setIsShareMenuOpen(false); }}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-container-high/80 flex items-center gap-2.5 cursor-pointer transition-all duration-150 text-[12px] font-geist font-semibold text-on-surface"
+                  >
+                    <div className="p-1.5 rounded-md bg-amber-100 text-yellow-600 flex items-center justify-center w-[26px] h-[26px]">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-yellow-600">
+                        <path d="M12 2c-4.968 0-9 3.018-9 6.741 0 1.253.468 2.42 1.3 3.398-.24 1.138-1.077 2.91-1.135 3.029-.059.123-.05.267.025.378.074.111.198.174.327.174 1.837 0 3.327-.923 4.157-1.634.968.399 2.062.616 3.326.616 4.968 0 9-3.017 9-6.741s-4.032-6.741-9-6.741zm6.758 9.539c-.58.384-1.257.616-1.996.697-.249.774-.827 1.391-1.564 1.69-.643.26-1.341.332-2.022.203-.23.636-.714 1.129-1.335 1.344-.645.223-1.345.187-1.97-.099-.335.539-.894.908-1.536 1.01-.763.123-1.528-.088-2.146-.575-.544-.428-.887-1.057-.962-1.748-.687.218-1.442.209-2.122-.023-.746-.255-1.346-.827-1.666-1.583.567-.28 1.037-.738 1.327-1.312.355-.705.419-1.488.18-2.222.421-.527.674-1.168.706-1.85.048-1.036-.503-2.029-1.428-2.585-.436-.262-.919-.446-1.421-.539.26-.816.852-1.488 1.637-1.867.753-.362 1.605-.443 2.42-.228.618-.621 1.464-.997 2.378-1.026.962-.03 1.905.297 2.622.92.518-.432 1.165-.694 1.849-.728.847-.042 1.677.215 2.327.72.673-.427 1.455-.662 2.274-.662.628 0 1.233.136 1.791.399-.447.88-.5 1.888-.146 2.802.433.245.803.585 1.077.994.469.7.636 1.528.469 2.326.471.493.771 1.13.829 1.821.066.8-.184 1.597-.696 2.215z" />
+                      </svg>
+                    </div>
+                    <span>Snapchat</span>
+                  </a>
+                </div>
+              </>
+            )
+          })()}
+        </div>
       </div>
 
-      {showComments && (
+      {showComments && !isDetailPage && (
         <div className="pt-4 border-t border-gray-100 space-y-4 transition-all duration-200">
           {/* Add Comment Form */}
           <form onSubmit={handleCommentSubmit} className="flex gap-3 items-start">
@@ -917,6 +1192,72 @@ export function FeedCard({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox / Immersive Full-Screen Photo Viewer */}
+      {lightboxIndex !== null && displayImages && displayImages.length > 0 && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center select-none animate-in fade-in duration-200"
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightboxIndex(null);
+          }}
+        >
+          {/* Close Button */}
+          <button 
+            type="button"
+            className="absolute top-4 right-4 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer z-50 hover:scale-105"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxIndex(null);
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+
+          {/* Left Arrow */}
+          {displayImages.length > 1 && (
+            <button 
+              type="button"
+              className="absolute left-4 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer z-50 hover:scale-105"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev! - 1 + displayImages.length) % displayImages.length);
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+          )}
+
+          {/* Image Container */}
+          <div className="relative max-w-[90vw] max-h-[80vh] flex items-center justify-center p-4">
+            <img 
+              src={displayImages[lightboxIndex]} 
+              alt={`Full size attachment ${lightboxIndex + 1}`}
+              className="max-w-full max-h-full object-contain rounded-lg animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+
+          {/* Right Arrow */}
+          {displayImages.length > 1 && (
+            <button 
+              type="button"
+              className="absolute right-4 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer z-50 hover:scale-105"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev! + 1) % displayImages.length);
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+          )}
+
+          {/* Info Footer */}
+          <div className="absolute bottom-6 text-white/70 font-geist text-sm tracking-wider">
+            {lightboxIndex + 1} / {displayImages.length}
           </div>
         </div>
       )}

@@ -7,6 +7,8 @@ export interface Post {
   authorId: string;
   event?: EventData | null;
   poll?: PollData | null;
+  images?: string[];
+  tags?: string[];
   createdAt: Date;
   updatedAt: Date;
 }

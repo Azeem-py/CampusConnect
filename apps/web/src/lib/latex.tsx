@@ -1,4 +1,5 @@
 import { Fragment } from "react"
+import { Link } from "react-router-dom"
 import { InlineMath, BlockMath } from "react-katex"
 import katex from "katex"
 import "katex/dist/katex.min.css"
@@ -245,7 +246,8 @@ function FormattedText({ text }: { text: string }) {
     !text.includes("*") &&
     !text.includes("~~") &&
     !text.includes("[") &&
-    !text.includes("<u>")
+    !text.includes("<u>") &&
+    !text.includes("@")
   ) {
     return <>{text}</>
   }
@@ -260,6 +262,7 @@ function FormattedText({ text }: { text: string }) {
     const underlineRe = /<u>(.+?)<\/u>/
     const strikeRe = /~~(.+?)~~/
     const linkRe = /\[([^\]]+)\]\(([^)]+)\)/
+    const mentionRe = /@([a-zA-Z0-9_-]+)/
 
     let earliest: RegExpExecArray | null = null
     let earliestType = ""
@@ -271,6 +274,7 @@ function FormattedText({ text }: { text: string }) {
       [underlineRe, "underline"],
       [strikeRe, "strike"],
       [linkRe, "link"],
+      [mentionRe, "mention"],
     ] as const) {
       const m = re.exec(remaining)
       if (m && m.index < earliestIdx) {
@@ -304,6 +308,20 @@ function FormattedText({ text }: { text: string }) {
         <a key={key++} href={href} className="text-blue-600 underline">
           {renderLatexCommands(content)}
         </a>,
+      )
+    } else if (earliestType === "mention") {
+      parts.push(
+        <Link
+          key={key++}
+          to={`/profile?username=${content}`}
+          className="text-blue-600 font-semibold hover:underline font-geist"
+          onClick={(e) => {
+            // Prevent navigate click if on card
+            e.stopPropagation();
+          }}
+        >
+          @{content}
+        </Link>
       )
     }
 

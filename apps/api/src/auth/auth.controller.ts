@@ -212,6 +212,14 @@ export class AuthController {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    if (user.isDeactivated) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { isDeactivated: false },
+      });
+      user.isDeactivated = false;
+    }
+
     const { accessToken, refreshToken } = await this.generateTokens(user.id, user.email);
     this.setTokenCookies(res, accessToken, refreshToken);
 
