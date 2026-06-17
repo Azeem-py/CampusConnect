@@ -41,7 +41,9 @@ describe('PostsService', () => {
 
   beforeEach(() => {
     prisma = makePrisma();
-    service = new PostsService(prisma);
+    const mockEmitter = { emit: jest.fn() } as any;
+    const mockBannedFilter = { containsBannedContent: jest.fn().mockReturnValue({ banned: false, matched: null }) } as any;
+    service = new PostsService(prisma, mockEmitter, mockBannedFilter);
   });
 
   afterEach(() => jest.clearAllMocks());

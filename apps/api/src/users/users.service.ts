@@ -1,6 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { NOTIFICATION_EVENT } from '../notifications/notification-listener.service';
 import { UpgradeBusinessDto } from '@campus-connect/types';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePasswordDto, UpdateEmailDto, UpdatePreferencesDto } from './dto/update-settings.dto';
@@ -11,6 +13,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private readonly matrixService: InteractionMatrixService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async upgradeToBusiness(userId: string, dto: UpgradeBusinessDto) {
@@ -103,6 +106,13 @@ export class UsersService {
           },
         },
       }
+    });
+
+    await this.eventEmitter.emitAsync(NOTIFICATION_EVENT, {
+      recipientId: followingId,
+      type: 'FOLLOW',
+      actorId: followerId,
+      metadata: {},
     });
 
     const { password: _, refreshTokenHash: __, ...userWithoutSensitive } = updatedUser;

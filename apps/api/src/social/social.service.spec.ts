@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SocialService } from './social.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -29,6 +30,7 @@ describe('SocialService', () => {
       providers: [
         SocialService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: EventEmitter2, useValue: { emit: jest.fn(), emitAsync: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 

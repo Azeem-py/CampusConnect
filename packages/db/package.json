@@ -7,7 +7,8 @@
   "scripts": {
     "generate": "prisma generate",
     "build": "prisma generate && tsc",
-    "dev": "prisma generate --watch"
+    "dev": "prisma generate --watch",
+    "seed:institutions": "tsx prisma/seed-institutions.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0"

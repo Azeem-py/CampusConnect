@@ -46,6 +46,7 @@ export class PostsController {
   @ApiQuery({ name: 'search', required: false, example: '#STA201' })
   @ApiQuery({ name: 'sort', required: false, enum: ['latest', 'top'], description: 'Sort order: latest (by date) or top (by engagement score)' })
   @ApiQuery({ name: 'period', required: false, enum: ['all', 'week', 'month'], description: 'Time period filter: all time, past week, or past month' })
+  @ApiQuery({ name: 'communityId', required: false, example: 'cm1abcd1234', description: 'Filter posts by community' })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -55,6 +56,7 @@ export class PostsController {
     @Query('search') search?: string,
     @Query('sort') sort?: string,
     @Query('period') period?: string,
+    @Query('communityId') communityId?: string,
   ) {
     const validSorts = ['latest', 'top'] as const;
     const validPeriods = ['all', 'week', 'month'] as const;
@@ -71,6 +73,7 @@ export class PostsController {
       search,
       resolvedSort,
       resolvedPeriod,
+      communityId,
     );
   }
 

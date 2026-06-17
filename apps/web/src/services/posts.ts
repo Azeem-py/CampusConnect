@@ -23,6 +23,8 @@ export interface CreatePostPayload {
   poll?: PollData | null;
   images?: string[];
   tags?: string[];
+  communityId?: string;
+  groupId?: string;
 }
 
 export interface UpdatePostPayload {
@@ -142,11 +144,12 @@ export function usePosts(
   search?: string,
   sort: 'latest' | 'top' = 'latest',
   period: 'all' | 'week' | 'month' = 'all',
+  communityId?: string,
 ) {
   return useQuery<PaginatedResponse>({
-    queryKey: [...POSTS_KEY, { page, limit, followingOf, search, sort, period }],
+    queryKey: [...POSTS_KEY, { page, limit, followingOf, search, sort, period, communityId }],
     queryFn: async () => {
-      const { data } = await api.get('/posts', { params: { page, limit, followingOf, search, sort, period } });
+      const { data } = await api.get('/posts', { params: { page, limit, followingOf, search, sort, period, communityId } });
       return data;
     },
     staleTime: 30_000,
@@ -245,9 +248,12 @@ export function useCreatePost() {
       const { data } = await api.post('/posts', payload);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, payload) => {
       queryClient.invalidateQueries({ queryKey: POSTS_KEY });
       queryClient.invalidateQueries({ queryKey: DRAFTS_KEY });
+      if (payload.communityId) {
+        queryClient.invalidateQueries({ queryKey: [...POSTS_KEY, 'community', payload.communityId] });
+      }
     },
   });
 }

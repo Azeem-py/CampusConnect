@@ -9,7 +9,11 @@ import {
   CheckCircle,
   AlertCircle,
   LogOut,
-  UserCheck
+  UserCheck,
+  ChevronDown,
+  ChevronRight,
+  Smartphone,
+  BellRing,
 } from "lucide-react"
 import { Sidebar } from "../components/layout/Sidebar"
 import { useAuth } from "../contexts/AuthContext"
@@ -21,6 +25,15 @@ import {
   useUpdatePreferences,
   useDeactivateAccount
 } from "../services/auth"
+import {
+  useNotificationPreferences,
+  useBulkUpdateNotificationPreferences,
+  useVapidPublicKey,
+  usePushSubscribe,
+  usePushUnsubscribe,
+  type NotificationPreference,
+} from "../services/notifications"
+
 
 type SettingsTab = "account" | "notifications" | "privacy"
 
@@ -37,7 +50,8 @@ export function SettingsPage() {
 
   // Preferences states
   const [emailNotifications, setEmailNotifications] = useState(true)
-  const [pushNotifications, setPushNotifications] = useState(true)
+  const [pushNotifications, setPushNotifications] = useState(false)
+  const [isPushToggling, setIsPushToggling] = useState(false)
   const [weeklyDigest, setWeeklyDigest] = useState(true)
   const [profilePrivacy, setProfilePrivacy] = useState<"PUBLIC" | "CAMPUS_ONLY" | "PRIVATE">("PUBLIC")
   const [showReputation, setShowReputation] = useState(true)
@@ -46,6 +60,171 @@ export function SettingsPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isDeactivateOpen, setIsDeactivateOpen] = useState(false)
+
+  // Per-type notification preferences
+  const { data: notifPrefs } = useNotificationPreferences()
+  const bulkUpdatePrefsMutation = useBulkUpdateNotificationPreferences()
+  const [perTypePrefs, setPerTypePrefs] = useState<NotificationPreference[]>([])
+  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
+
+  // Push subscription
+  const { data: vapidKey } = useVapidPublicKey()
+  const pushSubscribeMutation = usePushSubscribe()
+  const pushUnsubscribeMutation = usePushUnsubscribe()
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>(
+    typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
+  )
+
+  function urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+    const rawData = window.atob(base64)
+    return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)))
+  }
+
+  /** Get the active SW registration, or throw if none is available within 3 seconds. */
+  async function getSwRegistration(): Promise<ServiceWorkerRegistration> {
+    if (!('serviceWorker' in navigator)) {
+      throw new Error('Service workers are not supported in this browser.')
+    }
+    // navigator.serviceWorker.ready never resolves if no SW is registered (e.g. dev mode).
+    // Race it against a timeout so the UI doesn't hang indefinitely.
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('No active service worker found. Push notifications require the installed PWA.')), 3000),
+    )
+    return Promise.race([navigator.serviceWorker.ready, timeout])
+  }
+
+  useEffect(() => {
+    async function checkActualSubscription() {
+      if (pushPermission === 'granted') {
+        try {
+          const registration = await getSwRegistration()
+          const sub = await registration.pushManager.getSubscription()
+          setPushNotifications(!!sub)
+        } catch {
+          setPushNotifications(false)
+        }
+      } else {
+        setPushNotifications(false)
+      }
+    }
+    checkActualSubscription()
+  }, [pushPermission])
+
+  async function handlePushToggle() {
+    if (isPushToggling) return
+    setIsPushToggling(true)
+
+    const wantSubscribe = !pushNotifications
+
+    try {
+      if (wantSubscribe) {
+        if (pushPermission === 'unsupported') {
+          showNotification('error', 'Push notifications are not supported in this browser.')
+          return
+        }
+
+        let permission = pushPermission
+        if (permission === 'default') {
+          permission = await Notification.requestPermission()
+          setPushPermission(permission)
+        }
+
+        if (permission === 'granted') {
+          const registration = await getSwRegistration()
+          if (!vapidKey?.publicKey) {
+            showNotification('error', 'Could not fetch VAPID key.')
+            return
+          }
+
+          // Clean up any stale browser subscription before creating a fresh one
+          const existingSub = await registration.pushManager.getSubscription()
+          if (existingSub) {
+            await existingSub.unsubscribe()
+          }
+
+          const sub = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidKey.publicKey),
+          })
+
+          const subJson = sub.toJSON()
+
+          // Atomically: register subscription on server + update user preference flag
+          await pushSubscribeMutation.mutateAsync({
+            endpoint: subJson.endpoint!,
+            p256dh: subJson.keys!.p256dh,
+            auth: subJson.keys!.auth,
+          })
+          await updatePreferencesMutation.mutateAsync({ pushNotifications: true })
+
+          setPushNotifications(true)
+          showNotification('success', 'Push notifications enabled!')
+        } else {
+          showNotification('error', 'Push notification permission was denied. Update it in your browser settings.')
+        }
+      } else {
+        // Unsubscribe: browser + server + user preference flag
+        const registration = await getSwRegistration()
+        const sub = await registration.pushManager.getSubscription()
+        if (sub) {
+          const endpoint = sub.endpoint
+          await sub.unsubscribe()
+          await pushUnsubscribeMutation.mutateAsync(endpoint)
+        }
+        await updatePreferencesMutation.mutateAsync({ pushNotifications: false })
+
+        setPushNotifications(false)
+        showNotification('success', 'Push notifications disabled.')
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : undefined
+      showNotification('error', message ?? (wantSubscribe
+        ? 'Failed to enable push notifications.'
+        : 'Failed to disable push notifications. Please try again.')
+      )
+    } finally {
+      setIsPushToggling(false)
+    }
+
+  }
+
+  useEffect(() => {
+    if (notifPrefs && notifPrefs.length > 0) {
+      setPerTypePrefs(notifPrefs)
+    }
+  }, [notifPrefs])
+
+  const ALL_TYPES: { type: NotificationPreference['type']; label: string; desc: string }[] = [
+    { type: "LIKE", label: "Likes", desc: "When someone likes your post" },
+    { type: "LIKE_COMMENT", label: "Comment Likes", desc: "When someone likes your comment" },
+    { type: "COMMENT", label: "Comments", desc: "When someone comments on your post" },
+    { type: "REPLY", label: "Replies", desc: "When someone replies to your comment" },
+    { type: "REPOST", label: "Reposts", desc: "When someone reposts your post" },
+    { type: "FOLLOW", label: "Follows", desc: "When someone follows you" },
+    { type: "MENTION", label: "Mentions", desc: "When someone mentions you" },
+    { type: "SYSTEM", label: "System", desc: "System announcements and updates" },
+  ]
+
+  function getPref(type: string) {
+    return perTypePrefs.find((p) => p.type === type)
+  }
+
+  function togglePref(type: string, channel: 'inApp' | 'push') {
+    setPerTypePrefs((prev) =>
+      prev.map((p) => (p.type === type ? { ...p, [channel]: !p[channel] } : p)),
+    )
+  }
+
+  function toggleTypeExpanded(type: string) {
+    setExpandedTypes((prev) => {
+      const next = new Set(prev)
+      if (next.has(type)) next.delete(type)
+      else next.add(type)
+      return next
+    })
+  }
 
   // Mutation hooks
   const updatePasswordMutation = useUpdatePassword()
@@ -58,7 +237,6 @@ export function SettingsPage() {
     if (user) {
       setEmail(user.email || "")
       setEmailNotifications(user.emailNotifications ?? true)
-      setPushNotifications(user.pushNotifications ?? true)
       setWeeklyDigest(user.weeklyDigest ?? true)
       setProfilePrivacy(user.profilePrivacy || "PUBLIC")
       setShowReputation(user.showReputation ?? true)
@@ -138,14 +316,13 @@ export function SettingsPage() {
     try {
       await updatePreferencesMutation.mutateAsync({
         emailNotifications,
-        pushNotifications,
         weeklyDigest,
         profilePrivacy,
         showReputation,
       })
       showNotification("success", "Settings and preferences saved successfully!")
-    } catch (err: any) {
-      const msg = err.response?.data?.message || "Failed to save preferences."
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to save preferences."
       showNotification("error", msg)
     }
   }
@@ -393,14 +570,66 @@ export function SettingsPage() {
                 </h2>
 
                 <div className="space-y-3.5">
-                  {/* Toggle 1: Email */}
+                  {/* Master Toggles */}
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low/40 border border-outline-variant/10 hover:border-outline-variant/25 transition-all duration-200">
+                    <div className="space-y-0.5 max-w-[75%]">
+                      <span className="font-geist text-title-md text-on-surface font-semibold flex items-center gap-1.5">
+                        <BellRing size={15} className="text-primary" />
+                        In-App Notifications
+                      </span>
+                      <p className="font-inter text-body-sm text-on-surface-variant">
+                        Show notifications in the app notification feed.
+                      </p>
+                    </div>
+                    <span className="text-label-sm text-on-surface-variant/60 font-geist font-medium">
+                      Always On
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low/40 border border-outline-variant/10 hover:border-outline-variant/25 transition-all duration-200">
+                    <div className="space-y-0.5 max-w-[75%]">
+                      <span className="font-geist text-title-md text-on-surface font-semibold flex items-center gap-1.5">
+                        <Smartphone size={15} className="text-primary" />
+                        Push Notifications
+                      </span>
+                      <p className="font-inter text-body-sm text-on-surface-variant">
+                        Receive browser push notifications.
+                      </p>
+                      {pushPermission === 'denied' && (
+                        <p className="font-inter text-body-xs text-error mt-0.5">
+                          Permission denied. Enable it in your browser settings.
+                        </p>
+                      )}
+                      {pushPermission === 'unsupported' && (
+                        <p className="font-inter text-body-xs text-on-surface-variant mt-0.5">
+                          Not supported in this browser.
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={handlePushToggle}
+                      disabled={pushPermission === 'unsupported' || isPushToggling}
+                      className={`relative w-11 h-6 shrink-0 rounded-full transition-all duration-200 focus:outline-none disabled:opacity-40 ${
+                        pushNotifications ? "bg-primary" : "bg-outline-variant/50"
+                      }`}
+                    >
+                      {isPushToggling ? (
+                        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 block w-3.5 h-3.5 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <span className={`absolute top-0.5 left-0.5 block w-5 h-5 rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200 ${
+                          pushNotifications ? "translate-x-5" : "translate-x-0"
+                        }`} />
+                      )}
+                    </button>
+                  </div>
+
                   <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low/40 border border-outline-variant/10 hover:border-outline-variant/25 transition-all duration-200">
                     <div className="space-y-0.5 max-w-[80%]">
                       <span className="font-geist text-title-md text-on-surface font-semibold">
                         Email Notifications
                       </span>
                       <p className="font-inter text-body-sm text-on-surface-variant">
-                        Receive daily updates on new discussions, follows, and scientific comments.
+                        Receive daily updates on new discussions, follows, and comments.
                       </p>
                     </div>
                     <button
@@ -409,39 +638,12 @@ export function SettingsPage() {
                         emailNotifications ? "bg-primary" : "bg-outline-variant/50"
                       }`}
                     >
-                      <span
-                        className={`absolute top-0.5 left-0.5 block w-5 h-5 rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200 ${
-                          emailNotifications ? "translate-x-5" : "translate-x-0"
-                        }`}
-                      />
+                      <span className={`absolute top-0.5 left-0.5 block w-5 h-5 rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200 ${
+                        emailNotifications ? "translate-x-5" : "translate-x-0"
+                      }`} />
                     </button>
                   </div>
 
-                  {/* Toggle 2: Push */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low/40 border border-outline-variant/10 hover:border-outline-variant/25 transition-all duration-200">
-                    <div className="space-y-0.5 max-w-[80%]">
-                      <span className="font-geist text-title-md text-on-surface font-semibold">
-                        Browser Push Toggles
-                      </span>
-                      <p className="font-inter text-body-sm text-on-surface-variant">
-                        Instant notification triggers on scholar replies or repost alerts.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setPushNotifications(!pushNotifications)}
-                      className={`relative w-11 h-6 shrink-0 rounded-full transition-all duration-200 focus:outline-none ${
-                        pushNotifications ? "bg-primary" : "bg-outline-variant/50"
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-0.5 left-0.5 block w-5 h-5 rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200 ${
-                          pushNotifications ? "translate-x-5" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Toggle 3: Digest */}
                   <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-low/40 border border-outline-variant/10 hover:border-outline-variant/25 transition-all duration-200">
                     <div className="space-y-0.5 max-w-[80%]">
                       <span className="font-geist text-title-md text-on-surface font-semibold">
@@ -457,16 +659,82 @@ export function SettingsPage() {
                         weeklyDigest ? "bg-primary" : "bg-outline-variant/50"
                       }`}
                     >
-                      <span
-                        className={`absolute top-0.5 left-0.5 block w-5 h-5 rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200 ${
-                          weeklyDigest ? "translate-x-5" : "translate-x-0"
-                        }`}
-                      />
+                      <span className={`absolute top-0.5 left-0.5 block w-5 h-5 rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200 ${
+                        weeklyDigest ? "translate-x-5" : "translate-x-0"
+                      }`} />
                     </button>
                   </div>
                 </div>
 
+                {/* Per-Type Preferences */}
                 <div className="pt-2">
+                  <h3 className="text-title-md font-geist font-bold text-on-surface mb-3">
+                    Per-Notification Type Settings
+                  </h3>
+                  <div className="space-y-2">
+                    {ALL_TYPES.map(({ type, label, desc }) => {
+                      const pref = getPref(type)
+                      const isExpanded = expandedTypes.has(type)
+                      return (
+                        <div key={type} className="rounded-xl bg-surface-container-low/20 border border-outline-variant/10 overflow-hidden transition-all duration-200">
+                          <button
+                            onClick={() => toggleTypeExpanded(type)}
+                            className="w-full flex items-center justify-between p-3.5 hover:bg-surface-container-low/40 transition-colors"
+                          >
+                            <div className="text-left">
+                              <span className="font-geist text-title-sm text-on-surface font-semibold">
+                                {label}
+                              </span>
+                              <p className="font-inter text-body-sm text-on-surface-variant">
+                                {desc}
+                              </p>
+                            </div>
+                            {isExpanded ? <ChevronDown size={16} className="text-on-surface-variant" /> : <ChevronRight size={16} className="text-on-surface-variant" />}
+                          </button>
+
+                          {isExpanded && (
+                            <div className="px-3.5 pb-3.5 space-y-2.5 border-t border-outline-variant/10 pt-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="font-geist text-label-md text-on-surface font-medium flex items-center gap-1.5">
+                                  <BellRing size={13} className="text-primary" />
+                                  In-App
+                                </span>
+                                <button
+                                  onClick={() => togglePref(type, 'inApp')}
+                                  className={`relative w-11 h-6 shrink-0 rounded-full transition-all duration-200 focus:outline-none ${
+                                    pref?.inApp ?? true ? "bg-primary" : "bg-outline-variant/50"
+                                  }`}
+                                >
+                                  <span className={`absolute top-0.5 left-0.5 block w-5 h-5 rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200 ${
+                                    pref?.inApp ?? true ? "translate-x-5" : "translate-x-0"
+                                  }`} />
+                                </button>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-geist text-label-md text-on-surface font-medium flex items-center gap-1.5">
+                                  <Smartphone size={13} className="text-primary" />
+                                  Push
+                                </span>
+                                <button
+                                  onClick={() => togglePref(type, 'push')}
+                                  className={`relative w-11 h-6 shrink-0 rounded-full transition-all duration-200 focus:outline-none ${
+                                    pref?.push ?? true ? "bg-primary" : "bg-outline-variant/50"
+                                  }`}
+                                >
+                                  <span className={`absolute top-0.5 left-0.5 block w-5 h-5 rounded-full bg-[#ffffff] shadow-sm transition-transform duration-200 ${
+                                    pref?.push ?? true ? "translate-x-5" : "translate-x-0"
+                                  }`} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-2 flex gap-3">
                   <Button
                     onClick={handleSavePreferences}
                     variant="primary"
@@ -475,7 +743,17 @@ export function SettingsPage() {
                     loading={updatePreferencesMutation.isPending}
                     icon={<Save size={16} />}
                   >
-                    Save Preferences
+                    Save General
+                  </Button>
+                  <Button
+                    onClick={() => bulkUpdatePrefsMutation.mutate(perTypePrefs)}
+                    variant="secondary"
+                    size="md"
+                    className="w-full sm:w-auto"
+                    loading={bulkUpdatePrefsMutation.isPending}
+                    icon={<Save size={16} />}
+                  >
+                    Save Per-Type
                   </Button>
                 </div>
               </div>

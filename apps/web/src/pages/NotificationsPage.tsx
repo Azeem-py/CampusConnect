@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react"
-import { Link } from "react-router-dom"
+import { useState, useMemo, useCallback } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import {
   Bell,
   Heart,
@@ -8,30 +8,23 @@ import {
   UserPlus,
   FlaskConical,
   CheckCheck,
-  Bookmark,
   Calendar,
   Clock,
   Ellipsis,
+  Reply,
+  Loader2,
 } from "lucide-react"
 import { Sidebar } from "../components/layout/Sidebar"
 import { Avatar } from "../components/ui/Avatar"
 import { cn, formatDistanceToNow } from "../lib/utils"
-import { useAuth } from "../contexts/AuthContext"
-import { useUserPosts } from "../services/posts"
-
-type NotifType = "like" | "follow" | "comment" | "repost" | "system" | "mention" | "bookmark"
-
-interface Notification {
-  id: string
-  type: NotifType
-  actor: string
-  handle?: string
-  action: string
-  target?: string
-  time: string
-  timestamp: Date
-  unread: boolean
-}
+import { useNotificationContext } from "../contexts/NotificationContext"
+import {
+  useNotifications,
+  useMarkAsRead,
+  useMarkAllAsRead,
+  useDeleteNotification,
+  type NotificationItem as NotificationItemType,
+} from "../services/notifications"
 
 type Tab = "all" | "unread" | "mentions" | "system"
 
@@ -42,22 +35,34 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "system", label: "System" },
 ]
 
-const TYPE_STYLES: Record<NotifType, { icon: React.ElementType; bg: string; color: string }> = {
-  like: { icon: Heart, bg: "bg-red-500/10", color: "text-red-500" },
-  follow: { icon: UserPlus, bg: "bg-primary/10", color: "text-primary" },
-  comment: { icon: MessageCircle, bg: "bg-primary/10", color: "text-primary" },
-  repost: { icon: Repeat2, bg: "bg-green-500/10", color: "text-green-600" },
-  system: { icon: FlaskConical, bg: "bg-amber-500/10", color: "text-amber-600" },
-  mention: { icon: Bell, bg: "bg-purple-500/10", color: "text-purple-600" },
-  bookmark: { icon: Bookmark, bg: "bg-sky-500/10", color: "text-sky-600" },
+const TYPE_STYLES: Record<string, { icon: React.ElementType; bg: string; color: string }> = {
+  LIKE: { icon: Heart, bg: "bg-red-500/10", color: "text-red-500" },
+  LIKE_COMMENT: { icon: Heart, bg: "bg-red-500/10", color: "text-red-500" },
+  FOLLOW: { icon: UserPlus, bg: "bg-primary/10", color: "text-primary" },
+  COMMENT: { icon: MessageCircle, bg: "bg-primary/10", color: "text-primary" },
+  REPLY: { icon: Reply, bg: "bg-primary/10", color: "text-primary" },
+  REPOST: { icon: Repeat2, bg: "bg-green-500/10", color: "text-green-600" },
+  SYSTEM: { icon: FlaskConical, bg: "bg-amber-500/10", color: "text-amber-600" },
+  MENTION: { icon: Bell, bg: "bg-purple-500/10", color: "text-purple-600" },
 }
 
-function groupNotifications(list: Notification[]) {
-  const groups: { label: string; items: Notification[] }[] = []
-  const today: Notification[] = []
-  const yesterday: Notification[] = []
-  const thisWeek: Notification[] = []
-  const earlier: Notification[] = []
+const TYPE_LABELS: Record<string, string> = {
+  LIKE: "liked your post",
+  LIKE_COMMENT: "liked your comment",
+  COMMENT: "commented on your post",
+  REPLY: "replied to your comment",
+  REPOST: "reposted your post",
+  FOLLOW: "followed you",
+  MENTION: "mentioned you",
+  SYSTEM: "",
+}
+
+function groupNotifications(list: NotificationItemType[]) {
+  const groups: { label: string; items: NotificationItemType[] }[] = []
+  const today: NotificationItemType[] = []
+  const yesterday: NotificationItemType[] = []
+  const thisWeek: NotificationItemType[] = []
+  const earlier: NotificationItemType[] = []
 
   const now = new Date()
   const day = 86400000
@@ -66,7 +71,7 @@ function groupNotifications(list: Notification[]) {
   const startOfWeek = new Date(startOfToday.getTime() - startOfToday.getDay() * day)
 
   for (const n of list) {
-    const t = n.timestamp
+    const t = new Date(n.createdAt)
     if (t >= startOfToday) today.push(n)
     else if (t >= startOfYesterday) yesterday.push(n)
     else if (t >= startOfWeek) thisWeek.push(n)
@@ -82,100 +87,48 @@ function groupNotifications(list: Notification[]) {
 }
 
 export function NotificationsPage() {
-  const { user } = useAuth()
-  const { data: postsData } = useUserPosts(user?.id)
+  const { unreadCount } = useNotificationContext()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Tab>("all")
-  const [markedRead, setMarkedRead] = useState<Set<string>>(new Set())
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
 
-  const posts = postsData?.posts || []
+  const filters = useMemo(() => {
+    if (activeTab === "unread") return { unread: true }
+    if (activeTab === "mentions") return { type: "MENTION" }
+    if (activeTab === "system") return { type: "SYSTEM" }
+    return {}
+  }, [activeTab])
 
-  const dynamicNotifications = useMemo(() => {
-    if (!user) return []
+  const { data, isLoading } = useNotifications(page, 20, filters)
+  const markAsReadMutation = useMarkAsRead()
+  const markAllAsReadMutation = useMarkAllAsRead()
+  const deleteMutation = useDeleteNotification()
 
-    const list: Notification[] = []
+  const notifications = data?.notifications ?? []
+  const totalPages = data?.totalPages ?? 1
 
-    // 1. Generate realistic notifications dynamically from the user's actual backend posts
-    posts.forEach((post, index) => {
-      const excerpt = post.content.length > 30 ? post.content.substring(0, 30) + "..." : post.content
+  const grouped = useMemo(() => groupNotifications(notifications), [notifications])
 
-      list.push({
-        id: `like-${post.id}`,
-        type: "like",
-        actor: index % 2 === 0 ? "Dr. Arthur Pendelton" : "Dr. Elena Rostova",
-        handle: index % 2 === 0 ? "@art_physics" : "@erostova",
-        action: "liked your post",
-        target: `"${excerpt}"`,
-        time: formatDistanceToNow(post.createdAt),
-        timestamp: new Date(post.createdAt),
-        unread: index === 0,
-      })
-
-      list.push({
-        id: `comment-${post.id}`,
-        type: "comment",
-        actor: index % 2 === 0 ? "CompSci Dept" : "Adebayo S.",
-        handle: index % 2 === 0 ? "@stanford_cs" : "@adebayoscience",
-        action: "commented on your post",
-        target: `"${excerpt}"`,
-        time: formatDistanceToNow(new Date(new Date(post.createdAt).getTime() + 10 * 60000).toISOString()),
-        timestamp: new Date(new Date(post.createdAt).getTime() + 10 * 60000),
-        unread: index === 0,
-      })
-    })
-
-    // 2. Add welcoming and feature alert notifications utilizing real school/name details from the backend session
-    list.push({
-      id: "welcome-system",
-      type: "system",
-      actor: "Scholarsphere",
-      action: `Welcome to Scholarsphere, ${user.name}! Complete your profile for ${user.school || "your campus"} to get discovered.`,
-      time: formatDistanceToNow(user.createdAt),
-      timestamp: new Date(user.createdAt),
-      unread: false,
-    })
-
-    list.push({
-      id: "system-latex",
-      type: "system",
-      actor: "Scholarsphere",
-      action: "New feature: Live LaTeX preview now supports multi-line equations and mathematical matrices.",
-      time: "2 days ago",
-      timestamp: new Date(Date.now() - 2 * 24 * 3600 * 1000),
-      unread: false,
-    })
-
-    // Sort by timestamp descending
-    return list.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-  }, [user, posts])
-
-  const unreadCount = useMemo(() => {
-    return dynamicNotifications.filter((n) => n.unread && !markedRead.has(n.id)).length
-  }, [dynamicNotifications, markedRead])
-
-  const filtered = useMemo(() => {
-    let list = dynamicNotifications
-    if (activeTab === "unread") {
-      list = dynamicNotifications.filter((n) => n.unread && !markedRead.has(n.id))
-    } else if (activeTab === "mentions") {
-      list = dynamicNotifications.filter((n) => n.type === "mention")
-    } else if (activeTab === "system") {
-      list = dynamicNotifications.filter((n) => n.type === "system")
-    }
-    return groupNotifications(list)
-  }, [activeTab, markedRead, dynamicNotifications])
-
-  function markAllRead() {
-    setMarkedRead(new Set(dynamicNotifications.map((n) => n.id)))
+  function handleMarkAllRead() {
+    markAllAsReadMutation.mutate()
   }
 
-  function toggleRead(id: string) {
-    setMarkedRead((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+  const getNotificationLink = useCallback((n: NotificationItemType) => {
+    if (n.type === "FOLLOW" && n.actorId) return `/profile/${n.actorId}`
+    if (n.postId) return `/post/${n.postId}`
+    return null
+  }, [])
+
+  function handleNotificationClick(n: NotificationItemType) {
+    if (n.unread) {
+      markAsReadMutation.mutate(n.id)
+    }
+    const link = getNotificationLink(n)
+    if (link) navigate(link)
+  }
+
+  function handleDelete(id: string) {
+    deleteMutation.mutate(id)
   }
 
   return (
@@ -197,7 +150,7 @@ export function NotificationsPage() {
             </div>
             {unreadCount > 0 && (
               <button
-                onClick={markAllRead}
+                onClick={handleMarkAllRead}
                 className="flex items-center gap-1.5 text-label-md text-primary font-geist font-medium hover:text-primary/80 transition-colors"
               >
                 <CheckCheck size={15} />
@@ -210,7 +163,7 @@ export function NotificationsPage() {
             {TABS.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); setPage(1) }}
                 className={cn(
                   "flex-1 px-3 py-2 rounded-md text-label-md font-geist font-medium transition-all duration-150",
                   activeTab === tab.id
@@ -223,7 +176,11 @@ export function NotificationsPage() {
             ))}
           </div>
 
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 size={24} className="animate-spin text-on-surface-variant/60" />
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center mb-4">
                 <Bell size={24} className="text-on-surface-variant/60" />
@@ -245,7 +202,7 @@ export function NotificationsPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {filtered.map((group) => (
+              {grouped.map((group) => (
                 <section key={group.label}>
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar size={13} className="text-on-surface-variant/50" />
@@ -256,63 +213,63 @@ export function NotificationsPage() {
                   </div>
 
                   <div className="space-y-0.5">
-                    {group.items.map((n, idx) => {
-                      const isRead = !n.unread || markedRead.has(n.id)
-                      const style = TYPE_STYLES[n.type]
+                    {group.items.map((n) => {
+                      const style = TYPE_STYLES[n.type] ?? { icon: Bell, bg: "bg-surface-container-high", color: "text-on-surface-variant" }
                       const Icon = style.icon
-                      const isHovered = hoveredId === n.id
+                      const actionText = TYPE_LABELS[n.type] ?? "interacted with you"
 
                       return (
                         <div
                           key={n.id}
-                          onMouseEnter={() => setHoveredId(n.id)}
-                          onMouseLeave={() => setHoveredId(null)}
-                          onClick={() => toggleRead(n.id)}
+                          onClick={() => handleNotificationClick(n)}
                           className={cn(
                             "group relative flex items-start gap-3 p-3 pl-8 rounded-lg transition-all duration-150 cursor-pointer",
-                            isRead
-                              ? "hover:bg-surface-container/30"
-                              : "bg-primary-container/5 hover:bg-primary-container/15"
+                            n.unread
+                              ? "bg-primary-container/5 hover:bg-primary-container/15"
+                              : "hover:bg-surface-container/30"
                           )}
-                          style={{ animationDelay: `${idx * 40}ms` }}
                         >
-                          {!isRead && (
+                          {n.unread && (
                             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary shrink-0" />
                           )}
 
                           <div className="shrink-0 mt-0.5">
-                            {n.type === "system" || n.type === "mention" ? (
-                              <div
-                                className={cn(
-                                  "w-10 h-10 rounded-full flex items-center justify-center",
-                                  style.bg
-                                )}
-                              >
+                            {n.type === "SYSTEM" || !n.actor ? (
+                              <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", style.bg)}>
                                 <Icon size={18} className={style.color} />
                               </div>
                             ) : (
-                              <Avatar name={n.actor} size="sm" />
+                              <Avatar name={n.actor.name ?? n.actor.username} src={n.actor.avatar ?? undefined} size="sm" />
                             )}
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <p className="text-body-md text-on-surface font-inter leading-relaxed">
-                              <span className="font-geist font-semibold">{n.actor}</span>{" "}
-                              <span className="text-on-surface-variant/80">{n.action}</span>
-                              {n.target && (
-                                <span className="text-on-surface-variant/60"> {n.target}</span>
+                              {n.type === "SYSTEM" ? (
+                                <span className="text-on-surface-variant/80">
+                                  {(n.metadata as any)?.message ?? "System notification"}
+                                </span>
+                              ) : (
+                                <>
+                                  {n.actor && (
+                                    <span className="font-geist font-semibold">
+                                      {n.actor.name ?? n.actor.username}{" "}
+                                    </span>
+                                  )}
+                                  <span className="text-on-surface-variant/80">{actionText}</span>
+                                </>
                               )}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <Clock size={11} className="text-on-surface-variant/40" />
                               <p className="text-body-sm text-on-surface-variant/60 font-inter">
-                                {n.time}
+                                {formatDistanceToNow(n.createdAt)}
                               </p>
-                              {n.handle && (
+                              {n.actor && (
                                 <>
                                   <span className="text-on-surface-variant/20">·</span>
                                   <span className="text-body-sm text-on-surface-variant/40 font-inter">
-                                    {n.handle}
+                                    @{n.actor.username}
                                   </span>
                                 </>
                               )}
@@ -322,17 +279,9 @@ export function NotificationsPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              toggleRead(n.id)
+                              handleDelete(n.id)
                             }}
-                            className={cn(
-                              "shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150",
-                              isHovered || isRead
-                                ? "opacity-100"
-                                : "opacity-0 group-hover:opacity-100",
-                              isRead
-                                ? "text-on-surface-variant/30 hover:text-on-surface-variant/60 hover:bg-surface-container"
-                                : "text-primary hover:bg-primary/10"
-                            )}
+                            className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-on-surface-variant/30 hover:bg-surface-container hover:text-on-surface-variant/60 transition-all duration-150"
                           >
                             <Ellipsis size={15} />
                           </button>
@@ -343,9 +292,14 @@ export function NotificationsPage() {
                 </section>
               ))}
 
-              <button className="w-full py-3 text-label-md text-on-surface-variant/50 font-geist font-medium hover:text-on-surface-variant transition-colors border-t border-outline-variant/10">
-                Load older notifications
-              </button>
+              {page < totalPages && (
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  className="w-full py-3 text-label-md text-on-surface-variant/50 font-geist font-medium hover:text-on-surface-variant transition-colors border-t border-outline-variant/10"
+                >
+                  Load older notifications
+                </button>
+              )}
             </div>
           )}
         </main>
@@ -356,7 +310,7 @@ export function NotificationsPage() {
               Notification Settings
             </h3>
             <p className="text-body-sm text-on-surface-variant font-inter leading-relaxed">
-              You're receiving notifications for likes, follows, comments, and mentions.
+              Control which notifications you receive and how they're delivered.
             </p>
             <Link to="/settings">
               <button className="mt-3 text-label-sm text-primary font-geist font-medium hover:underline cursor-pointer">

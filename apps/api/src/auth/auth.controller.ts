@@ -8,6 +8,8 @@ import {
   HttpStatus,
   ConflictException,
   UnauthorizedException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import type { Response, Request } from 'express';
@@ -15,6 +17,7 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { SignupDto, LoginDto } from './dto';
 
 @ApiTags('Auth')
@@ -23,6 +26,7 @@ export class AuthController {
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
+    @Inject(forwardRef(() => NotificationsService)) private notificationsService: NotificationsService,
     private jwtService: JwtService,
   ) {}
 
@@ -154,6 +158,8 @@ export class AuthController {
         banner: dto.banner ?? null,
       },
     });
+
+    await this.notificationsService.seedDefaultPreferences(user.id);
 
     const { accessToken, refreshToken } = await this.generateTokens(user.id, user.email);
     this.setTokenCookies(res, accessToken, refreshToken);

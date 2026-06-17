@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { AppLayout } from "./components/layout/AppLayout"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
+import { NotificationProvider } from "./contexts/NotificationContext"
 import { LandingPage } from "./pages/LandingPage"
 import { LoginPage } from "./pages/LoginPage"
 import { SignUpPage } from "./pages/SignUpPage"
@@ -11,7 +12,27 @@ import { CreatePostPage } from "./pages/CreatePostPage"
 import { NotificationsPage } from "./pages/NotificationsPage"
 import { SettingsPage } from "./pages/SettingsPage"
 import { PostDetailPage } from "./pages/PostDetailPage"
-import { ModerationPage } from "./pages/ModerationPage"
+import { AdminLayout } from "./pages/admin/AdminLayout"
+import { AdminDashboard } from "./pages/admin/AdminDashboard"
+import { AdminReportsPage } from "./pages/admin/AdminReportsPage"
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage"
+import { AdminInstitutionsPage } from "./pages/admin/AdminInstitutionsPage"
+import { AdminContentPage } from "./pages/admin/AdminContentPage"
+import { AdminBannedWordsPage } from "./pages/admin/AdminBannedWordsPage"
+import { AdminAnalyticsPage } from "./pages/admin/AdminAnalyticsPage"
+import { CommunitiesPage } from "./pages/communities"
+import { CreateCommunityPage } from "./pages/communities/create"
+import { CommunityLayout } from "./pages/communities/[id]"
+import { CommunityMembersPage } from "./pages/communities/[id]/members"
+import { CommunitySettingsPage } from "./pages/communities/[id]/settings"
+import { CommunityRequestsPage } from "./pages/communities/[id]/requests"
+import { CommunityGroupsPage } from "./pages/communities/[id]/groups"
+import { GroupDetailPage } from "./pages/communities/[id]/groups/[groupId]"
+import { QuizzesPage } from "./pages/communities/[id]/groups/[groupId]/quizzes"
+import { CreateQuizPage } from "./pages/communities/[id]/groups/[groupId]/quizzes/create"
+import { QuizDetailPage } from "./pages/communities/[id]/groups/[groupId]/quizzes/[quizId]"
+import { TakeQuizPage } from "./pages/communities/[id]/groups/[groupId]/quizzes/[quizId]/take"
+import { AttemptResultPage } from "./pages/communities/[id]/groups/[groupId]/quizzes/[quizId]/attempt/[attemptId]"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -35,6 +56,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <NotificationProvider>
         <AppLayout>
           <Routes>
             <Route path="/" element={<LandingPage />} />
@@ -47,9 +69,34 @@ function App() {
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/post/:id" element={<ProtectedRoute><PostDetailPage /></ProtectedRoute>} />
-            <Route path="/moderation" element={<ProtectedRoute><ModerationPage /></ProtectedRoute>} />
+            <Route path="/moderation" element={<Navigate to="/admin/reports" replace />} />
+            <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="reports" element={<AdminReportsPage />} />
+              <Route path="users" element={<AdminUsersPage />} />
+              <Route path="institutions" element={<AdminInstitutionsPage />} />
+              <Route path="content" element={<AdminContentPage />} />
+              <Route path="banned-words" element={<AdminBannedWordsPage />} />
+              <Route path="analytics" element={<AdminAnalyticsPage />} />
+            </Route>
+            <Route path="/communities" element={<ProtectedRoute><CommunitiesPage /></ProtectedRoute>} />
+            <Route path="/communities/create" element={<ProtectedRoute><CreateCommunityPage /></ProtectedRoute>} />
+            <Route path="/communities/:id" element={<ProtectedRoute><CommunityLayout /></ProtectedRoute>}>
+              <Route index element={null} />
+              <Route path="members" element={<CommunityMembersPage />} />
+              <Route path="settings" element={<CommunitySettingsPage />} />
+              <Route path="requests" element={<CommunityRequestsPage />} />
+              <Route path="groups" element={<CommunityGroupsPage />} />
+              <Route path="groups/:groupId" element={<GroupDetailPage />} />
+              <Route path="groups/:groupId/quizzes" element={<QuizzesPage />} />
+              <Route path="groups/:groupId/quizzes/create" element={<CreateQuizPage />} />
+              <Route path="groups/:groupId/quizzes/:quizId" element={<QuizDetailPage />} />
+              <Route path="groups/:groupId/quizzes/:quizId/take" element={<TakeQuizPage />} />
+              <Route path="groups/:groupId/quizzes/:quizId/attempt/:attemptId" element={<AttemptResultPage />} />
+            </Route>
           </Routes>
         </AppLayout>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   )

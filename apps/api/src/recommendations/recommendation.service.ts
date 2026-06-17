@@ -1,4 +1,5 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { InteractionMatrix, InteractionMatrixService } from './interaction-matrix.service';
 import { TfidfService } from './tfidf.service';
@@ -40,6 +41,7 @@ export class RecommendationService implements OnModuleInit {
     private readonly tfidf: TfidfService,
     private readonly svd: SvdService,
     private readonly knn: KnnService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -48,8 +50,13 @@ export class RecommendationService implements OnModuleInit {
    * the module or leaves it silently degraded with no explanation.
    */
   async onModuleInit(): Promise<void> {
+    const mode = this.configService.get<string>('RECOMMENDATION_MODE', 'enterprise');
     try {
-      await Promise.all([this.tfidf.buildCorpus(), this.svd.recompute()]);
+      if (mode === 'light') {
+        await this.tfidf.buildCorpus();
+      } else {
+        await Promise.all([this.tfidf.buildCorpus(), this.svd.recompute()]);
+      }
     } catch (err) {
       this.logger.error(
         'RecommendationService: failed to warm up on startup — falling back to cold-start until next Cron tick.',
@@ -99,29 +106,46 @@ export class RecommendationService implements OnModuleInit {
 
     if (candidates.length === 0) return [];
 
-    const allPostIds = candidates.map((c) => c.id);
     const profileVector = this.tfidf.buildUserProfile(
       interactedPostIds,
       userProfile.interests,
       userProfile.hobby,
     );
 
-    // FIX C3: One call, all posts scored in a single pass
-    const knnScoreMap = await this.knn.scoreMany(userId, allPostIds);
+    const mode = this.configService.get<string>('RECOMMENDATION_MODE', 'enterprise');
+
+    let knnScoreMap: Map<string, number>;
+    let weights: { TFIDF: number; SVD: number; KNN: number; SOCIAL: number; RECENCY: number };
+
+    if (mode === 'light') {
+      knnScoreMap = new Map();
+      const total = WEIGHTS.TFIDF + WEIGHTS.SOCIAL + WEIGHTS.RECENCY;
+      weights = {
+        TFIDF: WEIGHTS.TFIDF / total,
+        SVD: 0,
+        KNN: 0,
+        SOCIAL: WEIGHTS.SOCIAL / total,
+        RECENCY: WEIGHTS.RECENCY / total,
+      };
+    } else {
+      const allPostIds = candidates.map((c) => c.id);
+      knnScoreMap = await this.knn.scoreMany(userId, allPostIds);
+      weights = { ...WEIGHTS };
+    }
 
     const scored: RecommendedPost[] = candidates.map(({ id: postId, authorId, createdAt }) => {
       const tfidfScore = this.tfidf.scorePost(profileVector, postId);
-      const svdScore   = sigmoid(this.svd.predict(userId, postId));
+      const svdScore   = mode === 'light' ? 0 : sigmoid(this.svd.predict(userId, postId));
       const knnScore   = sigmoid(knnScoreMap.get(postId) ?? 0);
       const social     = userProfile.followedAuthorIds.has(authorId) ? 1 : 0;
       const recency    = this.recencyBoost(createdAt);
 
       const score =
-        WEIGHTS.TFIDF   * tfidfScore +
-        WEIGHTS.SVD     * svdScore   +
-        WEIGHTS.KNN     * knnScore   +
-        WEIGHTS.SOCIAL  * social     +
-        WEIGHTS.RECENCY * recency;
+        weights.TFIDF   * tfidfScore +
+        weights.SVD     * svdScore   +
+        weights.KNN     * knnScore   +
+        weights.SOCIAL  * social     +
+        weights.RECENCY * recency;
 
       return { postId, score };
     });

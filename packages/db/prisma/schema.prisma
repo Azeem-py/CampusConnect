@@ -41,8 +41,10 @@ model User {
   pollVotes       PollVote[]
   comments        Comment[]
   bookmarks       Bookmark[]
-  notifications   Notification[]   @relation("UserNotifications")
-  sentNotifications Notification[] @relation("NotificationSender")
+  notifications        Notification[]          @relation("UserNotifications")
+  sentNotifications    Notification[]          @relation("NotificationSender")
+  notificationPreferences NotificationPreference[]
+  pushSubscriptions    PushSubscription[]
   reportsCreated  Report[]         @relation("ReporterRelation")
   reportsAgainst  Report[]         @relation("ReportedUserRelation")
   reportsResolved Report[]         @relation("ResolverRelation")
@@ -50,6 +52,13 @@ model User {
   updatedAt       DateTime         @updatedAt
   followers       User[]           @relation("UserFollows")
   following       User[]           @relation("UserFollows")
+
+  ownedCommunities     Community[]         @relation("CommunityOwner")
+  communityMemberships CommunityMember[]
+  communityJoinRequests CommunityJoinRequest[]
+  groupMemberships     GroupMember[]
+  quizzesCreated       Quiz[]
+  quizAttempts         QuizAttempt[]
 
   @@index([email])
   @@index([username])
@@ -85,12 +94,18 @@ model Post {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  groupId     String?
+  group       CommunityGroup? @relation(fields: [groupId], references: [id])
+
   originalPostId  String?
   originalPost    Post?            @relation("PostReposts", fields: [originalPostId], references: [id], onDelete: Cascade)
   reposts         Post[]           @relation("PostReposts")
 
   @@index([authorId])
   @@index([status])
+  @@index([communityId])
 }
 
 model Event {
@@ -222,19 +237,199 @@ model Notification {
   post        Post?            @relation(fields: [postId], references: [id], onDelete: Cascade)
   commentId   String?
   comment     Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  metadata    Json?
   unread      Boolean          @default(true)
   createdAt   DateTime         @default(now())
 
-  @@index([recipientId])
+  @@index([recipientId, createdAt])
+  @@index([recipientId, unread])
 }
 
 enum NotificationType {
   MENTION
   LIKE
+  LIKE_COMMENT
   COMMENT
+  REPLY
   REPOST
   FOLLOW
   SYSTEM
+}
+
+model NotificationPreference {
+  id     String           @id @default(cuid())
+  userId String
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type   NotificationType
+  inApp  Boolean          @default(true)
+  push   Boolean          @default(true)
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum InstitutionType {
+  UNIVERSITY
+  POLYTECHNIC
+  COLLEGE_OF_EDUCATION
+  COLLEGE_OF_HEALTH
+}
+
+model Institution {
+  id          String           @id @default(cuid())
+  name        String
+  type        InstitutionType
+  state       String?
+  acronym     String?
+  departments Department[]
+  communities Community[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([type])
+  @@index([name])
+}
+
+model Department {
+  id             String      @id @default(cuid())
+  name           String
+  institutionId  String
+  institution    Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([name])
+  @@index([institutionId])
+}
+
+enum CommunityMemberRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum CommunityJoinType {
+  OPEN
+  REQUEST
+  INVITE_ONLY
+}
+
+enum GroupMemberRole {
+  MODERATOR
+  MEMBER
+}
+
+model Community {
+  id          String              @id @default(cuid())
+  name        String
+  description String?             @db.Text
+  avatar      String?             @db.Text
+  banner      String?             @db.Text
+  joinType    CommunityJoinType   @default(OPEN)
+  isListed    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  ownerId      String
+  owner        User               @relation("CommunityOwner", fields: [ownerId], references: [id])
+
+  institutionId String?
+  institution   Institution?       @relation(fields: [institutionId], references: [id])
+
+  members     CommunityMember[]
+  joinRequests CommunityJoinRequest[]
+  groups      CommunityGroup[]
+  posts       Post[]
+
+  @@index([ownerId])
+  @@index([institutionId])
+  @@index([isListed])
+  @@map("communities")
+}
+
+model CommunityMember {
+  id          String              @id @default(cuid())
+  role        CommunityMemberRole
+  joinedAt    DateTime            @default(now())
+
+  communityId String
+  community   Community           @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User                @relation(fields: [userId], references: [id])
+
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@index([communityId, role])
+  @@map("community_members")
+}
+
+model CommunityJoinRequest {
+  id          String   @id @default(cuid())
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  communityId String
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@unique([communityId, userId])
+  @@index([communityId, status])
+  @@map("community_join_requests")
+}
+
+model CommunityGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  avatar      String?  @db.Text
+  banner      String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  communityId String
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  members     GroupMember[]
+  posts       Post[]
+  quizzes     Quiz[]
+
+  @@index([communityId])
+  @@map("community_groups")
+}
+
+model GroupMember {
+  id        String           @id @default(cuid())
+  role      GroupMemberRole
+  joinedAt  DateTime         @default(now())
+
+  groupId   String
+  group     CommunityGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@index([groupId, role])
+  @@map("group_members")
 }
 
 enum ReportReason {
@@ -279,4 +474,140 @@ model Report {
   @@index([commentId])
   @@index([reportedUserId])
   @@index([status])
+}
+
+model BannedWord {
+  id        String   @id @default(cuid())
+  pattern   String   @unique
+  isRegex   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pattern])
+}
+
+enum QuizStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum ShowResult {
+  IMMEDIATE
+  MANUAL
+}
+
+enum QuestionType {
+  MCQ
+  TRUE_FALSE
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED
+}
+
+model Quiz {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?    @db.Text
+  timeLimit    Int        // in minutes
+  maxAttempts  Int        @default(1) // 1 = once, 0 = unlimited
+  showResult   ShowResult @default(MANUAL)
+  resultsPublished Boolean @default(false)
+  status       QuizStatus @default(DRAFT)
+
+  groupId   String
+  group     CommunityGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  creatorId String
+  creator   User           @relation(fields: [creatorId], references: [id])
+
+  questions  Question[]
+  attempts   QuizAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupId])
+  @@index([creatorId])
+  @@index([status])
+  @@map("quizzes")
+}
+
+model Question {
+  id     String       @id @default(cuid())
+  text   String       @db.Text
+  type   QuestionType @default(MCQ)
+  points Int          @default(1)
+  order  Int
+
+  quizId String
+  quiz   Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  options QuestionOption[]
+  answers QuizAnswer[]
+
+  @@index([quizId])
+  @@index([quizId, order])
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String  @id @default(cuid())
+  text       String  @db.Text
+  isCorrect  Boolean @default(false)
+  order      Int
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  answers    QuizAnswer[]
+
+  @@index([questionId])
+  @@index([questionId, order])
+  @@map("question_options")
+}
+
+model QuizAttempt {
+  id          String        @id @default(cuid())
+  score       Int?
+  totalPoints Int           @default(0)
+  status      AttemptStatus @default(IN_PROGRESS)
+  startedAt   DateTime      @default(now())
+  submittedAt DateTime?
+
+  quizId String
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  answers QuizAnswer[]
+
+  @@index([quizId])
+  @@index([userId])
+  @@index([quizId, userId])
+  @@index([quizId, userId, status])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id             String         @id @default(cuid())
+  isCorrect      Boolean?
+  pointsEarned   Int?
+
+  attemptId String
+  attempt   QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  questionId       String
+  question         Question       @relation(fields: [questionId], references: [id])
+
+  selectedOptionId String?
+  selectedOption   QuestionOption? @relation(fields: [selectedOptionId], references: [id])
+
+  @@index([attemptId])
+  @@index([questionId])
+  @@map("quiz_answers")
 }

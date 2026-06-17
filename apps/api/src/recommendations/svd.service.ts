@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InteractionMatrix, InteractionMatrixService } from './interaction-matrix.service';
 
@@ -45,7 +46,10 @@ export class SvdService {
   /** Power-iteration steps per singular vector. */
   private readonly MAX_ITER = 50;
 
-  constructor(private readonly matrixService: InteractionMatrixService) {}
+  constructor(
+    private readonly matrixService: InteractionMatrixService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -79,6 +83,11 @@ export class SvdService {
 
   @Cron(CronExpression.EVERY_HOUR)
   async recompute(): Promise<void> {
+    const mode = this.configService.get<string>('RECOMMENDATION_MODE', 'enterprise');
+    if (mode === 'light') {
+      this.logger.log('SVD: Skipped — light mode active');
+      return;
+    }
     if (this.recomputePromise) return this.recomputePromise;
     this.recomputePromise = this.doRecompute().finally(() => {
       this.recomputePromise = null;

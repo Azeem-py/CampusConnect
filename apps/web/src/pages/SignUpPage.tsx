@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import {
   FlaskConical,
@@ -24,8 +24,9 @@ import { Input } from "../components/ui/Input"
 import { Select } from "../components/ui/Select"
 import { useAuth } from "../contexts/AuthContext"
 import { uploadPublicFile } from "../services/storage"
+import { useInstitutions, useDepartments } from "../services/institutions"
 
-const DEPARTMENTS = [
+const FALLBACK_DEPARTMENTS = [
   { value: "aeronautics", label: "Aeronautics & Astronautics" },
   { value: "anthropology", label: "Anthropology" },
   { value: "architecture", label: "Architecture" },
@@ -68,7 +69,7 @@ const DEPARTMENTS = [
   { value: "urban-planning", label: "Urban Planning" },
 ]
 
-const UNIVERSITIES = [
+const FALLBACK_INSTITUTIONS = [
   { value: "harvard", label: "Harvard University" },
   { value: "mit", label: "MIT" },
   { value: "stanford", label: "Stanford University" },
@@ -519,6 +520,40 @@ export function SignUpPage() {
     )
   }
 
+  const { data: apiInstitutions } = useInstitutions();
+  const { data: apiDepartments } = useDepartments(
+    apiInstitutions?.find((i) => i.name === form.school)?.id
+  );
+
+  const institutionOptions = useMemo(() => {
+    const options = [...FALLBACK_INSTITUTIONS];
+    if (apiInstitutions) {
+      for (const inst of apiInstitutions) {
+        if (!options.some((o) => o.label === inst.name || o.value === inst.name)) {
+          options.push({ value: inst.name, label: inst.name });
+        }
+      }
+    }
+    return options.sort((a, b) => a.label.localeCompare(b.label));
+  }, [apiInstitutions]);
+
+  const departmentOptions = useMemo(() => {
+    const deptMap = new Map<string, string>();
+    if (apiDepartments) {
+      for (const d of apiDepartments) {
+        deptMap.set(d.name, d.name);
+      }
+    }
+    for (const d of FALLBACK_DEPARTMENTS) {
+      if (!deptMap.has(d.label)) {
+        deptMap.set(d.label, d.label);
+      }
+    }
+    return Array.from(deptMap.entries())
+      .map(([key, label]) => ({ value: key, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [apiDepartments]);
+
   function renderAcademicStep() {
     return (
       <div className="space-y-4 animate-[fadeIn_0.3s_ease]">
@@ -533,7 +568,7 @@ export function SignUpPage() {
           label="Institution"
           name="school"
           placeholder="Select your university"
-          options={UNIVERSITIES}
+          options={institutionOptions}
           value={form.school}
           onChange={handleChange}
           required
@@ -544,7 +579,7 @@ export function SignUpPage() {
           label="Department"
           name="department"
           placeholder="Select your department"
-          options={DEPARTMENTS}
+          options={departmentOptions}
           value={form.department}
           onChange={handleChange}
           required
@@ -746,8 +781,8 @@ export function SignUpPage() {
   }
 
   function renderProfileStep() {
-    const selectedSchool = UNIVERSITIES.find((u) => u.value === form.school)?.label || form.school || "Institution name"
-    const selectedDept = DEPARTMENTS.find((d) => d.value === form.department)?.label || form.department || "Academic department"
+    const selectedSchool = FALLBACK_INSTITUTIONS.find((u) => u.value === form.school)?.label || institutionOptions.find((o) => o.value === form.school)?.label || form.school || "Institution name"
+    const selectedDept = FALLBACK_DEPARTMENTS.find((d) => d.value === form.department)?.label || departmentOptions.find((o) => o.value === form.department)?.label || form.department || "Academic department"
     
     // Parse interests and hobbies
     const interestsList = form.interests

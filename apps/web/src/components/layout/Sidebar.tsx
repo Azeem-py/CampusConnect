@@ -1,13 +1,15 @@
-import { Home, Compass, Bell, User, Plus, Settings, Shield } from "lucide-react"
+import { Home, Compass, Bell, User, Plus, Settings, Users, LayoutDashboard } from "lucide-react"
 import { NavLink, Link } from "react-router-dom"
 import { cn } from "../../lib/utils"
 import { Avatar } from "../ui/Avatar"
 import { Button } from "../ui/Button"
 import { useAuth } from "../../contexts/AuthContext"
+import { useNotificationContext } from "../../contexts/NotificationContext"
 
 const navItems = [
   { to: "/feed", icon: Home, label: "Home" },
   { to: "/explore", icon: Compass, label: "Explore" },
+  { to: "/communities", icon: Users, label: "Communities" },
   { to: "/notifications", icon: Bell, label: "Alerts" },
   { to: "/profile", icon: User, label: "Profile" },
   { to: "/settings", icon: Settings, label: "Settings" },
@@ -15,10 +17,11 @@ const navItems = [
 
 export function Sidebar() {
   const { user } = useAuth()
+  const { unreadCount } = useNotificationContext()
 
   const items = [...navItems]
   if (user?.role === "ADMIN") {
-    items.push({ to: "/moderation", icon: Shield, label: "Moderation" })
+    items.push({ to: "/admin", icon: LayoutDashboard, label: "Admin" })
   }
 
   return (
@@ -50,7 +53,12 @@ export function Sidebar() {
             }
           >
             <item.icon size={18} />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.label === "Alerts" && unreadCount > 0 && (
+              <span className="bg-primary text-on-primary text-label-xs font-geist font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-tight">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

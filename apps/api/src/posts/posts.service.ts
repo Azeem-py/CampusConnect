@@ -1,12 +1,19 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { NOTIFICATION_EVENT } from '../notifications/notification-listener.service';
+import { BannedWordFilter } from '../admin/banned-word.filter';
 
 @Injectable()
 export class PostsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+    private bannedWordFilter: BannedWordFilter,
+  ) {}
 
   private postInclude = {
     author: {
@@ -85,6 +92,13 @@ export class PostsService {
     const extractedTags = this.extractHashtags(dto.content);
     const mergedTags = Array.from(new Set([...(dto.tags ?? []), ...extractedTags]));
 
+    const bannedCheck = this.bannedWordFilter.containsBannedContent(dto.content);
+    if (bannedCheck.banned) {
+      throw new BadRequestException(
+        `Your post contains prohibited content (matched: "${bannedCheck.matched}"). Please remove it and try again.`,
+      );
+    }
+
     const post = await this.prisma.post.create({
       data: {
         title: dto.title ?? null,
@@ -92,6 +106,8 @@ export class PostsService {
         status: dto.status ?? 'DRAFT',
         courseCode: dto.courseCode ?? null,
         authorId,
+        communityId: dto.communityId ?? null,
+        groupId: dto.groupId ?? null,
         event: eventData ? { create: eventData } : undefined,
         poll: pollData ? { create: pollData } : undefined,
         images: dto.images ?? [],
@@ -118,13 +134,12 @@ export class PostsService {
 
       for (const targetUser of mentionedUsers) {
         if (targetUser.id !== authorId) {
-          await this.prisma.notification.create({
-            data: {
-              recipientId: targetUser.id,
-              type: 'MENTION',
-              actorId: authorId,
-              postId: post.id,
-            },
+          this.eventEmitter.emit(NOTIFICATION_EVENT, {
+            recipientId: targetUser.id,
+            type: 'MENTION',
+            actorId: authorId,
+            postId: post.id,
+            metadata: {},
           });
         }
       }
@@ -142,6 +157,7 @@ export class PostsService {
     search?: string,
     sort: 'latest' | 'top' = 'latest',
     period: 'all' | 'week' | 'month' = 'all',
+    communityId?: string,
   ) {
     const skip = (page - 1) * limit;
     const where: any = {
@@ -172,6 +188,10 @@ export class PostsService {
           },
         },
       };
+    }
+
+    if (communityId) {
+      where.communityId = communityId;
     }
 
     if (period === 'week') {
@@ -416,13 +436,12 @@ export class PostsService {
           });
 
           if (!existingNotif) {
-            await this.prisma.notification.create({
-              data: {
-                recipientId: targetUser.id,
-                type: 'MENTION',
-                actorId: userId,
-                postId: id,
-              },
+await this.eventEmitter.emitAsync(NOTIFICATION_EVENT, {
+              recipientId: targetUser.id,
+              type: 'MENTION',
+              actorId: userId,
+              postId: id,
+              metadata: {},
             });
           }
         }
@@ -498,6 +517,13 @@ export class PostsService {
       if (parentComment.postId !== postId) throw new BadRequestException('Parent comment does not belong to this post');
     }
 
+    const bannedCheck = this.bannedWordFilter.containsBannedContent(dto.content);
+    if (bannedCheck.banned) {
+      throw new BadRequestException(
+        `Your comment contains prohibited content (matched: "${bannedCheck.matched}"). Please remove it and try again.`,
+      );
+    }
+
     const comment = await this.prisma.comment.create({
       data: {
         content: dto.content,
@@ -512,6 +538,30 @@ export class PostsService {
       },
     });
 
+    // Notify post author (or parent comment author for replies)
+    if (dto.parentId) {
+      const parentComment = await this.prisma.comment.findUnique({ where: { id: dto.parentId } });
+      if (parentComment && parentComment.authorId !== authorId) {
+        this.eventEmitter.emit(NOTIFICATION_EVENT, {
+          recipientId: parentComment.authorId,
+          type: 'REPLY',
+          actorId: authorId,
+          postId,
+          commentId: comment.id,
+          metadata: { parentCommentId: dto.parentId },
+        });
+      }
+    } else if (post.authorId !== authorId) {
+      this.eventEmitter.emit(NOTIFICATION_EVENT, {
+        recipientId: post.authorId,
+        type: 'COMMENT',
+        actorId: authorId,
+        postId,
+        commentId: comment.id,
+        metadata: {},
+      });
+    }
+
     // Handle mentions in comments
     const mentionedUsernames = this.extractMentions(dto.content);
     if (mentionedUsernames.length > 0) {
@@ -525,14 +575,13 @@ export class PostsService {
 
       for (const targetUser of mentionedUsers) {
         if (targetUser.id !== authorId) {
-          await this.prisma.notification.create({
-            data: {
-              recipientId: targetUser.id,
-              type: 'MENTION',
-              actorId: authorId,
-              postId,
-              commentId: comment.id,
-            },
+          this.eventEmitter.emit(NOTIFICATION_EVENT, {
+            recipientId: targetUser.id,
+            type: 'MENTION',
+            actorId: authorId,
+            postId,
+            commentId: comment.id,
+            metadata: {},
           });
         }
       }
@@ -613,6 +662,16 @@ export class PostsService {
       },
       include: this.postInclude,
     });
+
+    if (originalPost.authorId !== userId) {
+      this.eventEmitter.emit(NOTIFICATION_EVENT, {
+        recipientId: originalPost.authorId,
+        type: 'REPOST',
+        actorId: userId,
+        postId,
+        metadata: {},
+      });
+    }
 
     return { reposted: true, post: newRepost };
   }

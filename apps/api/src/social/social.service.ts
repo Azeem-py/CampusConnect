@@ -1,10 +1,15 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { VoteDto } from '@campus-connect/types';
+import { NOTIFICATION_EVENT } from '../notifications/notification-listener.service';
 
 @Injectable()
 export class SocialService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   /**
    * Casts or updates a vote on a post or comment.
@@ -67,6 +72,19 @@ export class SocialService {
         where: { id: target.authorId },
         data: { reputationScore: { increment: repDiff } }
       });
+
+      // Send notification only on upvote
+      if (value === 1 && target.authorId !== userId) {
+        const type = postId ? 'LIKE' : 'LIKE_COMMENT';
+        await this.eventEmitter.emitAsync(NOTIFICATION_EVENT, {
+          recipientId: target.authorId,
+          type,
+          actorId: userId,
+          postId: postId ?? undefined,
+          commentId: commentId ?? undefined,
+          metadata: {},
+        });
+      }
 
       return voteResult;
     });

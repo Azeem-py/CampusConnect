@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { RecommendationService } from './recommendation.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { InteractionMatrixService, InteractionMatrix } from './interaction-matrix.service';
@@ -48,6 +49,14 @@ const makeKnn = () =>
     clearCache: jest.fn(),
   }) as unknown as jest.Mocked<KnnService>;
 
+const makeConfigService = (mode = 'enterprise') =>
+  ({
+    get: jest.fn().mockImplementation((key: string, defaultValue?: string) => {
+      if (key === 'RECOMMENDATION_MODE') return mode;
+      return defaultValue;
+    }),
+  }) as unknown as jest.Mocked<ConfigService>;
+
 // ─── Test Suite ───────────────────────────────────────────────────────────────
 
 describe('RecommendationService', () => {
@@ -57,16 +66,21 @@ describe('RecommendationService', () => {
   let tfidf: jest.Mocked<TfidfService>;
   let svd: jest.Mocked<SvdService>;
   let knn: jest.Mocked<KnnService>;
+  let configService: jest.Mocked<ConfigService>;
 
   /** Resets all mocks and rebuilds the service with fresh instances. */
-  const rebuild = (matrixInteractions: Record<string, Record<string, number>> = {}) => {
+  const rebuild = (
+    matrixInteractions: Record<string, Record<string, number>> = {},
+    mode = 'enterprise',
+  ) => {
     const matrix = makeMatrix(matrixInteractions);
     prisma = makePrisma();
     matrixService = makeMatrixService(matrix);
     tfidf = makeTfidf();
     svd = makeSvd();
     knn = makeKnn();
-    service = new RecommendationService(prisma, matrixService, tfidf, svd, knn);
+    configService = makeConfigService(mode);
+    service = new RecommendationService(prisma, matrixService, tfidf, svd, knn, configService);
   };
 
   afterEach(() => jest.clearAllMocks());
@@ -215,6 +229,60 @@ describe('RecommendationService', () => {
 
       const results = await service.recommend('u1', 2);
       expect(results[0]).toBe('pNew');
+    });
+  });
+
+  // ─── Light mode ──────────────────────────────────────────────────────────────
+
+  describe('light mode', () => {
+    describe('onModuleInit — startup warmup', () => {
+      it('does NOT trigger SVD recompute in light mode', async () => {
+        rebuild({ u1: { p1: 3 } }, 'light');
+        await service.onModuleInit();
+        expect(tfidf.buildCorpus).toHaveBeenCalledTimes(1);
+        expect(svd.recompute).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('cold-start', () => {
+      it('returns department-based results without calling SVD or KNN', async () => {
+        rebuild({ u1: { p1: 3, p2: 1 } }, 'light');
+        (prisma.user.findUnique as jest.Mock).mockResolvedValue({ department: 'Physics' });
+        (prisma.post.findMany as jest.Mock).mockImplementation((args) => {
+          if (args?.where?.NOT) return Promise.resolve([{ id: 'p11' }]);
+          return Promise.resolve([{ id: 'p10' }]);
+        });
+        const results = await service.recommend('u1', 5);
+        expect(results).toEqual(['p10', 'p11']);
+        expect(svd.predict).not.toHaveBeenCalled();
+        expect(knn.scoreMany).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('recommend — scoring', () => {
+      const candidatePosts = [
+        { id: 'p10', authorId: 'author1', createdAt: new Date() },
+        { id: 'p11', authorId: 'author2', createdAt: new Date(Date.now() - 30 * 86_400_000) },
+      ];
+
+      beforeEach(() => {
+        rebuild({ u1: { p1: 3, p2: 3, p3: 1, p4: -1 } }, 'light');
+        (prisma.post.findMany as jest.Mock).mockResolvedValue(candidatePosts);
+        (prisma.user.findUnique as jest.Mock).mockResolvedValue({ following: [] });
+      });
+
+      it('does not invoke knn.scoreMany or svd.predict in light mode', async () => {
+        svd.predict = jest.fn().mockReturnValue(0.5);
+        await service.recommend('u1', 10);
+        expect(knn.scoreMany).not.toHaveBeenCalled();
+        expect(svd.predict).not.toHaveBeenCalled();
+      });
+
+      it('applies recency boost — newer post ranks first when scores are equal', async () => {
+        tfidf.scorePost = jest.fn().mockReturnValue(0.5);
+        const results = await service.recommend('u1', 10);
+        expect(results).toEqual(['p10', 'p11']);
+      });
     });
   });
 });

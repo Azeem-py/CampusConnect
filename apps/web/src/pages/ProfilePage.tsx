@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useMemo } from "react"
 import { 
   MapPin, 
   Calendar, 
@@ -30,6 +30,7 @@ import { useUpdateProfile, useUserProfile, useFollowUser, useUnfollowUser, type 
 import { uploadPublicFile } from "../services/storage"
 import { AlertTriangle } from "lucide-react"
 import { ReportDialog } from "../components/ui/ReportDialog"
+import { useInstitutions, useDepartments } from "../services/institutions"
 
 function formatJoinDate(dateString: string) {
   const date = new Date(dateString)
@@ -47,7 +48,7 @@ function timeAgo(dateString: string) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-const DEPARTMENTS = [
+const FALLBACK_DEPARTMENTS = [
   { value: "aeronautics", label: "Aeronautics & Astronautics" },
   { value: "biology", label: "Biology" },
   { value: "business", label: "Business & Management" },
@@ -70,7 +71,7 @@ const DEPARTMENTS = [
   { value: "software-eng", label: "Software Engineering" },
 ]
 
-const UNIVERSITIES = [
+const FALLBACK_INSTITUTIONS = [
   { value: "harvard", label: "Harvard University" },
   { value: "mit", label: "MIT" },
   { value: "stanford", label: "Stanford University" },
@@ -229,6 +230,40 @@ export function ProfilePage() {
     avatar: currentUser?.avatar || "",
     banner: currentUser?.banner || "",
   })
+
+  const { data: apiInstitutions } = useInstitutions()
+  const { data: apiDepartments } = useDepartments(
+    apiInstitutions?.find((i) => i.name === formData.school)?.id
+  )
+
+  const institutionOptionsProfile = useMemo(() => {
+    const options = [...FALLBACK_INSTITUTIONS]
+    if (apiInstitutions) {
+      for (const inst of apiInstitutions) {
+        if (!options.some((o) => o.value === inst.name)) {
+          options.push({ value: inst.name, label: inst.name })
+        }
+      }
+    }
+    return options.sort((a, b) => a.label.localeCompare(b.label))
+  }, [apiInstitutions])
+
+  const departmentOptionsProfile = useMemo(() => {
+    const deptMap = new Map<string, string>()
+    if (apiDepartments) {
+      for (const d of apiDepartments) {
+        deptMap.set(d.name, d.name)
+      }
+    }
+    for (const d of FALLBACK_DEPARTMENTS) {
+      if (!deptMap.has(d.label)) {
+        deptMap.set(d.label, d.label)
+      }
+    }
+    return Array.from(deptMap.entries())
+      .map(([key, label]) => ({ value: key, label }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [apiDepartments])
 
   if (urlUserId && userLoading) {
     return (
@@ -900,8 +935,8 @@ export function ProfilePage() {
                             className="w-full bg-surface-container border border-outline-variant/15 hover:border-primary/45 rounded-xl px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm hover:shadow transition-all duration-200 font-inter cursor-pointer appearance-none"
                           >
                             <option value="">Select University</option>
-                            {UNIVERSITIES.map(u => (
-                              <option key={u.value} value={u.label}>{u.label}</option>
+                            {institutionOptionsProfile.map(u => (
+                              <option key={u.value} value={u.value}>{u.label}</option>
                             ))}
                           </select>
                           <div className="absolute right-4 top-3.5 pointer-events-none text-on-surface-variant/50">
@@ -922,8 +957,8 @@ export function ProfilePage() {
                             className="w-full bg-surface-container border border-outline-variant/15 hover:border-primary/45 rounded-xl px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm hover:shadow transition-all duration-200 font-inter cursor-pointer appearance-none"
                           >
                             <option value="">Select Department</option>
-                            {DEPARTMENTS.map(d => (
-                              <option key={d.value} value={d.label}>{d.label}</option>
+                            {departmentOptionsProfile.map(d => (
+                              <option key={d.value} value={d.value}>{d.label}</option>
                             ))}
                           </select>
                           <div className="absolute right-4 top-3.5 pointer-events-none text-on-surface-variant/50">

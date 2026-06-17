@@ -84,6 +84,16 @@ export class CreatePostDto {
   @Type(() => PollDto)
   poll?: PollDto;
 
+  @ApiPropertyOptional({ example: 'cm1abcd1234' })
+  @IsOptional()
+  @IsString()
+  communityId?: string;
+
+  @ApiPropertyOptional({ example: 'cm1abcd5678' })
+  @IsOptional()
+  @IsString()
+  groupId?: string;
+
   @ApiPropertyOptional({ type: [String], example: ['ai', 'nextjs'] })
   @IsOptional()
   @IsArray()

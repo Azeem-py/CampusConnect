@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { SvdService } from './svd.service';
 import { InteractionMatrixService, InteractionMatrix } from './interaction-matrix.service';
 
@@ -21,13 +22,23 @@ const makeMockMatrixService = (matrix = buildMockMatrix()) =>
     invalidate: jest.fn(),
   }) as unknown as jest.Mocked<InteractionMatrixService>;
 
+const makeConfigService = (mode = 'enterprise') =>
+  ({
+    get: jest.fn().mockImplementation((key: string, defaultValue?: string) => {
+      if (key === 'RECOMMENDATION_MODE') return mode;
+      return defaultValue;
+    }),
+  }) as unknown as jest.Mocked<ConfigService>;
+
 describe('SvdService', () => {
   let service: SvdService;
   let matrixService: jest.Mocked<InteractionMatrixService>;
+  let configService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
     matrixService = makeMockMatrixService();
-    service = new SvdService(matrixService);
+    configService = makeConfigService();
+    service = new SvdService(matrixService, configService);
     await service.recompute();
   });
 
@@ -45,7 +56,7 @@ describe('SvdService', () => {
     });
 
     it('returns 0 before any recompute', () => {
-      const fresh = new SvdService(matrixService);
+      const fresh = new SvdService(matrixService, configService);
       expect(fresh.predict('u1', 'p1')).toBe(0);
     });
   });
@@ -84,14 +95,14 @@ describe('SvdService', () => {
 
   describe('sparse implementation (C4)', () => {
     it('handles an empty matrix gracefully', async () => {
-      const empty = new SvdService(makeMockMatrixService(new Map()));
+      const empty = new SvdService(makeMockMatrixService(new Map()), configService);
       await expect(empty.recompute()).resolves.not.toThrow();
       expect(empty.predict('u1', 'p1')).toBe(0);
     });
 
     it('works correctly with a single-user single-post matrix', async () => {
       const tiny = new Map([['u1', new Map([['p1', 3]])]]);
-      const svc = new SvdService(makeMockMatrixService(tiny));
+      const svc = new SvdService(makeMockMatrixService(tiny), configService);
       await svc.recompute();
       expect(Number.isFinite(svc.predict('u1', 'p1'))).toBe(true);
     });
@@ -107,11 +118,24 @@ describe('SvdService', () => {
     });
 
     it('concurrent recompute() calls share one in-flight Promise', async () => {
-      const svc = new SvdService(matrixService);
+      const svc = new SvdService(matrixService, configService);
       jest.clearAllMocks();
       await Promise.all([svc.recompute(), svc.recompute(), svc.recompute()]);
       // Matrix was only fetched once, not three times
       expect(matrixService.getMatrix).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ─── Light mode ──────────────────────────────────────────────────────────────
+
+  describe('light mode', () => {
+    it('skips decomposition and returns 0 for all predictions', async () => {
+      const freshMatrixService = makeMockMatrixService();
+      const lightConfig = makeConfigService('light');
+      const lightSvc = new SvdService(freshMatrixService, lightConfig);
+      await lightSvc.recompute();
+      expect(freshMatrixService.getMatrix).not.toHaveBeenCalled();
+      expect(lightSvc.predict('u1', 'p1')).toBe(0);
     });
   });
 
@@ -126,7 +150,7 @@ describe('SvdService', () => {
     });
 
     it('returns [] before any recompute', () => {
-      const fresh = new SvdService(matrixService);
+      const fresh = new SvdService(matrixService, configService);
       expect(fresh.getPostIds()).toEqual([]);
     });
   });

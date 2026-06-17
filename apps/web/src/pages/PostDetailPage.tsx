@@ -16,6 +16,7 @@ import { TrendingWidget } from "../components/widgets/TrendingWidget"
 import { ScholarsWidget } from "../components/widgets/ScholarsWidget"
 import { usePost, useCreateComment, useDeleteComment, useVoteSocial } from "../services/posts"
 import { useAuth } from "../contexts/AuthContext"
+import { useSearchScholars } from "../services/auth"
 import { Avatar } from "../components/ui/Avatar"
 import { cn, formatDistanceToNow } from "../lib/utils"
 import { renderEnhancedPreview } from "../lib/latex"
@@ -75,6 +76,162 @@ export function PostDetailPage() {
   const [replyToCommentId, setReplyToCommentId] = useState<string | null>(null)
   const [newReplyText, setNewReplyText] = useState("")
   const [copied, setCopied] = useState(false)
+
+  // --- @Mention Autocomplete State & Hooks ---
+  const [mentionSearch, setMentionSearch] = useState<string | null>(null)
+  const [activeInputType, setActiveInputType] = useState<'comment' | 'reply' | null>(null)
+  const [activeMentionIndex, setActiveMentionIndex] = useState(0)
+
+  const { data: searchedScholars } = useSearchScholars(mentionSearch || "", mentionSearch !== null)
+
+  const checkMentionTrigger = (value: string, selectionStart: number | null) => {
+    const textBeforeCursor = value.slice(0, selectionStart ?? 0)
+    const lastAt = textBeforeCursor.lastIndexOf("@")
+    
+    if (lastAt !== -1) {
+      const charBeforeAt = lastAt > 0 ? textBeforeCursor[lastAt - 1] : " "
+      if (/\s/.test(charBeforeAt)) {
+        const query = textBeforeCursor.slice(lastAt + 1)
+        if (/^[a-zA-Z0-9_-]*$/.test(query)) {
+          setMentionSearch(query)
+          setActiveMentionIndex(0)
+          return
+        }
+      }
+    }
+    setMentionSearch(null)
+  }
+
+  const insertMention = (username: string) => {
+    if (activeInputType === 'comment') {
+      const textarea = document.getElementById("post-detail-comment-input") as HTMLTextAreaElement
+      if (!textarea) return
+      
+      const val = newCommentText
+      const selStart = textarea.selectionStart
+      const textBeforeCursor = val.slice(0, selStart)
+      const lastAt = textBeforeCursor.lastIndexOf("@")
+      
+      if (lastAt !== -1) {
+        const startText = val.slice(0, lastAt)
+        const endText = val.slice(selStart)
+        const updatedVal = `${startText}@${username} ${endText}`
+        setNewCommentText(updatedVal)
+        
+        const newOffset = lastAt + username.length + 2
+        setTimeout(() => {
+          textarea.focus()
+          textarea.setSelectionRange(newOffset, newOffset)
+        }, 10)
+      }
+    } else if (activeInputType === 'reply') {
+      if (!replyToCommentId) return
+      const input = document.getElementById(`reply-input-${replyToCommentId}`) as HTMLInputElement
+      if (!input) return
+      
+      const val = newReplyText
+      const selStart = input.selectionStart ?? 0
+      const textBeforeCursor = val.slice(0, selStart)
+      const lastAt = textBeforeCursor.lastIndexOf("@")
+      
+      if (lastAt !== -1) {
+        const startText = val.slice(0, lastAt)
+        const endText = val.slice(selStart)
+        const updatedVal = `${startText}@${username} ${endText}`
+        setNewReplyText(updatedVal)
+        
+        const newOffset = lastAt + username.length + 2
+        setTimeout(() => {
+          input.focus()
+          input.setSelectionRange(newOffset, newOffset)
+        }, 10)
+      }
+    }
+    setMentionSearch(null)
+    setActiveInputType(null)
+  }
+
+  const handleCommentTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value
+    setNewCommentText(val)
+    setActiveInputType('comment')
+    checkMentionTrigger(val, e.target.selectionStart)
+  }
+
+  const handleCommentSelect = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    const target = e.currentTarget
+    setActiveInputType('comment')
+    checkMentionTrigger(target.value, target.selectionStart)
+  }
+
+  const handleReplyTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setNewReplyText(val)
+    setActiveInputType('reply')
+    checkMentionTrigger(val, e.target.selectionStart)
+  }
+
+  const handleReplySelect = (e: React.SyntheticEvent<HTMLInputElement>) => {
+    const target = e.currentTarget
+    setActiveInputType('reply')
+    checkMentionTrigger(target.value, target.selectionStart)
+  }
+
+  const handleCommentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionSearch !== null && searchedScholars && searchedScholars.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        setActiveMentionIndex((prev) => (prev + 1) % searchedScholars.length)
+        return
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault()
+        setActiveMentionIndex((prev) => (prev - 1 + searchedScholars.length) % searchedScholars.length)
+        return
+      }
+      if (e.key === "Enter") {
+        e.preventDefault()
+        if (searchedScholars[activeMentionIndex]) {
+          insertMention(searchedScholars[activeMentionIndex].username)
+        }
+        return
+      }
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setMentionSearch(null)
+        setActiveInputType(null)
+        return
+      }
+    }
+  }
+
+  const handleReplyKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (mentionSearch !== null && searchedScholars && searchedScholars.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        setActiveMentionIndex((prev) => (prev + 1) % searchedScholars.length)
+        return
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault()
+        setActiveMentionIndex((prev) => (prev - 1 + searchedScholars.length) % searchedScholars.length)
+        return
+      }
+      if (e.key === "Enter") {
+        e.preventDefault()
+        if (searchedScholars[activeMentionIndex]) {
+          insertMention(searchedScholars[activeMentionIndex].username)
+        }
+        return
+      }
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setMentionSearch(null)
+        setActiveInputType(null)
+        return
+      }
+    }
+  }
 
   // Update Page Document Title
   useEffect(() => {
@@ -249,16 +406,54 @@ export function PostDetailPage() {
                 size="sm"
                 className="ring-1 ring-black/5"
               />
-              <div className="flex-1 space-y-3">
+              <div className="flex-1 space-y-3 relative">
                 <textarea
                   id="post-detail-comment-input"
                   value={newCommentText}
-                  onChange={(e) => setNewCommentText(e.target.value)}
+                  onChange={handleCommentTextChange}
+                  onSelect={handleCommentSelect}
+                  onKeyUp={handleCommentSelect}
+                  onMouseUp={handleCommentSelect}
+                  onKeyDown={handleCommentKeyDown}
                   placeholder="Join the discussion... Type here (LaTeX $$formula$$ and code blocks supported)"
                   disabled={createComment.isPending}
                   rows={2}
                   className="w-full px-3.5 py-2 text-[13px] font-inter text-gray-800 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/80 transition-all duration-200 placeholder-gray-400 font-inter resize-none"
                 />
+
+                {mentionSearch !== null && activeInputType === 'comment' && searchedScholars && searchedScholars.length > 0 && (
+                  <div className="absolute left-0 bottom-full mb-2 z-50 w-full max-w-xs bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-2xl p-1.5 max-h-48 overflow-y-auto font-geist">
+                    {searchedScholars.map((scholar, idx) => (
+                      <button
+                        key={scholar.id}
+                        type="button"
+                        onClick={() => insertMention(scholar.username)}
+                        onMouseEnter={() => setActiveMentionIndex(idx)}
+                        className={cn(
+                          "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all duration-150",
+                          idx === activeMentionIndex
+                            ? "bg-blue-50 text-blue-700 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
+                        )}
+                      >
+                        <Avatar
+                          name={scholar.name ?? scholar.username}
+                          src={scholar.avatar ?? undefined}
+                          size="sm"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[12px] font-semibold truncate leading-none">
+                            {scholar.name || scholar.username}
+                          </div>
+                          <div className="text-[10px] text-gray-500 truncate mt-0.5 leading-none">
+                            @{scholar.username}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex justify-end">
                   <button
                     type="submit"
@@ -390,29 +585,68 @@ export function PostDetailPage() {
 
                           {/* Reply Form */}
                           {replyToCommentId === comment.id && (
-                            <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="flex gap-2 items-center mt-3 pl-3 border-l-2 border-blue-500/50 bg-blue-50/10 p-2 rounded-r-lg">
-                              <input
-                                type="text"
-                                value={newReplyText}
-                                onChange={(e) => setNewReplyText(e.target.value)}
-                                placeholder={`Reply to @${comment.author.username}...`}
-                                disabled={createComment.isPending}
-                                className="flex-1 px-3 py-1.5 text-[12px] font-inter text-gray-800 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/80 transition-all placeholder-gray-400"
-                                autoFocus
-                              />
-                              <button
-                                type="submit"
-                                disabled={!newReplyText.trim() || createComment.isPending}
-                                className={cn(
-                                  "px-3 py-1.5 rounded-lg text-[12px] font-geist font-semibold cursor-pointer shrink-0 transition-all select-none",
-                                  newReplyText.trim() && !createComment.isPending
-                                    ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                )}
-                              >
-                                Post
-                              </button>
-                            </form>
+                             <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="flex gap-2 items-center mt-3 pl-3 border-l-2 border-blue-500/50 bg-blue-50/10 p-2 rounded-r-lg relative">
+                               <input
+                                 id={`reply-input-${comment.id}`}
+                                 type="text"
+                                 value={newReplyText}
+                                 onChange={handleReplyTextChange}
+                                 onSelect={handleReplySelect}
+                                 onKeyUp={handleReplySelect}
+                                 onMouseUp={handleReplySelect}
+                                 onKeyDown={handleReplyKeyDown}
+                                 placeholder={`Reply to @${comment.author.username}...`}
+                                 disabled={createComment.isPending}
+                                 className="flex-1 px-3 py-1.5 text-[12px] font-inter text-gray-800 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/80 transition-all placeholder-gray-400"
+                                 autoFocus
+                               />
+
+                               {mentionSearch !== null && activeInputType === 'reply' && searchedScholars && searchedScholars.length > 0 && (
+                                 <div className="absolute left-3 bottom-full mb-2 z-50 w-full max-w-xs bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-2xl p-1.5 max-h-48 overflow-y-auto font-geist">
+                                   {searchedScholars.map((scholar, idx) => (
+                                     <button
+                                       key={scholar.id}
+                                       type="button"
+                                       onClick={() => insertMention(scholar.username)}
+                                       onMouseEnter={() => setActiveMentionIndex(idx)}
+                                       className={cn(
+                                         "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-left transition-all duration-150",
+                                         idx === activeMentionIndex
+                                           ? "bg-blue-50 text-blue-700 font-medium"
+                                           : "text-gray-700 hover:bg-gray-50"
+                                       )}
+                                     >
+                                       <Avatar
+                                         name={scholar.name ?? scholar.username}
+                                         src={scholar.avatar ?? undefined}
+                                         size="sm"
+                                       />
+                                       <div className="flex-1 min-w-0">
+                                         <div className="text-[12px] font-semibold truncate leading-none">
+                                           {scholar.name || scholar.username}
+                                         </div>
+                                         <div className="text-[10px] text-gray-500 truncate mt-0.5 leading-none">
+                                           @{scholar.username}
+                                         </div>
+                                       </div>
+                                     </button>
+                                   ))}
+                                 </div>
+                               )}
+
+                               <button
+                                 type="submit"
+                                 disabled={!newReplyText.trim() || createComment.isPending}
+                                 className={cn(
+                                   "px-3 py-1.5 rounded-lg text-[12px] font-geist font-semibold cursor-pointer shrink-0 transition-all select-none",
+                                   newReplyText.trim() && !createComment.isPending
+                                     ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                 )}
+                               >
+                                 Post
+                               </button>
+                             </form>
                           )}
                         </div>
                       </div>

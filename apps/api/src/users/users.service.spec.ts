@@ -33,11 +33,13 @@ describe('UsersService - getSuggestedScholars', () => {
   let prisma: jest.Mocked<PrismaService>;
   let matrixService: jest.Mocked<InteractionMatrixService>;
 
+  const mockEmitter = { emit: jest.fn() } as any;
+
   const rebuild = (matrixInteractions: Record<string, Record<string, number>> = {}) => {
     const matrix = makeMatrix(matrixInteractions);
     prisma = makePrisma();
     matrixService = makeMatrixService(matrix);
-    service = new UsersService(prisma, matrixService);
+    service = new UsersService(prisma, matrixService, mockEmitter);
   };
 
   afterEach(() => jest.clearAllMocks());
