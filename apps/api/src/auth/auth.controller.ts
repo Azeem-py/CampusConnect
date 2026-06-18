@@ -12,6 +12,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Response, Request } from 'express';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
@@ -79,6 +80,7 @@ export class AuthController {
   }
 
   @Post('signup')
+  @Throttle({ short: { limit: 1, ttl: 1000 }, medium: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Register a new user account' })
   @ApiBody({
     type: SignupDto,
@@ -149,6 +151,7 @@ export class AuthController {
         username: dto.username,
         email: dto.email,
         password: hashedPassword,
+        role: 'STUDENT',
         phone: dto.phone ?? null,
         department: dto.department ?? null,
         school: dto.school ?? null,
@@ -169,6 +172,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ short: { limit: 3, ttl: 1000 }, medium: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Sign in with email and password' })
   @ApiBody({
@@ -234,6 +238,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ short: { limit: 3, ttl: 1000 }, medium: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token using the refresh token cookie' })
   @ApiResponse({

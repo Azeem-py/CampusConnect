@@ -13,6 +13,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../auth/admin.guard';
@@ -33,6 +34,7 @@ import {
 @Controller('api/v1/admin')
 @UseGuards(JwtAuthGuard, AdminGuard)
 @ApiBearerAuth()
+@Throttle({ long: { limit: 200, ttl: 60000 } })
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
