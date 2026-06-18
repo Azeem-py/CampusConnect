@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Req,
   HttpCode,
@@ -170,9 +171,13 @@ export class QuizzesController {
     @Param('groupId') groupId: string,
     @Param('quizId') quizId: string,
     @Req() req: Request,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     const userId = (req as any).user.id;
-    return this.quizzesService.getMyAttempts(communityId, groupId, quizId, userId);
+    const p = page ? parseInt(page, 10) : 1;
+    const l = limit ? parseInt(limit, 10) : 10;
+    return this.quizzesService.getMyAttempts(communityId, groupId, quizId, userId, p, l);
   }
 
   @Get(':quizId/attempts')
@@ -182,9 +187,13 @@ export class QuizzesController {
     @Param('groupId') groupId: string,
     @Param('quizId') quizId: string,
     @Req() req: Request,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     const userId = (req as any).user.id;
-    return this.quizzesService.getAllAttempts(communityId, groupId, quizId, userId);
+    const p = page ? parseInt(page, 10) : 1;
+    const l = limit ? parseInt(limit, 10) : 10;
+    return this.quizzesService.getAllAttempts(communityId, groupId, quizId, userId, p, l);
   }
 
   @Get(':quizId/attempts/:attemptId')

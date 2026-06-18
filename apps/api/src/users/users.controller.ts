@@ -56,23 +56,12 @@ export class UsersController {
         following: {
           select: {
             id: true,
-            name: true,
-            username: true,
-            avatar: true,
-            school: true,
-            department: true,
-            major: true,
           },
         },
-        followers: {
+        _count: {
           select: {
-            id: true,
-            name: true,
-            username: true,
-            avatar: true,
-            school: true,
-            department: true,
-            major: true,
+            followers: true,
+            following: true,
           },
         },
       },
@@ -148,26 +137,10 @@ export class UsersController {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
-        following: {
+        _count: {
           select: {
-            id: true,
-            name: true,
-            username: true,
-            avatar: true,
-            school: true,
-            department: true,
-            major: true,
-          },
-        },
-        followers: {
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            avatar: true,
-            school: true,
-            department: true,
-            major: true,
+            followers: true,
+            following: true,
           },
         },
       },
@@ -176,6 +149,34 @@ export class UsersController {
     if (!user) throw new NotFoundException('User not found');
     const { password: _, refreshTokenHash: __, ...userWithoutSensitive } = user;
     return userWithoutSensitive;
+  }
+
+  @Get(':id/followers')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get paginated followers of a user' })
+  @ApiCookieAuth('token')
+  async getFollowers(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const p = page ? parseInt(page, 10) : 1;
+    const l = limit ? parseInt(limit, 10) : 10;
+    return this.usersService.findFollowers(id, p, l);
+  }
+
+  @Get(':id/following')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get paginated users followed by a user' })
+  @ApiCookieAuth('token')
+  async getFollowing(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const p = page ? parseInt(page, 10) : 1;
+    const l = limit ? parseInt(limit, 10) : 10;
+    return this.usersService.findFollowing(id, p, l);
   }
 
   @Patch('me/password')

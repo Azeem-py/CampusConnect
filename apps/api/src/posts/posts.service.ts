@@ -290,33 +290,50 @@ export class PostsService {
   async findOne(id: string) {
     const post = await this.prisma.post.findUnique({
       where: { id },
-      include: {
-        ...this.postInclude,
-        comments: {
-          where: { parentId: null },
-          orderBy: { createdAt: 'asc' },
-          include: {
-            author: {
-              select: { id: true, name: true, username: true, avatar: true },
-            },
-            votes: true,
-            replies: {
-              orderBy: { createdAt: 'asc' },
-              include: {
-                author: {
-                  select: { id: true, name: true, username: true, avatar: true },
-                },
-                votes: true,
-              },
-            },
-          },
-        },
-      },
+      include: this.postInclude,
     });
 
     if (!post) throw new NotFoundException('Post not found');
     return post;
   }
+
+  async findComments(postId: string, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+
+    const [comments, total] = await Promise.all([
+      this.prisma.comment.findMany({
+        where: { postId, parentId: null },
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take: limit,
+        include: {
+          author: {
+            select: { id: true, name: true, username: true, avatar: true },
+          },
+          votes: true,
+          replies: {
+            orderBy: { createdAt: 'asc' },
+            include: {
+              author: {
+                select: { id: true, name: true, username: true, avatar: true },
+              },
+              votes: true,
+            },
+          },
+        },
+      }),
+      this.prisma.comment.count({ where: { postId, parentId: null } }),
+    ]);
+
+    return {
+      comments,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
 
   async update(id: string, userId: string, dto: UpdatePostDto) {
     const post = await this.prisma.post.findUnique({

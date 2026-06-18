@@ -124,6 +124,19 @@ export class PostsController {
     return this.postsService.findOne(id);
   }
 
+  @Get(':id/comments')
+  @ApiOperation({ summary: 'Get paginated comments for a post' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 20 })
+  async findComments(
+    @Param('id') id: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.postsService.findComments(id, Number(page) || 1, Number(limit) || 20);
+  }
+
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update a post (content, status, event, poll)' })
   async update(@Param('id') id: string, @Body() dto: UpdatePostDto, @Req() req: Request) {

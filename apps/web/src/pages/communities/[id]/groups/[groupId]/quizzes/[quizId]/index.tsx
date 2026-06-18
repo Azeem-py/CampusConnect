@@ -16,8 +16,10 @@ export function QuizDetailPage() {
   const { data: community } = useCommunity(communityId!)
   const { data: group } = useCommunityGroup(communityId!, groupId!)
   const { data: quiz, isLoading } = useQuiz(communityId!, groupId!, quizId!)
-  const { data: myAttempts } = useMyAttempts(communityId!, groupId!, quizId!)
-  const { data: allAttempts } = useAllAttempts(communityId!, groupId!, quizId!)
+
+  const [allAttemptsLimit, setAllAttemptsLimit] = useState(20)
+  const { data: myAttempts } = useMyAttempts(communityId!, groupId!, quizId!, 1, 20)
+  const { data: allAttempts } = useAllAttempts(communityId!, groupId!, quizId!, 1, allAttemptsLimit)
   const publishQuiz = usePublishQuiz(communityId!, groupId!, quizId!)
   const closeQuiz = useCloseQuiz(communityId!, groupId!, quizId!)
   const publishResults = usePublishResults(communityId!, groupId!, quizId!)
@@ -32,8 +34,8 @@ export function QuizDetailPage() {
     return <div className="text-center py-12 text-on-surface-variant">Loading...</div>
   }
 
-  const latestAttempt = myAttempts?.find((a) => a.status === "IN_PROGRESS")
-  const completedAttempts = myAttempts?.filter((a) => a.status === "SUBMITTED" || a.status === "AUTO_SUBMITTED") ?? []
+  const latestAttempt = myAttempts?.attempts?.find((a) => a.status === "IN_PROGRESS")
+  const completedAttempts = myAttempts?.attempts?.filter((a) => a.status === "SUBMITTED" || a.status === "AUTO_SUBMITTED") ?? []
   const canTake = quiz.status === "PUBLISHED" && (quiz.maxAttempts === 0 || completedAttempts.length < quiz.maxAttempts)
 
   const handleStart = async () => {
@@ -182,13 +184,13 @@ export function QuizDetailPage() {
         </Card>
       )}
 
-      {canManage && allAttempts && allAttempts.length > 0 && (
+      {canManage && allAttempts?.attempts && allAttempts.attempts.length > 0 && (
         <Card className="p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-title-sm font-geist font-semibold text-on-surface">
-              All Attempts ({allAttempts.length})
+              All Attempts ({allAttempts.total ?? 0})
             </h3>
-            {quiz.showResult === "MANUAL" && !quiz.resultsPublished && allAttempts.some((a) => a.status !== "IN_PROGRESS") && (
+            {quiz.showResult === "MANUAL" && !quiz.resultsPublished && allAttempts.attempts.some((a) => a.status !== "IN_PROGRESS") && (
               <Button
                 size="sm"
                 variant="outline"
@@ -200,8 +202,8 @@ export function QuizDetailPage() {
               </Button>
             )}
           </div>
-          <div className="space-y-2">
-            {allAttempts.map((attempt: QuizAttempt & { user?: { id: string; name: string | null; username: string; avatar: string | null } }) => (
+          <div className="space-y-2 mb-3">
+            {allAttempts.attempts.map((attempt: QuizAttempt & { user?: { id: string; name: string | null; username: string; avatar: string | null } }) => (
               <div
                 key={attempt.id}
                 className="flex items-center justify-between p-2.5 bg-surface-container rounded-lg"
@@ -230,6 +232,17 @@ export function QuizDetailPage() {
               </div>
             ))}
           </div>
+          {allAttempts.attempts.length < (allAttempts.total ?? 0) && (
+            <div className="flex justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setAllAttemptsLimit((prev) => prev + 20)}
+              >
+                Load More
+              </Button>
+            </div>
+          )}
         </Card>
       )}
 

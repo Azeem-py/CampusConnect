@@ -468,13 +468,17 @@ export class AdminService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const users = await this.prisma.user.findMany({
-      where: { createdAt: { gte: startDate } },
-      select: { createdAt: true, role: true },
-      orderBy: { createdAt: 'asc' },
-    });
+    const rawResults: { date: string; count: number }[] = await this.prisma.$queryRaw`
+      SELECT 
+        TO_CHAR(DATE_TRUNC('day', "createdAt"), 'YYYY-MM-DD') as date, 
+        COUNT(*)::int as count 
+      FROM "User" 
+      WHERE "createdAt" >= ${startDate} 
+      GROUP BY DATE_TRUNC('day', "createdAt")
+      ORDER BY DATE_TRUNC('day', "createdAt") ASC
+    `;
 
-    const userGrowth = await this.buildTimeSeries(users, days, 'createdAt');
+    const userGrowth = this.fillTimeSeries(rawResults, days);
     const roleDistribution = await this.prisma.user.groupBy({
       by: ['role'],
       _count: { id: true },
@@ -492,13 +496,17 @@ export class AdminService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const posts = await this.prisma.post.findMany({
-      where: { createdAt: { gte: startDate } },
-      select: { createdAt: true, status: true },
-      orderBy: { createdAt: 'asc' },
-    });
+    const rawResults: { date: string; count: number }[] = await this.prisma.$queryRaw`
+      SELECT 
+        TO_CHAR(DATE_TRUNC('day', "createdAt"), 'YYYY-MM-DD') as date, 
+        COUNT(*)::int as count 
+      FROM "Post" 
+      WHERE "createdAt" >= ${startDate} 
+      GROUP BY DATE_TRUNC('day', "createdAt")
+      ORDER BY DATE_TRUNC('day', "createdAt") ASC
+    `;
 
-    const postTrend = await this.buildTimeSeries(posts, days, 'createdAt');
+    const postTrend = this.fillTimeSeries(rawResults, days);
 
     const totalPosts = await this.prisma.post.count();
     const publishedPosts = await this.prisma.post.count({ where: { status: PostStatus.PUBLISHED } });
@@ -518,21 +526,29 @@ export class AdminService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const [comments, votes] = await Promise.all([
-      this.prisma.comment.findMany({
-        where: { createdAt: { gte: startDate } },
-        select: { createdAt: true },
-        orderBy: { createdAt: 'asc' },
-      }),
-      this.prisma.vote.findMany({
-        where: { createdAt: { gte: startDate } },
-        select: { createdAt: true },
-        orderBy: { createdAt: 'asc' },
-      }),
+    const [rawComments, rawVotes] = await Promise.all([
+      this.prisma.$queryRaw`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('day', "createdAt"), 'YYYY-MM-DD') as date, 
+          COUNT(*)::int as count 
+        FROM "Comment" 
+        WHERE "createdAt" >= ${startDate} 
+        GROUP BY DATE_TRUNC('day', "createdAt")
+        ORDER BY DATE_TRUNC('day', "createdAt") ASC
+      ` as Promise<{ date: string; count: number }[]>,
+      this.prisma.$queryRaw`
+        SELECT 
+          TO_CHAR(DATE_TRUNC('day', "createdAt"), 'YYYY-MM-DD') as date, 
+          COUNT(*)::int as count 
+        FROM "Vote" 
+        WHERE "createdAt" >= ${startDate} 
+        GROUP BY DATE_TRUNC('day', "createdAt")
+        ORDER BY DATE_TRUNC('day', "createdAt") ASC
+      ` as Promise<{ date: string; count: number }[]>,
     ]);
 
-    const commentTrend = await this.buildTimeSeries(comments, days, 'createdAt');
-    const voteTrend = await this.buildTimeSeries(votes, days, 'createdAt');
+    const commentTrend = this.fillTimeSeries(rawComments, days);
+    const voteTrend = this.fillTimeSeries(rawVotes, days);
 
     const totalComments = await this.prisma.comment.count();
     const totalVotes = await this.prisma.vote.count();
@@ -544,32 +560,26 @@ export class AdminService {
       totalVotes,
     };
   }
-
   // ─────────────── HELPERS ───────────────
 
-  private async buildTimeSeries(
-    items: { createdAt: Date }[],
+  private fillTimeSeries(
+    results: { date: string; count: number }[],
     days: number,
-    field: string,
-  ): Promise<{ date: string; count: number }[]> {
+  ): { date: string; count: number }[] {
     const series: { date: string; count: number }[] = [];
     const map = new Map<string, number>();
+
+    for (const r of results) {
+      map.set(r.date, r.count);
+    }
 
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const key = d.toISOString().split('T')[0];
-      map.set(key, 0);
-      series.push({ date: key, count: 0 });
+      series.push({ date: key, count: map.get(key) || 0 });
     }
 
-    for (const item of items) {
-      const key = item.createdAt.toISOString().split('T')[0];
-      if (map.has(key)) {
-        map.set(key, map.get(key)! + 1);
-      }
-    }
-
-    return series.map((s) => ({ ...s, count: map.get(s.date) || 0 }));
+    return series;
   }
 }

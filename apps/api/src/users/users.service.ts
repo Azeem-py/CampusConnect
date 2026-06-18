@@ -86,23 +86,12 @@ export class UsersService {
         following: {
           select: {
             id: true,
-            name: true,
-            username: true,
-            avatar: true,
-            school: true,
-            department: true,
-            major: true,
           },
         },
-        followers: {
+        _count: {
           select: {
-            id: true,
-            name: true,
-            username: true,
-            avatar: true,
-            school: true,
-            department: true,
-            major: true,
+            followers: true,
+            following: true,
           },
         },
       }
@@ -139,23 +128,12 @@ export class UsersService {
         following: {
           select: {
             id: true,
-            name: true,
-            username: true,
-            avatar: true,
-            school: true,
-            department: true,
-            major: true,
           },
         },
-        followers: {
+        _count: {
           select: {
-            id: true,
-            name: true,
-            username: true,
-            avatar: true,
-            school: true,
-            department: true,
-            major: true,
+            followers: true,
+            following: true,
           },
         },
       }
@@ -163,6 +141,78 @@ export class UsersService {
 
     const { password: _, refreshTokenHash: __, ...userWithoutSensitive } = updatedUser;
     return userWithoutSensitive;
+  }
+
+  async findFollowers(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [followers, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          following: {
+            some: { id: userId }
+          },
+          isDeactivated: false,
+        },
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          avatar: true,
+          school: true,
+          department: true,
+          major: true,
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count({
+        where: {
+          following: {
+            some: { id: userId }
+          },
+          isDeactivated: false,
+        }
+      })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { followers, total, page, limit, totalPages };
+  }
+
+  async findFollowing(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const [following, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          followers: {
+            some: { id: userId }
+          },
+          isDeactivated: false,
+        },
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          avatar: true,
+          school: true,
+          department: true,
+          major: true,
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.user.count({
+        where: {
+          followers: {
+            some: { id: userId }
+          },
+          isDeactivated: false,
+        }
+      })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { following, total, page, limit, totalPages };
   }
 
   async getSuggestedScholars(userId: string) {
@@ -201,6 +251,10 @@ export class UsersService {
         hobby: true,
         reputationScore: true,
       },
+      orderBy: {
+        reputationScore: 'desc',
+      },
+      take: 100,
     });
 
     if (candidates.length === 0) return [];

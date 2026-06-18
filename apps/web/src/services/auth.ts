@@ -44,8 +44,12 @@ export interface User {
   major: string | null;
   graduationYear: number | null;
   createdAt: string;
-  following?: ConnectionUser[];
-  followers?: ConnectionUser[];
+  following?: { id: string }[];
+  followers?: { id: string }[];
+  _count?: {
+    followers: number;
+    following: number;
+  };
   emailNotifications: boolean;
   pushNotifications: boolean;
   weeklyDigest: boolean;
@@ -219,6 +223,7 @@ export function useFollowUser() {
       queryClient.setQueryData(CURRENT_USER_KEY, updatedUser);
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 }
@@ -235,6 +240,7 @@ export function useUnfollowUser() {
       queryClient.setQueryData(CURRENT_USER_KEY, updatedUser);
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 }
@@ -287,6 +293,46 @@ export function useSearchScholars(query: string, enabled = true) {
       return data;
     },
     enabled: !!query.trim() && enabled,
+    staleTime: 60_000,
+  });
+}
+
+export interface PaginatedFollowersResponse {
+  followers: ConnectionUser[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface PaginatedFollowingResponse {
+  following: ConnectionUser[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export function useUserFollowers(userId: string | undefined, page = 1, limit = 10) {
+  return useQuery<PaginatedFollowersResponse>({
+    queryKey: ['users', userId, 'followers', page, limit],
+    queryFn: async () => {
+      const { data } = await api.get(`/users/${userId}/followers`, { params: { page, limit } });
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: 60_000,
+  });
+}
+
+export function useUserFollowing(userId: string | undefined, page = 1, limit = 10) {
+  return useQuery<PaginatedFollowingResponse>({
+    queryKey: ['users', userId, 'following', page, limit],
+    queryFn: async () => {
+      const { data } = await api.get(`/users/${userId}/following`, { params: { page, limit } });
+      return data;
+    },
+    enabled: !!userId,
     staleTime: 60_000,
   });
 }

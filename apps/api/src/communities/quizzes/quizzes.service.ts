@@ -461,7 +461,14 @@ export class QuizzesService {
     return result;
   }
 
-  async getMyAttempts(communityId: string, groupId: string, quizId: string, userId: string) {
+  async getMyAttempts(
+    communityId: string,
+    groupId: string,
+    quizId: string,
+    userId: string,
+    page = 1,
+    limit = 10,
+  ) {
     await this.requireGroupMember(communityId, groupId, userId);
 
     const quiz = await this.prisma.quiz.findUnique({
@@ -470,16 +477,33 @@ export class QuizzesService {
     });
     if (!quiz || quiz.groupId !== groupId) throw new NotFoundException('Quiz not found');
 
-    const attempts = await this.prisma.quizAttempt.findMany({
-      where: { quizId, userId },
-      orderBy: { startedAt: 'desc' },
-      include: { _count: { select: { answers: true } } },
-    });
+    const skip = (page - 1) * limit;
 
-    return attempts;
+    const [attempts, total] = await Promise.all([
+      this.prisma.quizAttempt.findMany({
+        where: { quizId, userId },
+        orderBy: { startedAt: 'desc' },
+        include: { _count: { select: { answers: true } } },
+        skip,
+        take: limit,
+      }),
+      this.prisma.quizAttempt.count({
+        where: { quizId, userId },
+      })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { attempts, total, page, limit, totalPages };
   }
 
-  async getAllAttempts(communityId: string, groupId: string, quizId: string, userId: string) {
+  async getAllAttempts(
+    communityId: string,
+    groupId: string,
+    quizId: string,
+    userId: string,
+    page = 1,
+    limit = 10,
+  ) {
     await this.requireGroupMod(communityId, groupId, userId);
 
     const quiz = await this.prisma.quiz.findUnique({
@@ -488,16 +512,26 @@ export class QuizzesService {
     });
     if (!quiz || quiz.groupId !== groupId) throw new NotFoundException('Quiz not found');
 
-    const attempts = await this.prisma.quizAttempt.findMany({
-      where: { quizId },
-      orderBy: { startedAt: 'desc' },
-      include: {
-        user: { select: { id: true, name: true, username: true, avatar: true } },
-        _count: { select: { answers: true } },
-      },
-    });
+    const skip = (page - 1) * limit;
 
-    return attempts;
+    const [attempts, total] = await Promise.all([
+      this.prisma.quizAttempt.findMany({
+        where: { quizId },
+        orderBy: { startedAt: 'desc' },
+        include: {
+          user: { select: { id: true, name: true, username: true, avatar: true } },
+          _count: { select: { answers: true } },
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.quizAttempt.count({
+        where: { quizId },
+      })
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { attempts, total, page, limit, totalPages };
   }
 
   async getAttemptResult(

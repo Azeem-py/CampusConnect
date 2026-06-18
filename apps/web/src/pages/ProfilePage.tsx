@@ -26,7 +26,7 @@ import { FeedTabs } from "../components/feed/FeedTabs"
 import { FeedCard } from "../components/feed/FeedCard"
 import { useAuth } from "../contexts/AuthContext"
 import { useUserPosts, useBookmarkedPosts } from "../services/posts"
-import { useUpdateProfile, useUserProfile, useFollowUser, useUnfollowUser, type ConnectionUser } from "../services/auth"
+import { useUpdateProfile, useUserProfile, useFollowUser, useUnfollowUser, type ConnectionUser, useUserFollowers, useUserFollowing } from "../services/auth"
 import { uploadPublicFile } from "../services/storage"
 import { AlertTriangle } from "lucide-react"
 import { ReportDialog } from "../components/ui/ReportDialog"
@@ -145,8 +145,26 @@ export function ProfilePage() {
   const [isConnectionsModalOpen, setIsConnectionsModalOpen] = useState(false)
   const [connectionsModalTab, setConnectionsModalTab] = useState<"following" | "followers">("following")
 
+  // Followers & Following state / limit / hooks
+  const [followersLimit, setFollowersLimit] = useState(20)
+  const [followingLimit, setFollowingLimit] = useState(20)
+
+  const followersQuery = useUserFollowers(
+    isConnectionsModalOpen && connectionsModalTab === "followers" ? displayedUser?.id : undefined,
+    1,
+    followersLimit
+  )
+
+  const followingQuery = useUserFollowing(
+    isConnectionsModalOpen && connectionsModalTab === "following" ? displayedUser?.id : undefined,
+    1,
+    followingLimit
+  )
+
   const handleOpenConnectionsModal = (tab: "following" | "followers") => {
     setConnectionsModalTab(tab)
+    setFollowersLimit(20)
+    setFollowingLimit(20)
     setIsConnectionsModalOpen(true)
   }
 
@@ -592,7 +610,7 @@ export function ProfilePage() {
                   className="hover:underline text-left group flex items-center gap-1.5 focus:outline-none"
                 >
                   <strong className="text-on-surface font-semibold text-body-md group-hover:text-primary transition-colors">
-                    {displayedUser.following?.length ?? 0}
+                    {displayedUser._count?.following ?? 0}
                   </strong>{" "}
                   <span className="text-on-surface-variant font-normal text-body-sm">Following</span>
                 </button>
@@ -601,7 +619,7 @@ export function ProfilePage() {
                   className="hover:underline text-left group flex items-center gap-1.5 focus:outline-none"
                 >
                   <strong className="text-on-surface font-semibold text-body-md group-hover:text-primary transition-colors">
-                    {displayedUser.followers?.length ?? 0}
+                    {displayedUser._count?.followers ?? 0}
                   </strong>{" "}
                   <span className="text-on-surface-variant font-normal text-body-sm">Followers</span>
                 </button>
@@ -1209,7 +1227,7 @@ export function ProfilePage() {
                       : "border-transparent text-on-surface-variant hover:text-on-surface"
                   }`}
                 >
-                  Following ({displayedUser.following?.length ?? 0})
+                  Following ({displayedUser._count?.following ?? 0})
                 </button>
                 <button
                   onClick={() => setConnectionsModalTab("followers")}
@@ -1219,7 +1237,7 @@ export function ProfilePage() {
                       : "border-transparent text-on-surface-variant hover:text-on-surface"
                   }`}
                 >
-                  Followers ({displayedUser.followers?.length ?? 0})
+                  Followers ({displayedUser._count?.followers ?? 0})
                 </button>
               </div>
             </div>
@@ -1227,7 +1245,18 @@ export function ProfilePage() {
             {/* List Content */}
             <div className="p-4 overflow-y-auto flex-1 space-y-3 min-h-[250px]">
               {(() => {
-                const list = connectionsModalTab === "following" ? displayedUser.following : displayedUser.followers;
+                const activeQuery = connectionsModalTab === "following" ? followingQuery : followersQuery;
+                const list = connectionsModalTab === "following" ? followingQuery.data?.following : followersQuery.data?.followers;
+                const total = connectionsModalTab === "following" ? followingQuery.data?.total : followersQuery.data?.total;
+
+                if (activeQuery.isLoading) {
+                  return (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  );
+                }
+
                 if (!list || list.length === 0) {
                   return (
                     <div className="flex flex-col items-center justify-center h-full py-12 text-center">
@@ -1239,56 +1268,79 @@ export function ProfilePage() {
                   )
                 }
 
-                return list.map((userItem: ConnectionUser) => {
-                  const isOwnItem = userItem.id === currentUser?.id;
-                  const itemIsFollowing = currentUser?.following?.some((f: any) => f.id === userItem.id);
+                return (
+                  <>
+                    <div className="space-y-3">
+                      {list.map((userItem: ConnectionUser) => {
+                        const isOwnItem = userItem.id === currentUser?.id;
+                        const itemIsFollowing = currentUser?.following?.some((f: any) => f.id === userItem.id);
 
-                  return (
-                    <div 
-                      key={userItem.id}
-                      className="flex items-center justify-between p-2 rounded-xl hover:bg-surface-container/40 transition-colors border border-transparent hover:border-outline-variant/10 group/item"
-                    >
-                      <div 
-                        onClick={() => {
-                          setIsConnectionsModalOpen(false);
-                          navigate(`/profile?userId=${userItem.id}`);
-                        }}
-                        className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
-                      >
-                        <Avatar 
-                          name={userItem.name} 
-                          src={userItem.avatar ?? undefined} 
-                          size="md" 
-                        />
-                        <div className="min-w-0">
-                          <h4 className="font-geist font-semibold text-sm text-on-surface group-hover/item:text-primary transition-colors truncate">
-                            {userItem.name}
-                          </h4>
-                          <p className="text-xs text-on-surface-variant font-inter truncate">
-                            {userItem.username}
-                          </p>
-                          {(userItem.school || userItem.department) && (
-                            <p className="text-[11px] text-on-surface-variant/80 font-inter mt-0.5 truncate">
-                              {[userItem.school, userItem.department].filter(Boolean).join(" • ")}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                        return (
+                          <div 
+                            key={userItem.id}
+                            className="flex items-center justify-between p-2 rounded-xl hover:bg-surface-container/40 transition-colors border border-transparent hover:border-outline-variant/10 group/item"
+                          >
+                            <div 
+                              onClick={() => {
+                                setIsConnectionsModalOpen(false);
+                                navigate(`/profile?userId=${userItem.id}`);
+                              }}
+                              className="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
+                            >
+                              <Avatar 
+                                name={userItem.name} 
+                                src={userItem.avatar ?? undefined} 
+                                size="md" 
+                              />
+                              <div className="min-w-0">
+                                <h4 className="font-geist font-semibold text-sm text-on-surface group-hover/item:text-primary transition-colors truncate">
+                                  {userItem.name}
+                                </h4>
+                                <p className="text-xs text-on-surface-variant font-inter truncate">
+                                  {userItem.username}
+                                </p>
+                                {(userItem.school || userItem.department) && (
+                                  <p className="text-[11px] text-on-surface-variant/80 font-inter mt-0.5 truncate">
+                                    {[userItem.school, userItem.department].filter(Boolean).join(" • ")}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
 
-                      {!isOwnItem && currentUser && (
-                        <Button
-                          variant={itemIsFollowing ? "secondary" : "primary"}
-                          size="sm"
-                          className="py-1 px-3 text-xs"
-                          onClick={() => handleModalFollowToggle(userItem)}
-                          disabled={followUser.isPending || unfollowUser.isPending}
-                        >
-                          {itemIsFollowing ? "Following" : "Follow"}
-                        </Button>
-                      )}
+                            {!isOwnItem && currentUser && (
+                              <Button
+                                variant={itemIsFollowing ? "secondary" : "primary"}
+                                size="sm"
+                                className="py-1 px-3 text-xs"
+                                onClick={() => handleModalFollowToggle(userItem)}
+                                disabled={followUser.isPending || unfollowUser.isPending}
+                              >
+                                {itemIsFollowing ? "Following" : "Follow"}
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                });
+                    {list.length < (total ?? 0) && (
+                      <div className="pt-2 flex justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (connectionsModalTab === "following") {
+                              setFollowingLimit(prev => prev + 20);
+                            } else {
+                              setFollowersLimit(prev => prev + 20);
+                            }
+                          }}
+                        >
+                          Load More
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                );
               })()}
             </div>
           </div>

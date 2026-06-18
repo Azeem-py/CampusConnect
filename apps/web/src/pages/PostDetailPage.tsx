@@ -14,7 +14,7 @@ import { Sidebar } from "../components/layout/Sidebar"
 import { FeedCard } from "../components/feed/FeedCard"
 import { TrendingWidget } from "../components/widgets/TrendingWidget"
 import { ScholarsWidget } from "../components/widgets/ScholarsWidget"
-import { usePost, useCreateComment, useDeleteComment, useVoteSocial } from "../services/posts"
+import { usePost, usePostComments, useCreateComment, useDeleteComment, useVoteSocial } from "../services/posts"
 import { useAuth } from "../contexts/AuthContext"
 import { useSearchScholars } from "../services/auth"
 import { Avatar } from "../components/ui/Avatar"
@@ -68,6 +68,8 @@ export function PostDetailPage() {
   const { user: currentUser } = useAuth()
   
   const { data: post, isLoading, error } = usePost(id || "")
+  const [commentLimit, setCommentLimit] = useState(10)
+  const { data: commentsData } = usePostComments(id || "", 1, commentLimit)
   const createComment = useCreateComment()
   const deleteComment = useDeleteComment()
   const voteSocial = useVoteSocial()
@@ -76,6 +78,7 @@ export function PostDetailPage() {
   const [replyToCommentId, setReplyToCommentId] = useState<string | null>(null)
   const [newReplyText, setNewReplyText] = useState("")
   const [copied, setCopied] = useState(false)
+
 
   // --- @Mention Autocomplete State & Hooks ---
   const [mentionSearch, setMentionSearch] = useState<string | null>(null)
@@ -394,9 +397,10 @@ export function PostDetailPage() {
             <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
               <MessageSquare size={18} className="text-gray-500" />
               <h2 className="font-geist font-bold text-headline-sm text-gray-900">
-                Discussion ({post.comments?.length || 0} top-level { (post.comments?.length || 0) === 1 ? "comment" : "comments" })
+                Discussion ({commentsData?.total || 0} top-level { (commentsData?.total || 0) === 1 ? "comment" : "comments" })
               </h2>
             </div>
+
 
             {/* Add Top-Level Comment Form */}
             <form onSubmit={handleCommentSubmit} className="flex gap-3 items-start bg-gray-50/50 p-4 rounded-xl border border-gray-100">
@@ -476,9 +480,9 @@ export function PostDetailPage() {
             </form>
 
             {/* Comment Thread List */}
-            {post.comments && post.comments.length > 0 ? (
+            {commentsData?.comments && commentsData.comments.length > 0 ? (
               <div className="space-y-6 pt-2">
-                {post.comments.map((comment) => {
+                {commentsData.comments.map((comment) => {
                   const score = comment.votes?.reduce((sum, v) => sum + v.value, 0) || 0
                   const userVote = comment.votes?.find((v) => v.userId === currentUser?.id)?.value || 0
                   const isCommentAuthor = currentUser?.id === comment.authorId
@@ -573,7 +577,7 @@ export function PostDetailPage() {
                                 setNewReplyText("")
                               }}
                               className={cn(
-                                "text-[11px] font-geist font-medium transition-colors cursor-pointer select-none py-0.5 px-2 rounded-full border bg-gray-50 border-gray-100",
+                                "text-[11px] font-geist font-medium transition-colors cursor-pointer select-none py-0.5 px-2 rounded-full border bg-gray-55 border-gray-100",
                                 replyToCommentId === comment.id 
                                   ? "text-blue-600 border-blue-100 bg-blue-50 font-semibold" 
                                   : "text-gray-500 hover:text-blue-600 hover:border-gray-200"
@@ -747,6 +751,17 @@ export function PostDetailPage() {
                     </div>
                   )
                 })}
+
+                {commentsData && commentsData.comments.length < commentsData.total && (
+                  <div className="flex justify-center pt-4">
+                    <button
+                      onClick={() => setCommentLimit((prev) => prev + 10)}
+                      className="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150 shadow-sm cursor-pointer select-none"
+                    >
+                      Load More Comments
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-10 px-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">

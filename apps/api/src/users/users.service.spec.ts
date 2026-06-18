@@ -93,6 +93,10 @@ describe('UsersService - getSuggestedScholars', () => {
           isDeactivated: false,
         },
         select: expect.any(Object),
+        orderBy: {
+          reputationScore: 'desc',
+        },
+        take: 100,
       });
 
       // Should return u3

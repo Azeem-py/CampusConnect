@@ -261,11 +261,22 @@ export function useSubmitAttempt(
   });
 }
 
-export function useMyAttempts(communityId: string, groupId: string, quizId: string) {
-  return useQuery<QuizAttempt[]>({
-    queryKey: myAttemptsKey(communityId, groupId, quizId),
+export interface PaginatedAttemptsResponse {
+  attempts: QuizAttempt[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export function useMyAttempts(communityId: string, groupId: string, quizId: string, page = 1, limit = 10) {
+  return useQuery<PaginatedAttemptsResponse>({
+    queryKey: [...myAttemptsKey(communityId, groupId, quizId), page, limit],
     queryFn: async () => {
-      const { data } = await api.get(`/communities/${communityId}/groups/${groupId}/quizzes/${quizId}/my-attempts`);
+      const { data } = await api.get(
+        `/communities/${communityId}/groups/${groupId}/quizzes/${quizId}/my-attempts`,
+        { params: { page, limit } }
+      );
       return data;
     },
     enabled: !!communityId && !!groupId && !!quizId,
@@ -273,11 +284,14 @@ export function useMyAttempts(communityId: string, groupId: string, quizId: stri
   });
 }
 
-export function useAllAttempts(communityId: string, groupId: string, quizId: string) {
-  return useQuery<QuizAttempt[]>({
-    queryKey: allAttemptsKey(communityId, groupId, quizId),
+export function useAllAttempts(communityId: string, groupId: string, quizId: string, page = 1, limit = 10) {
+  return useQuery<PaginatedAttemptsResponse>({
+    queryKey: [...allAttemptsKey(communityId, groupId, quizId), page, limit],
     queryFn: async () => {
-      const { data } = await api.get(`/communities/${communityId}/groups/${groupId}/quizzes/${quizId}/attempts`);
+      const { data } = await api.get(
+        `/communities/${communityId}/groups/${groupId}/quizzes/${quizId}/attempts`,
+        { params: { page, limit } }
+      );
       return data;
     },
     enabled: !!communityId && !!groupId && !!quizId,

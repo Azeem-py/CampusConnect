@@ -117,6 +117,15 @@ export interface PaginatedResponse {
   totalPages: number;
 }
 
+export interface PaginatedCommentsResponse {
+  comments: Comment[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+
 export interface UpcomingEvent {
   id: string;
   title: string;
@@ -179,6 +188,19 @@ export function usePost(id: string, enabled = true) {
   });
 }
 
+export function usePostComments(postId: string, page = 1, limit = 20) {
+  return useQuery<PaginatedCommentsResponse>({
+    queryKey: ['posts', postId, 'comments', { page, limit }],
+    queryFn: async () => {
+      const { data } = await api.get(`/posts/${postId}/comments`, { params: { page, limit } });
+      return data;
+    },
+    enabled: !!postId,
+    staleTime: 10_000,
+  });
+}
+
+
 export function useCreateComment() {
   const queryClient = useQueryClient();
 
@@ -189,6 +211,7 @@ export function useCreateComment() {
     },
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({ queryKey: postKey(postId) });
+      queryClient.invalidateQueries({ queryKey: ['posts', postId, 'comments'] });
       queryClient.invalidateQueries({ queryKey: POSTS_KEY });
     },
   });
@@ -209,6 +232,7 @@ export function useVoteSocial() {
     onSuccess: (_data, { postId }) => {
       if (postId) {
         queryClient.invalidateQueries({ queryKey: postKey(postId) });
+        queryClient.invalidateQueries({ queryKey: ['posts', postId, 'comments'] });
       }
       queryClient.invalidateQueries({ queryKey: POSTS_KEY });
     },
@@ -224,10 +248,12 @@ export function useDeleteComment() {
     },
     onSuccess: (_data, { postId }) => {
       queryClient.invalidateQueries({ queryKey: postKey(postId) });
+      queryClient.invalidateQueries({ queryKey: ['posts', postId, 'comments'] });
       queryClient.invalidateQueries({ queryKey: POSTS_KEY });
     },
   });
 }
+
 
 export function useDrafts() {
   return useQuery<Post[]>({
