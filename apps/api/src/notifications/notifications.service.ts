@@ -84,8 +84,8 @@ export class NotificationsService {
       const typeLabel = this.formatTypeLabel(data.type);
       this.emailService
         .sendNotification(data.recipientId, {
-          subject: `CampusConnect - ${actorName} ${typeLabel}`,
-          text: `${actorName} ${typeLabel} on CampusConnect.`,
+          subject: `Logos - ${actorName} ${typeLabel}`,
+          text: `${actorName} ${typeLabel} on Logos.`,
         })
         .catch((err) => this.logger.error(`Email notification failed: ${err.message}`));
     }

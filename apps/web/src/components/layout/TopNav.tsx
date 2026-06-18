@@ -9,7 +9,7 @@ export function TopNav() {
         <Link to="/" className="flex items-center gap-2 shrink-0 no-underline">
           <FlaskConical size={22} className="text-primary" />
           <span className="font-geist font-bold text-title-lg text-on-surface hidden sm:inline">
-            Scholarsphere
+            Logos
           </span>
         </Link>
 

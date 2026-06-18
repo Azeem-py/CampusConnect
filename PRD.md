@@ -1,6 +1,6 @@
 
 
-## Product Requirements Document: "CampusConnect"
+## Product Requirements Document: "Logos"
 
 ### 1. Product Overview
 **1.1. Purpose:** To provide a dedicated, cross-platform social ecosystem for university students that supports rigorous academic discourse alongside fast-paced social networking and campus business promotion.

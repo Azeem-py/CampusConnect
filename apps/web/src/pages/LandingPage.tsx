@@ -464,7 +464,7 @@ export function LandingPage() {
               <FlaskConical size={18} className="text-on-primary" />
             </div>
             <span className="font-geist font-bold text-title-lg text-on-surface">
-              CampusConnect
+              Logos
             </span>
           </Link>
 
@@ -556,7 +556,7 @@ export function LandingPage() {
                   <Link to="/signup">
                     <div className="lp-cta-btn-glow rounded-lg">
                       <Button variant="primary" size="lg">
-                        Join CampusConnect
+                        Join Logos
                         <ArrowRight size={16} />
                       </Button>
                     </div>

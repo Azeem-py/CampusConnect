@@ -1,7 +1,7 @@
-# CampusConnect - GitHub Documentation
+# Logos - GitHub Documentation
 
 ## Project Overview
-**CampusConnect** is a cross-platform social ecosystem for university students. It uses a monorepo architecture for seamless sharing of types and configurations between the NestJS backend and React PWA frontend.
+**Logos** is a cross-platform social ecosystem for university students. It uses a monorepo architecture for seamless sharing of types and configurations between the NestJS backend and React PWA frontend.
 
 ## Tech Stack
 - **Monorepo:** [Turborepo](https://turbo.build/) + [pnpm](https://pnpm.io/)
@@ -37,8 +37,8 @@ campus-connect/
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/CampusConnect.git
-   cd CampusConnect
+git clone https://github.com/your-username/CampusConnect.git
+    cd CampusConnect
    ```
 2. Install dependencies:
    ```bash
@@ -46,7 +46,7 @@ campus-connect/
    ```
 3. Set up the environment:
    - Create a `.env` file in `packages/db` with your `DATABASE_URL`.
-   - Example: `DATABASE_URL="postgresql://user:pass@localhost:5432/CampusConnect?schema=public"`
+   - Example: `DATABASE_URL="postgresql://user:pass@localhost:5432/logos?schema=public"`
 
 4. Initialize the database:
    ```bash

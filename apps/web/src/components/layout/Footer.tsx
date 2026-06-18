@@ -9,7 +9,7 @@ export function Footer() {
           <Link to="/" className="flex items-center gap-2 no-underline">
             <FlaskConical size={20} className="text-primary" />
             <span className="font-geist font-bold text-title-md text-on-surface">
-              Scholarsphere
+              Logos
             </span>
           </Link>
           <nav className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-label-sm text-on-surface-variant font-geist">
@@ -31,7 +31,7 @@ export function Footer() {
           </nav>
         </div>
         <p className="mt-6 text-center text-label-sm text-on-surface-variant/60 font-inter">
-          &copy; 2024 Scholarsphere. Precision in Academic Discourse.
+          &copy; 2024 Logos. Precision in Academic Discourse.
         </p>
       </div>
     </footer>

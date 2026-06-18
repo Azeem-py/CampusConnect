@@ -322,7 +322,7 @@ export function FeedCard({
       <div className="bg-gray-50/60 dark:bg-gray-950/20 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-4 text-center select-none animate-in fade-in duration-300">
         <p className="text-[12.5px] font-geist font-semibold text-red-500/80 dark:text-red-400 flex items-center justify-center gap-1.5">
           <AlertTriangle size={14} className="stroke-[2.5]" />
-          This content has been reported and hidden. Thank you for keeping CampusConnect safe!
+          This content has been reported and hidden. Thank you for keeping Logos safe!
         </p>
       </div>
     )
@@ -804,7 +804,7 @@ export function FeedCard({
 
           {isShareMenuOpen && (() => {
             const postUrl = `${window.location.origin}/post/${displayId || id}`
-            const shareText = `Check out this academic discussion on Scholarsphere: "${displayContent ? (displayContent.substring(0, 80) + '...') : ''}"`
+            const shareText = `Check out this academic discussion on Logos: "${displayContent ? (displayContent.substring(0, 80) + '...') : ''}"`
             
             const handleCopyLink = (e: React.MouseEvent) => {
               e.stopPropagation()

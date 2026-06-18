@@ -42,7 +42,7 @@ async function bootstrap() {
 
   // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle('CampusConnect / ScholarSphare API')
+    .setTitle('Logos API')
     .setDescription(
       'REST API for the academic social network. Uses httpOnly cookies for JWT authentication.',
     )

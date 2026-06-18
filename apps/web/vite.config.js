@@ -124,9 +124,9 @@ export default defineConfig(function (_a) {
                     ],
                 },
                 manifest: {
-                    name: 'CampusConnect',
-                    short_name: 'CampusConnect',
-                    description: 'CampusConnect - The academic social network for university students.',
+                    name: 'Logos',
+                    short_name: 'Logos',
+                    description: 'Logos - The academic social network for university students.',
                     theme_color: '#00236f',
                     background_color: '#faf8ff',
                     display: 'standalone',

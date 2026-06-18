@@ -797,7 +797,7 @@ export function SignUpPage() {
         <div className="text-center sm:text-left">
           <h2 className="font-geist font-semibold text-headline-sm text-on-surface">Customize your profile</h2>
           <p className="text-body-md text-on-surface-variant font-inter mt-0.5">
-            Preview how your profile will look on Scholarsphere.
+            Preview how your profile will look on Logos.
           </p>
         </div>
 
@@ -1008,7 +1008,7 @@ export function SignUpPage() {
           <Link to="/" className="flex items-center gap-2 shrink-0 no-underline">
             <FlaskConical size={22} className="text-primary" />
             <span className="font-geist font-bold text-title-lg text-on-surface">
-              Scholarsphere
+              Logos
             </span>
           </Link>
         </div>
@@ -1024,7 +1024,7 @@ export function SignUpPage() {
             <div>
               <div className="flex items-center gap-2">
                 <FlaskConical size={24} className="text-white/90" />
-                <span className="font-geist font-bold text-title-lg text-white/90">Scholarsphere</span>
+                <span className="font-geist font-bold text-title-lg text-white/90">Logos</span>
               </div>
 
               <div className="mt-12">

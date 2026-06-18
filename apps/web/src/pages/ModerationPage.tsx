@@ -105,7 +105,7 @@ export function ModerationPage() {
               </h1>
             </div>
             <p className="text-body-md text-on-surface-variant font-inter mt-1">
-              Review reports, enforce academic integrity guidelines, and protect the CampusConnect ecosystem.
+              Review reports, enforce academic integrity guidelines, and protect the Logos ecosystem.
             </p>
           </div>
 

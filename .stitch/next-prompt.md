@@ -1,7 +1,7 @@
 ---
 page: dashboard_feed
 ---
-Design the main Student Feed / Dashboard for CampusConnect.
+Design the main Student Feed / Dashboard for Logos.
 
 **DESIGN SYSTEM (REQUIRED):**
 [Copy from .stitch/DESIGN.md]

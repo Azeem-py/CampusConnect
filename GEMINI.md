@@ -1,4 +1,4 @@
-# CampusConnect Development Guidelines
+# Logos Development Guidelines
 
 ## Coding Standards
 

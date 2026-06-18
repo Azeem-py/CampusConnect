@@ -194,14 +194,14 @@ async function main() {
       reputationScore: 190,
     },
     {
-      email: 'admin@campusconnect.edu',
+      email: 'admin@logos.app',
       name: 'System Admin',
       username: 'admin',
       password: passwordHash,
       role: Role.ADMIN,
       school: 'Massachusetts Institute of Technology',
       department: 'Administration',
-      bio: 'Official CampusConnect Moderation & Security Team.',
+      bio: 'Official Logos Moderation & Security Team.',
       avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       banner: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&auto=format&fit=crop&q=80',
       reputationScore: 999,
@@ -495,7 +495,7 @@ We are offering massive student discounts on all required textbooks, reference b
 - Computer Science books & CUDA programming manuals: 30% OFF
 - Custom quad-ruled math notebooks: Buy 1 Get 1 Free!
 
-Bring your student ID or show your CampusConnect profile page to claim an additional 5% discount at the counter! Free donuts and coffee will be served! ☕🍩`,
+Bring your student ID or show your Logos profile page to claim an additional 5% discount at the counter! Free donuts and coffee will be served! ☕🍩`,
       // Will attach an Event
       event: {
         title: 'Annual Academic Textbook Fair 📚',

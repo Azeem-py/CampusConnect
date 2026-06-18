@@ -1,8 +1,8 @@
-# Design System: CampusConnect
+# Design System: Logos
 **Project ID:** 2788113975905652454
 
 ## 1. Visual Theme & Atmosphere
-CampusConnect uses a **"Journalistic Modernism"** aesthetic—a high-integrity social ecosystem for scholars. The design balances the structured authority of an academic journal with the fluid intensity of a campus network. The atmosphere is **Airy, Professional, and Achievement-Oriented**, prioritizing mathematical clarity and PWA ergonomics.
+Logos uses a **"Journalistic Modernism"** aesthetic—a high-integrity social ecosystem for scholars. The design balances the structured authority of an academic journal with the fluid intensity of a campus network. The atmosphere is **Airy, Professional, and Achievement-Oriented**, prioritizing mathematical clarity and PWA ergonomics.
 
 ## 2. Color Palette & Roles
 *   **Academic Indigo (#1E3A8A):** Primary brand color used for headings, primary brand elements, and authoritative UI surfaces.

@@ -45,7 +45,7 @@ export function LoginPage() {
           <Link to="/" className="flex items-center gap-2 shrink-0 no-underline">
             <FlaskConical size={22} className="text-primary" />
             <span className="font-geist font-bold text-title-lg text-on-surface">
-              Scholarsphere
+              Logos
             </span>
           </Link>
         </div>

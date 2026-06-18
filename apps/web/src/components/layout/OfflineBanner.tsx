@@ -56,7 +56,7 @@ export function OfflineBanner() {
         </p>
         <p className="text-[11px] opacity-80 mt-0.5 leading-normal font-inter">
           {isOffline
-            ? "CampusConnect is in offline mode. Your actions (like upvoting or posting) are queued and will sync automatically when you reconnect."
+            ? "Logos is in offline mode. Your actions (like upvoting or posting) are queued and will sync automatically when you reconnect."
             : "You're back online! Syncing your queued offline actions with the server..."}
         </p>
       </div>

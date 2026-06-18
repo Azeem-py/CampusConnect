@@ -16,7 +16,7 @@ export class PushNotificationsService {
     private prisma: PrismaService,
     private config: ConfigService,
   ) {
-    this.vapidSubject = this.config.get('VAPID_SUBJECT') ?? 'mailto:notifications@campusconnect.app';
+    this.vapidSubject = this.config.get('VAPID_SUBJECT') ?? 'mailto:notifications@logos.app';
     this.vapidPublicKey = this.config.get('VAPID_PUBLIC_KEY') ?? '';
     this.vapidPrivateKey = this.config.get('VAPID_PRIVATE_KEY') ?? '';
 

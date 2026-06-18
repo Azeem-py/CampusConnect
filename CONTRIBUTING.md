@@ -1,6 +1,6 @@
-# Contributing to CampusConnect
+# Contributing to Logos
 
-Thank you for your interest in contributing to CampusConnect! To maintain a high-quality, type-safe, and performant social ecosystem, we follow a strict set of engineering standards.
+Thank you for your interest in contributing to Logos! To maintain a high-quality, type-safe, and performant social ecosystem, we follow a strict set of engineering standards.
 
 ## 🛠 Development Workflow
 

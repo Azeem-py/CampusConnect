@@ -1,7 +1,7 @@
-# Site Document: CampusConnect
+# Site Document: Logos
 
 ## 1. Vision
-**CampusConnect** is a cross-platform social ecosystem for university students. It combines academic rigor (LaTeX, code rendering) with the dynamism of a modern social network (feeds, upvotes, reputations).
+**Logos** is a cross-platform social ecosystem for university students. It combines academic rigor (LaTeX, code rendering) with the dynamism of a modern social network (feeds, upvotes, reputations).
 
 ## 2. Stitch Project
 - **Project ID:** 2788113975905652454

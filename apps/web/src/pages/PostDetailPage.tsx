@@ -239,9 +239,9 @@ export function PostDetailPage() {
   // Update Page Document Title
   useEffect(() => {
     if (post?.author?.name) {
-      document.title = `Scholarsphere - Discussion by ${post.author.name}`
+      document.title = `Logos - Discussion by ${post.author.name}`
     } else {
-      document.title = "Scholarsphere - Post Detail"
+      document.title = "Logos - Post Detail"
     }
   }, [post])
 

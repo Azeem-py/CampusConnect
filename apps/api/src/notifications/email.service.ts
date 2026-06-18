@@ -62,7 +62,7 @@ export class EmailService {
 
     if (!user || !user.email || user.emailNotifications === false) return;
 
-    const from = this.config.get('SMTP_FROM') ?? 'notifications@campusconnect.app';
+    const from = this.config.get('SMTP_FROM') ?? 'notifications@logos.app';
 
     try {
       await this.transporter.sendMail({

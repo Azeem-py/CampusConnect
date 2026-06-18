@@ -32,7 +32,7 @@ export function PWARegister() {
           Update Available!
         </p>
         <p className="text-[11px] opacity-80 mt-0.5 leading-normal font-inter text-on-surface-variant">
-          A new version of CampusConnect has been released. Click reload to experience the latest updates instantly!
+          A new version of Logos has been released. Click reload to experience the latest updates instantly!
         </p>
         <button
           onClick={() => updateServiceWorker(true)}

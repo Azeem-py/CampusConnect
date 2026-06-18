@@ -880,7 +880,7 @@ export function SettingsPage() {
               </h3>
             </div>
             <p className="text-body-md text-on-surface-variant font-inter leading-relaxed">
-              Are you absolutely sure you want to deactivate your Scholarsphere account? 
+              Are you absolutely sure you want to deactivate your Logos account? 
               This will log you out immediately and hide your researcher profile, suggested listings, and all published posts/comments from everyone.
               <br />
               <span className="text-on-surface font-semibold mt-2 block">

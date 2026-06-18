@@ -1,7 +1,7 @@
-# CampusConnect: Design Language & UI/UX Guidelines
+# Logos: Design Language & UI/UX Guidelines
 
 ## 1. Core Design Philosophy
-CampusConnect bridges the gap between a rigorous academic tool and a fast-paced social network. The UI must balance **high information density** (for reading complex posts) with **cognitive ease** (so it doesn't feel like homework).
+Logos bridges the gap between a rigorous academic tool and a fast-paced social network. The UI must balance **high information density** (for reading complex posts) with **cognitive ease** (so it doesn't feel like homework).
 
 * **Mobile-First (PWA Standard):** Design everything for a 390px width screen first. Scale up to desktop, never down to mobile.
 * **Content is King:** The interface should recede into the background. Let the Markdown, LaTeX, and images take center stage.
@@ -10,7 +10,7 @@ CampusConnect bridges the gap between a rigorous academic tool and a fast-paced 
 ---
 
 ## 2. Adaptive Theming (Triple-Mode System)
-To ensure the best reading experience for students during 24-hour study cycles, CampusConnect implements a sophisticated three-state theming system.
+To ensure the best reading experience for students during 24-hour study cycles, Logos implements a sophisticated three-state theming system.
 
 ### 2.1. The Three Modes
 1. **Light Mode:** High contrast, crisp backgrounds for daytime use and bright environments.

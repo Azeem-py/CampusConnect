@@ -933,7 +933,7 @@ export function ProfilePage() {
                           value={formData.bio}
                           onChange={(e) => setFormData(p => ({ ...p, bio: e.target.value }))}
                           className="w-full bg-surface-container border border-outline-variant/15 hover:border-primary/45 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm hover:shadow transition-all duration-200 font-inter resize-none leading-relaxed"
-                          placeholder="Passionate researcher, developer, and student at Scholarsphare..."
+                          placeholder="Passionate researcher, developer, and student at Logos..."
                         />
                       </div>
                     </div>
