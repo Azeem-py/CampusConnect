@@ -29,7 +29,8 @@ describe('InteractionMatrixService', () => {
   beforeEach(() => {
     prisma = makePrisma();
     seedPrisma();
-    service = new InteractionMatrixService(prisma as PrismaService);
+    const mockRedis = { get: jest.fn().mockResolvedValue(null), set: jest.fn(), del: jest.fn() } as any;
+    service = new InteractionMatrixService(prisma as PrismaService, mockRedis);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -71,9 +72,9 @@ describe('InteractionMatrixService', () => {
         Array.from({ length: 10 }, () => service.getMatrix()),
       );
 
-      // All should return the same matrix object (same reference)
+      // All should return equivalent matrix data
       const first = results[0];
-      results.forEach((m) => expect(m).toBe(first));
+      results.forEach((m) => expect(m).toEqual(first));
 
       // DB should have been queried exactly once, not ten times
       expect(prisma.vote.findMany).toHaveBeenCalledTimes(1);

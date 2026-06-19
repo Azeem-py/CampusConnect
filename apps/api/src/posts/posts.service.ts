@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -11,6 +12,7 @@ import { BannedWordFilter } from '../admin/banned-word.filter';
 export class PostsService {
   constructor(
     private prisma: PrismaService,
+    private redis: RedisService,
     private eventEmitter: EventEmitter2,
     private bannedWordFilter: BannedWordFilter,
   ) {}
@@ -762,6 +764,9 @@ await this.eventEmitter.emitAsync(NOTIFICATION_EVENT, {
   }
 
   async findDistinctCourseCodes() {
+    const cached = await this.redis.get<string[]>('posts', 'course-codes');
+    if (cached) return cached;
+
     const posts = await this.prisma.post.findMany({
       where: {
         status: 'PUBLISHED',
@@ -775,6 +780,9 @@ await this.eventEmitter.emitAsync(NOTIFICATION_EVENT, {
       },
       distinct: ['courseCode'],
     });
-    return posts.map((p) => p.courseCode).filter(Boolean);
+    const codes = posts.map((p) => p.courseCode).filter(Boolean) as string[];
+
+    await this.redis.set(['posts', 'course-codes'], codes, 900);
+    return codes;
   }
 }

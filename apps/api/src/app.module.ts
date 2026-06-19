@@ -20,6 +20,7 @@ import { CommunitiesModule } from './communities/communities.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { NotesModule } from './notes/notes.module';
+import { RedisModule } from './redis/redis.module';
 import { ThrottlerBehindProxyGuard } from './common/guards/throttler-behind-proxy.guard';
 
 @Module({
@@ -56,6 +57,7 @@ import { ThrottlerBehindProxyGuard } from './common/guards/throttler-behind-prox
     CommunitiesModule,
     AdminModule,
     NotesModule,
+    RedisModule,
   ],
   controllers: [AppController, SocialController],
   providers: [

@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 
-/**
- * Interaction weights — tuned so that explicit votes dominate implicit signals.
- */
 const WEIGHT = {
   UPVOTE: 3,
   DOWNVOTE: -1,
@@ -11,24 +9,23 @@ const WEIGHT = {
   POLL_VOTE: 0.5,
 } as const;
 
-/** Sparse matrix: userId → postId → interaction score. */
 export type InteractionMatrix = Map<string, Map<string, number>>;
+
+const CACHE_KEY = ['interaction', 'matrix'];
+const CACHE_TTL_S = 300;
+const LOCK_KEY = 'interaction:matrix';
 
 @Injectable()
 export class InteractionMatrixService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   private cache: InteractionMatrix | null = null;
   private cacheBuiltAt = 0;
-  private readonly TTL_MS = 5 * 60 * 1_000; // 5 minutes
+  private readonly TTL_MS = CACHE_TTL_S * 1_000;
   public lastInvalidatedAt = 0;
-
-  /**
-   * FIX C1 — Cache stampede protection.
-   *
-   * If a rebuild is already running, all concurrent callers piggyback on
-   * the same in-flight Promise instead of each firing their own DB queries.
-   */
   private rebuildPromise: Promise<InteractionMatrix> | null = null;
 
   async getMatrix(): Promise<InteractionMatrix> {
@@ -37,79 +34,64 @@ export class InteractionMatrixService {
     }
     if (this.rebuildPromise) return this.rebuildPromise;
 
-    this.rebuildPromise = this.rebuild().finally(() => {
+    this.rebuildPromise = this.tryRedisOrRebuild().finally(() => {
       this.rebuildPromise = null;
     });
     return this.rebuildPromise;
   }
 
-  /** Force-clears the cache so the next call to getMatrix() triggers a rebuild. */
+  private async tryRedisOrRebuild(): Promise<InteractionMatrix> {
+    const cached = await this.redis.get<Record<string, Record<string, number>>>(...CACHE_KEY);
+    if (cached) {
+      this.cache = this.deserialize(cached);
+      this.cacheBuiltAt = Date.now();
+      return this.cache!;
+    }
+    return this.rebuild();
+  }
+
   invalidate(): void {
     this.cache = null;
     this.lastInvalidatedAt = Date.now();
-    // Note: an in-progress rebuild will still complete and cache its result,
-    // but the NEXT call after that will see cache=null and rebuild again.
+    this.redis.del(...CACHE_KEY);
   }
 
-  // ─── Private Helpers ────────────────────────────────────────────────────────
-
   private async rebuild(): Promise<InteractionMatrix> {
-    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90-day sliding window
+    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
 
     let [votes, comments, pollVotes] = await Promise.all([
       this.prisma.vote.findMany({
-        where: {
-          postId: { not: null },
-          createdAt: { gte: cutoff },
-        },
+        where: { postId: { not: null }, createdAt: { gte: cutoff } },
         select: { userId: true, postId: true, value: true },
       }),
       this.prisma.comment.findMany({
-        where: {
-          createdAt: { gte: cutoff },
-        },
+        where: { createdAt: { gte: cutoff } },
         select: { authorId: true, postId: true },
       }),
       this.prisma.pollVote.findMany({
-        where: {
-          createdAt: { gte: cutoff },
-        },
-        select: {
-          userId: true,
-          poll: {
-            select: { postId: true },
-          },
-        },
+        where: { createdAt: { gte: cutoff } },
+        select: { userId: true, poll: { select: { postId: true } } },
       }),
     ]);
 
-    // Safe granular fallback: if a specific table has 0 recent interactions, re-query without cutoff date
     if (votes.length === 0) {
       votes = await this.prisma.vote.findMany({
         where: { postId: { not: null } },
         select: { userId: true, postId: true, value: true },
       });
     }
-
     if (comments.length === 0) {
       comments = await this.prisma.comment.findMany({
         select: { authorId: true, postId: true },
       });
     }
-
     if (pollVotes.length === 0) {
       pollVotes = await this.prisma.pollVote.findMany({
-        select: {
-          userId: true,
-          poll: {
-            select: { postId: true },
-          },
-        },
+        select: { userId: true, poll: { select: { postId: true } } },
       });
     }
 
     const matrix: InteractionMatrix = new Map();
-
     const add = (userId: string, postId: string, delta: number): void => {
       if (!matrix.has(userId)) matrix.set(userId, new Map());
       const row = matrix.get(userId)!;
@@ -119,17 +101,35 @@ export class InteractionMatrixService {
     votes.forEach(({ userId, postId, value }) => {
       if (postId) add(userId, postId, value === 1 ? WEIGHT.UPVOTE : WEIGHT.DOWNVOTE);
     });
-
-    comments.forEach(({ authorId, postId }) =>
-      add(authorId, postId, WEIGHT.COMMENT),
-    );
-
+    comments.forEach(({ authorId, postId }) => add(authorId, postId, WEIGHT.COMMENT));
     pollVotes.forEach(({ userId, poll }) => {
       if (poll?.postId) add(userId, poll.postId, WEIGHT.POLL_VOTE);
     });
 
     this.cache = matrix;
     this.cacheBuiltAt = Date.now();
+
+    this.redis.set(CACHE_KEY, this.serialize(matrix), CACHE_TTL_S);
+
+    return matrix;
+  }
+
+  private serialize(matrix: InteractionMatrix): Record<string, Record<string, number>> {
+    const obj: Record<string, Record<string, number>> = {};
+    matrix.forEach((row, userId) => {
+      obj[userId] = {};
+      row.forEach((val, postId) => {
+        obj[userId][postId] = val;
+      });
+    });
+    return obj;
+  }
+
+  private deserialize(obj: Record<string, Record<string, number>>): InteractionMatrix {
+    const matrix: InteractionMatrix = new Map();
+    for (const [userId, row] of Object.entries(obj)) {
+      matrix.set(userId, new Map(Object.entries(row)));
+    }
     return matrix;
   }
 }

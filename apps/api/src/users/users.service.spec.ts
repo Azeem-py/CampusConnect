@@ -39,7 +39,8 @@ describe('UsersService - getSuggestedScholars', () => {
     const matrix = makeMatrix(matrixInteractions);
     prisma = makePrisma();
     matrixService = makeMatrixService(matrix);
-    service = new UsersService(prisma, matrixService, mockEmitter);
+    const mockRedis = { get: jest.fn().mockResolvedValue(null), set: jest.fn(), del: jest.fn() } as any;
+    service = new UsersService(prisma, mockRedis, matrixService, mockEmitter);
   };
 
   afterEach(() => jest.clearAllMocks());

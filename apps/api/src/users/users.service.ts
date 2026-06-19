@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { NOTIFICATION_EVENT } from '../notifications/notification-listener.service';
 import { UpgradeBusinessDto } from '@campus-connect/types';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -12,6 +13,7 @@ import { InteractionMatrixService } from '../recommendations/interaction-matrix.
 export class UsersService {
   constructor(
     private prisma: PrismaService,
+    private redis: RedisService,
     private readonly matrixService: InteractionMatrixService,
     private eventEmitter: EventEmitter2,
   ) {}
@@ -216,69 +218,50 @@ export class UsersService {
   }
 
   async getSuggestedScholars(userId: string) {
-    // 1. Fetch target user details
+    const cacheKey = ['users', userId, 'suggested-scholars'];
+    const cached = await this.redis.get<any[]>(...cacheKey);
+    if (cached) return cached;
+
     const targetUser = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        following: {
-          select: { id: true },
-        },
+        following: { select: { id: true } },
       },
     });
 
     if (!targetUser) return [];
 
-    // Extract following IDs
     const followedIds = new Set(targetUser.following.map((f) => f.id));
 
-    // 2. Fetch all other active users in the system (excluding current user and already followed users)
     const candidates = await this.prisma.user.findMany({
       where: {
-        id: {
-          notIn: [userId, ...Array.from(followedIds)],
-        },
+        id: { notIn: [userId, ...Array.from(followedIds)] },
         isDeactivated: false,
       },
       select: {
-        id: true,
-        name: true,
-        username: true,
-        avatar: true,
-        department: true,
-        major: true,
-        school: true,
-        interests: true,
-        hobby: true,
-        reputationScore: true,
+        id: true, name: true, username: true, avatar: true,
+        department: true, major: true, school: true,
+        interests: true, hobby: true, reputationScore: true,
       },
-      orderBy: {
-        reputationScore: 'desc',
-      },
+      orderBy: { reputationScore: 'desc' },
       take: 100,
     });
 
     if (candidates.length === 0) return [];
 
-    // 3. Fetch sparse interaction matrix
     let matrix;
     try {
       matrix = await this.matrixService.getMatrix();
-    } catch (err) {
+    } catch {
       matrix = new Map();
     }
 
     const userVec = matrix.get(userId);
 
-    // 4. Scoring logic
     const scoredScholars = candidates.map((candidate) => {
-      // (a) Interests & Hobby similarity (Jaccard Similarity)
       const parseTags = (str: string | null): string[] => {
         if (!str) return [];
-        return str
-          .toLowerCase()
-          .split(',')
-          .map((t) => t.trim())
-          .filter((t) => t.length > 0);
+        return str.toLowerCase().split(',').map((t) => t.trim()).filter((t) => t.length > 0);
       };
 
       const interestsA = parseTags(targetUser.interests);
@@ -295,57 +278,33 @@ export class UsersService {
         return intersect.size / union.size;
       };
 
-      const jaccardInterests = jaccard(interestsA, interestsC);
-      const jaccardHobbies = jaccard(hobbiesA, hobbiesC);
-      const interestsSim = 0.7 * jaccardInterests + 0.3 * jaccardHobbies;
+      const interestsSim = 0.7 * jaccard(interestsA, interestsC) + 0.3 * jaccard(hobbiesA, hobbiesC);
 
-      // (b) Activity similarity (Cosine Similarity of post interaction vectors)
       let activitySim = 0;
       const candidateVec = matrix.get(candidate.id);
       if (userVec && candidateVec && userVec.size > 0 && candidateVec.size > 0) {
         let dot = 0;
         let normA = 0;
         let normB = 0;
-
-        // Iterate the smaller vector to minimize operations
         const [small, large] = userVec.size <= candidateVec.size ? [userVec, candidateVec] : [candidateVec, userVec];
-        small.forEach((w: number, term: string) => {
-          dot += w * (large.get(term) ?? 0);
-        });
+        small.forEach((w: number, term: string) => { dot += w * (large.get(term) ?? 0); });
         userVec.forEach((w: number) => (normA += w * w));
         candidateVec.forEach((w: number) => (normB += w * w));
-
         const denom = Math.sqrt(normA) * Math.sqrt(normB);
-        activitySim = denom === 0 ? 0 : dot / denom;
-        activitySim = Math.max(0, activitySim);
+        activitySim = denom === 0 ? 0 : Math.max(0, dot / denom);
       }
 
-      // (c) Academic context matches
       let contextSim = 0;
-      if (targetUser.department && candidate.department && targetUser.department === candidate.department) {
-        contextSim += 0.2;
-      }
-      if (targetUser.major && candidate.major && targetUser.major === candidate.major) {
-        contextSim += 0.2;
-      }
-      if (targetUser.school && candidate.school && targetUser.school === candidate.school) {
-        contextSim += 0.1;
-      }
+      if (targetUser.department && candidate.department && targetUser.department === candidate.department) contextSim += 0.2;
+      if (targetUser.major && candidate.major && targetUser.major === candidate.major) contextSim += 0.2;
+      if (targetUser.school && candidate.school && targetUser.school === candidate.school) contextSim += 0.1;
 
-      // (d) Reputation Popularity boost
       const popularitySim = Math.tanh(candidate.reputationScore / 100) * 0.1;
-
-      // (e) Composite score
-      // Weights: 40% Interests, 40% Activity, 10% Academic Context, 10% Reputation Popularity
       const compositeScore = 0.4 * interestsSim + 0.4 * activitySim + 0.1 * contextSim + 0.1 * popularitySim;
 
-      // Fallback display title / department info
       let displayTitle = 'Scholar';
-      if (candidate.major) {
-        displayTitle = candidate.major;
-      } else if (candidate.department) {
-        displayTitle = candidate.department;
-      }
+      if (candidate.major) displayTitle = candidate.major;
+      else if (candidate.department) displayTitle = candidate.department;
 
       return {
         id: candidate.id,
@@ -357,10 +316,12 @@ export class UsersService {
       };
     });
 
-    // 5. Sort by score in descending order and limit to top 5
     scoredScholars.sort((a, b) => b.score - a.score);
+    const result = scoredScholars.slice(0, 5).map(({ score: _, ...rest }) => rest);
 
-    return scoredScholars.slice(0, 5).map(({ score: _, ...rest }) => rest);
+    await this.redis.set(cacheKey, result, 300);
+
+    return result;
   }
 
   async searchScholars(query: string) {

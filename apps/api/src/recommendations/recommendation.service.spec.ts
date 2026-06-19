@@ -31,6 +31,7 @@ const makeMatrixService = (matrix: InteractionMatrix) =>
 
 const makeTfidf = () =>
   ({
+    warmFromCache: jest.fn().mockResolvedValue(false),
     buildCorpus: jest.fn().mockResolvedValue(undefined),
     buildUserProfile: jest.fn().mockReturnValue(new Map()),
     scorePost: jest.fn().mockReturnValue(0.5),

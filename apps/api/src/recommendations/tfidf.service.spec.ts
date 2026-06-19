@@ -30,13 +30,16 @@ const makePrisma = (posts = mockPosts) =>
     post: { findMany: jest.fn().mockResolvedValue(posts) },
   }) as unknown as jest.Mocked<PrismaService>;
 
+const makeRedis = () =>
+  ({ get: jest.fn().mockResolvedValue(null), set: jest.fn(), del: jest.fn() }) as any;
+
 describe('TfidfService', () => {
   let service: TfidfService;
   let prisma: jest.Mocked<PrismaService>;
 
   beforeEach(async () => {
     prisma = makePrisma();
-    service = new TfidfService(prisma as PrismaService);
+    service = new TfidfService(prisma as PrismaService, makeRedis());
     await service.buildCorpus();
   });
 
@@ -57,14 +60,14 @@ describe('TfidfService', () => {
     });
 
     it('handles an empty post list without error', async () => {
-      const empty = new TfidfService(makePrisma([]));
+      const empty = new TfidfService(makePrisma([]), makeRedis());
       await expect(empty.buildCorpus()).resolves.not.toThrow();
       expect(empty.isReady).toBe(false);
     });
 
     // FIX C2 — Concurrent build lock
     it('runs only one DB query even when called concurrently', async () => {
-      const freshService = new TfidfService(prisma as PrismaService);
+      const freshService = new TfidfService(prisma as PrismaService, makeRedis());
       jest.clearAllMocks();
       // 5 concurrent callers
       await Promise.all(Array.from({ length: 5 }, () => freshService.buildCorpus()));
@@ -80,7 +83,7 @@ describe('TfidfService', () => {
     });
 
     it('returns an empty map when the corpus is empty', async () => {
-      const empty = new TfidfService(makePrisma([]));
+      const empty = new TfidfService(makePrisma([]), makeRedis());
       await empty.buildCorpus();
       expect(empty.buildUserProfile(['p1']).size).toBe(0);
     });
@@ -142,7 +145,7 @@ describe('TfidfService', () => {
           author: { department: 'Computer Science', major: 'Computer Science' },
         },
       ];
-      const tagService = new TfidfService(makePrisma(postsWithTags));
+      const tagService = new TfidfService(makePrisma(postsWithTags), makeRedis());
       return tagService.buildCorpus().then(() => {
         const profile = tagService.buildUserProfile([], 'transformers', null);
         const scoreP1 = tagService.scorePost(profile, 'p1');

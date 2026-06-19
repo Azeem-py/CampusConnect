@@ -52,10 +52,12 @@ export class RecommendationService implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     const mode = this.configService.get<string>('RECOMMENDATION_MODE', 'enterprise');
     try {
-      if (mode === 'light') {
+      const warmed = await this.tfidf.warmFromCache();
+      if (!warmed) {
         await this.tfidf.buildCorpus();
-      } else {
-        await Promise.all([this.tfidf.buildCorpus(), this.svd.recompute()]);
+      }
+      if (mode !== 'light' && !warmed) {
+        await this.svd.recompute();
       }
     } catch (err) {
       this.logger.error(

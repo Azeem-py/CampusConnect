@@ -38,19 +38,37 @@ import { QuizDetailPage } from "./pages/communities/[id]/groups/[groupId]/quizze
 import { TakeQuizPage } from "./pages/communities/[id]/groups/[groupId]/quizzes/[quizId]/take"
 import { AttemptResultPage } from "./pages/communities/[id]/groups/[groupId]/quizzes/[quizId]/attempt/[attemptId]"
 
+function Spinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-surface">
+      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+    return <Spinner />
   }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  return <>{children}</>
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth()
+
+  if (isLoading) {
+    return <Spinner />
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/feed" replace />
   }
 
   return <>{children}</>
@@ -72,9 +90,9 @@ function App() {
         <NotificationProvider>
         <AppLayout>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+            <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute><SignUpPage /></PublicRoute>} />
             <Route path="/feed" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
             <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

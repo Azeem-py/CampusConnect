@@ -1,49 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 
-/** A post's TF-IDF vector: term → weight */
 export type TermVector = Map<string, number>;
 
-/**
- * TF-IDF content-based filtering.
- *
- * Fixes applied:
- *   C2 — Atomic state swap + concurrent build lock: the old `postVectors` is
- *        never partially replaced; a new map is built locally and swapped in
- *        one assignment only after the build completes successfully.
- *   H7 — Removed unused `TfIdfPost` interface.
- *   L1 — Removed unused `idf` field.
- */
+const CORPUS_KEY = ['tfidf', 'corpus'];
+const CACHE_TTL_S = 3600;
+
 @Injectable()
 export class TfidfService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(TfidfService.name);
 
-  /** Indexed post vectors, rebuilt hourly. */
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
+
   private postVectors: Map<string, TermVector> = new Map();
-
-  /**
-   * FIX C2 — Build lock: if corpus is already being built (e.g. startup +
-   * Cron firing at the same time), concurrent callers await the same Promise.
-   */
   private buildPromise: Promise<void> | null = null;
 
-  // ─── Public API ─────────────────────────────────────────────────────────────
-
-  /**
-   * Returns cosine similarity between the user's profile vector and a post.
-   * Scores are in [0, 1]; higher = more relevant.
-   */
   scorePost(userProfileVector: TermVector, postId: string): number {
     const postVec = this.postVectors.get(postId);
     if (!postVec || userProfileVector.size === 0) return 0;
     return this.cosineSimilarity(userProfileVector, postVec);
   }
 
-  /**
-   * Builds a user interest profile vector by summing TF-IDF vectors of posts
-   * the user has interacted with, enriched with their explicit interests & hobbies.
-   */
   buildUserProfile(
     interactedPostIds: string[],
     interests?: string | null,
@@ -51,7 +33,6 @@ export class TfidfService {
   ): TermVector {
     const profile: TermVector = new Map();
 
-    // 1. Incorporate interacted posts if they exist
     if (this.postVectors.size > 0 && interactedPostIds.length > 0) {
       const postInteractionAccum: TermVector = new Map();
       interactedPostIds.forEach((postId) => {
@@ -62,11 +43,8 @@ export class TfidfService {
         });
       });
 
-      // Calculate L2 norm of the accumulated vector to scale-normalise it
       let normSq = 0;
-      postInteractionAccum.forEach((w) => {
-        normSq += w * w;
-      });
+      postInteractionAccum.forEach((w) => { normSq += w * w; });
       const norm = Math.sqrt(normSq);
 
       if (norm > 0) {
@@ -76,7 +54,6 @@ export class TfidfService {
       }
     }
 
-    // 2. Incorporate explicit interests & hobbies
     const rawTokens: string[] = [];
     if (interests) {
       interests.split(',').forEach((val) => {
@@ -89,8 +66,6 @@ export class TfidfService {
       });
     }
 
-    // Give high importance to explicit user choices
-    // We assign a fixed weight boost (+1.5) relative to the scale-normalised L2 vector.
     rawTokens.forEach((token) => {
       profile.set(token, (profile.get(token) ?? 0) + 1.5);
     });
@@ -98,7 +73,6 @@ export class TfidfService {
     return profile;
   }
 
-  /** Returns all post IDs currently indexed in the corpus. */
   getAllPostIds(): string[] {
     return [...this.postVectors.keys()];
   }
@@ -107,12 +81,6 @@ export class TfidfService {
     return this.postVectors.size > 0;
   }
 
-  // ─── Corpus Building ─────────────────────────────────────────────────────────
-
-  /**
-   * Rebuilds the corpus every hour.
-   * FIX C2: Concurrent calls (startup + Cron) share the same in-flight Promise.
-   */
   @Cron(CronExpression.EVERY_HOUR)
   async buildCorpus(): Promise<void> {
     if (this.buildPromise) return this.buildPromise;
@@ -138,7 +106,6 @@ export class TfidfService {
     const N = posts.length;
     if (N === 0) return;
 
-    // Step 1: Tokenize + build raw TF and DF
     const rawTf = new Map<string, Map<string, number>>();
     const df = new Map<string, number>();
 
@@ -160,13 +127,11 @@ export class TfidfService {
       termCounts.forEach((_, term) => df.set(term, (df.get(term) ?? 0) + 1));
     });
 
-    // Step 2: IDF
     const idfMap = new Map<string, number>();
     df.forEach((docCount, term) =>
       idfMap.set(term, Math.log((N + 1) / (docCount + 1)) + 1),
     );
 
-    // Step 3: TF-IDF vectors — built into a LOCAL map first
     const vectors = new Map<string, TermVector>();
     rawTf.forEach((termCounts, postId) => {
       const totalTerms = [...termCounts.values()].reduce((a, b) => a + b, 0);
@@ -177,11 +142,40 @@ export class TfidfService {
       vectors.set(postId, vec);
     });
 
-    // FIX C2 — Atomic swap: only ONE assignment, happens after full success.
     this.postVectors = vectors;
+
+    this.redis.set(CORPUS_KEY, this.serialize(vectors), CACHE_TTL_S);
   }
 
-  // ─── Math Utilities ──────────────────────────────────────────────────────────
+  /** Load cached corpus from Redis into memory. Returns true if loaded. */
+  async warmFromCache(): Promise<boolean> {
+    const cached = await this.redis.get<Record<string, Record<string, number>>>(...CORPUS_KEY);
+    if (!cached) return false;
+    this.postVectors = this.deserialize(cached);
+    this.logger.log(`Warmed TF-IDF corpus from Redis (${this.postVectors.size} posts)`);
+    return true;
+  }
+
+  private serialize(
+    vectors: Map<string, TermVector>,
+  ): Record<string, Record<string, number>> {
+    const obj: Record<string, Record<string, number>> = {};
+    vectors.forEach((vec, postId) => {
+      obj[postId] = {};
+      vec.forEach((w, term) => { obj[postId][term] = w; });
+    });
+    return obj;
+  }
+
+  private deserialize(
+    obj: Record<string, Record<string, number>>,
+  ): Map<string, TermVector> {
+    const map = new Map<string, TermVector>();
+    for (const [postId, vec] of Object.entries(obj)) {
+      map.set(postId, new Map(Object.entries(vec)));
+    }
+    return map;
+  }
 
   private cosineSimilarity(a: TermVector, b: TermVector): number {
     let dot = 0;
