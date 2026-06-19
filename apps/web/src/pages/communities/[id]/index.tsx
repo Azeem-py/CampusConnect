@@ -21,7 +21,7 @@ export function CommunityLayout() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-surface pb-16 lg:pb-0">
+      <div className="min-h-screen bg-surface">
         <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
           <Sidebar />
           <main className="flex-1 max-w-[600px] min-w-0">
@@ -37,7 +37,7 @@ export function CommunityLayout() {
 
   if (error || !community) {
     return (
-      <div className="min-h-screen bg-surface pb-16 lg:pb-0">
+      <div className="min-h-screen bg-surface">
         <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
           <Sidebar />
           <main className="flex-1 max-w-[600px] min-w-0">
@@ -79,7 +79,7 @@ export function CommunityLayout() {
   const isRoot = location.pathname === `/communities/${id}`
 
   return (
-    <div className="min-h-screen bg-surface pb-16 lg:pb-0">
+    <div className="min-h-screen bg-surface">
       <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
         <Sidebar />
 

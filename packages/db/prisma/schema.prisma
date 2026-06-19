@@ -57,6 +57,8 @@ model User {
   communityMemberships CommunityMember[]
   communityJoinRequests CommunityJoinRequest[]
   groupMemberships     GroupMember[]
+  personalNotes        PersonalNote[]
+  noteAccess           NoteAccess[]
   quizzesCreated       Quiz[]
   quizAttempts         QuizAttempt[]
 
@@ -254,6 +256,7 @@ enum NotificationType {
   REPOST
   FOLLOW
   SYSTEM
+  NOTE_SHARE
 }
 
 model NotificationPreference {
@@ -484,6 +487,36 @@ model BannedWord {
   updatedAt DateTime @updatedAt
 
   @@index([pattern])
+}
+
+model PersonalNote {
+  id        String   @id @default(cuid())
+  title     String?
+  content   String   @db.Text
+  images    String[] @default([])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sharedWith NoteAccess[]
+
+  @@index([userId])
+  @@index([updatedAt])
+}
+
+model NoteAccess {
+  id         String       @id @default(cuid())
+  noteId     String
+  note       PersonalNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission String       @default("READ") // READ | WRITE
+  createdAt  DateTime     @default(now())
+
+  @@unique([noteId, userId])
+  @@index([userId])
 }
 
 enum QuizStatus {

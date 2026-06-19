@@ -15,7 +15,7 @@ export function BottomNav() {
   const { unreadCount } = useNotificationContext()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-t border-outline-variant/15 lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface/80 backdrop-blur-md border-t border-outline-variant/15 lg:hidden pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-center justify-around h-14">
         {items.map((item) => (
           <NavLink

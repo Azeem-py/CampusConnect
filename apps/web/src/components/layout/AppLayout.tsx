@@ -5,25 +5,29 @@ import { Avatar } from "../ui/Avatar"
 import { BottomNav } from "./BottomNav"
 import { OfflineBanner } from "./OfflineBanner"
 import { PWARegister } from "./PWARegister"
+import { cn } from "../../lib/utils"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const { user, logout } = useAuth()
   const isLanding = location.pathname === "/"
   const hideShell = isLanding || location.pathname === "/login" || location.pathname === "/signup"
+  const hideBottomNav =
+    location.pathname === "/create" ||
+    location.pathname.startsWith("/notes")
 
   if (hideShell) {
     return (
-      <>
+      <div className="flex flex-col min-h-screen min-h-[100dvh] overflow-x-hidden">
         {children}
         <OfflineBanner />
         <PWARegister />
-      </>
+      </div>
     )
   }
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen min-h-[100dvh] overflow-x-hidden">
       <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant/15">
         <div className="mx-auto max-w-7xl flex items-center justify-between h-14 px-4 lg:px-6">
           <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -59,10 +63,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      {children}
-      <BottomNav />
+      <div className={cn("flex-1", !hideBottomNav && "pb-14 lg:pb-0")}>
+        {children}
+      </div>
+      {!hideBottomNav && <BottomNav />}
       <OfflineBanner />
       <PWARegister />
-    </>
+    </div>
   )
 }

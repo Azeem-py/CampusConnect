@@ -1,8 +1,33 @@
 import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge"
+
+const customTwMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      "font-size": [
+        "text-display-xl",
+        "text-display-lg",
+        "text-display-md",
+        "text-headline-lg",
+        "text-headline-md",
+        "text-headline-sm",
+        "text-title-lg",
+        "text-title-md",
+        "text-title-sm",
+        "text-body-lg",
+        "text-body-md",
+        "text-body-sm",
+        "text-label-lg",
+        "text-label-md",
+        "text-label-sm",
+        "text-mono-code",
+      ],
+    },
+  },
+})
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return customTwMerge(clsx(inputs))
 }
 
 export function formatDistanceToNow(dateString: string | Date): string {

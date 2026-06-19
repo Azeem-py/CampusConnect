@@ -319,7 +319,7 @@ export function CreatePostPage() {
   const charCount = plainContent.length
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-surface pb-16 lg:pb-0">
+    <div className="min-h-[calc(100vh-3.5rem)] bg-surface">
       <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
         {/* ─── Sidebar ─── */}
         <Sidebar />
@@ -889,13 +889,15 @@ function ToolbarBtn({
   children: React.ReactNode
 }) {
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
+      iconOnly
       onClick={onClick}
-      className="p-2 rounded-lg text-on-surface-variant/70 hover:text-on-surface hover:bg-surface-container-high/80 active:scale-95 transition-all duration-150 shrink-0"
+      className="p-2 text-on-surface-variant/70 hover:text-on-surface hover:bg-surface-container-high/80 active:scale-95 transition-all duration-150 shrink-0 h-8 w-8"
       title={title}
-    >
-      {children}
-    </button>
+      icon={children}
+    />
   )
 }
 

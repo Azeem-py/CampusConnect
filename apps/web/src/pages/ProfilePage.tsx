@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react"
+import { useState, useRef, useMemo, useEffect } from "react"
 import { 
   MapPin, 
   Calendar, 
@@ -31,6 +31,7 @@ import { uploadPublicFile } from "../services/storage"
 import { AlertTriangle } from "lucide-react"
 import { ReportDialog } from "../components/ui/ReportDialog"
 import { useInstitutions, useDepartments } from "../services/institutions"
+import { PersonalNotesSection } from "../components/profile/PersonalNotesSection"
 
 function formatJoinDate(dateString: string) {
   const date = new Date(dateString)
@@ -136,6 +137,13 @@ export function ProfilePage() {
   const isOwnProfile = !urlUserId || urlUserId === currentUser?.id
 
   const [activeTab, setActiveTab] = useState("posts")
+
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    if (tab && ["posts", "media", "notes", "saved"].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
@@ -195,6 +203,7 @@ export function ProfilePage() {
   const tabs = [
     { id: "posts", label: isOwnProfile ? "My Posts" : "Posts" },
     { id: "media", label: "Media" },
+    { id: "notes", label: "Notes" },
     ...(isOwnProfile ? [{ id: "saved", label: "Saved Questions" }] : []),
   ]
 
@@ -499,7 +508,7 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-16 lg:pb-0">
+    <div className="min-h-screen bg-surface">
       <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
         <Sidebar />
 
@@ -636,7 +645,12 @@ export function ProfilePage() {
           <FeedTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
 
           <div className="space-y-4">
-            {postsLoading ? (
+            {activeTab === "notes" ? (
+              <PersonalNotesSection
+                userId={displayedUser.id}
+                isOwnProfile={isOwnProfile}
+              />
+            ) : postsLoading ? (
               <p className="text-center text-on-surface-variant py-8">Loading posts...</p>
             ) : filteredPosts.length === 0 ? (
               <p className="text-center text-on-surface-variant py-8 font-inter">

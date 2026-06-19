@@ -9,7 +9,7 @@ interface LaTeXBlockProps {
 export function LaTeXBlock({ children, block = true }: LaTeXBlockProps) {
   if (block) {
     return (
-      <div className="my-3 pl-4 border-l-2 border-primary bg-surface-container/50 py-3 pr-4 rounded-r-md overflow-x-auto">
+      <div className="my-3 pl-4 border-l-2 border-primary bg-surface-container/50 py-3 pr-4 rounded-r-md overflow-x-auto max-w-full">
         <BlockMath math={children} />
       </div>
     )

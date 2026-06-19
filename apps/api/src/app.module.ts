@@ -19,6 +19,7 @@ import { InstitutionsModule } from './institutions/institutions.module';
 import { CommunitiesModule } from './communities/communities.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
+import { NotesModule } from './notes/notes.module';
 import { ThrottlerBehindProxyGuard } from './common/guards/throttler-behind-proxy.guard';
 
 @Module({
@@ -54,6 +55,7 @@ import { ThrottlerBehindProxyGuard } from './common/guards/throttler-behind-prox
     InstitutionsModule,
     CommunitiesModule,
     AdminModule,
+    NotesModule,
   ],
   controllers: [AppController, SocialController],
   providers: [

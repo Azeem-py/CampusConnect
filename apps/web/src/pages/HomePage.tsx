@@ -70,7 +70,7 @@ export function HomePage() {
   const posts = data?.posts || []
 
   return (
-    <div className="min-h-screen bg-white pb-16 lg:pb-0">
+    <div className="min-h-screen bg-white">
       <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
         <Sidebar />
 

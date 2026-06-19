@@ -13,6 +13,9 @@
   --font-mono: "JetBrains Mono", monospace;
 
   --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
   --color-primary: #00236f;
   --color-on-primary: #ffffff;
   --color-primary-container: #1e3a8a;
@@ -151,6 +154,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+  html {
+    overflow-x: hidden;
+  }
+
   * {
     scrollbar-color: var(--color-outline-variant) transparent;
     scrollbar-width: thin;

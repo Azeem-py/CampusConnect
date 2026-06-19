@@ -18,6 +18,7 @@ import { usePost, usePostComments, useCreateComment, useDeleteComment, useVoteSo
 import { useAuth } from "../contexts/AuthContext"
 import { useSearchScholars } from "../services/auth"
 import { Avatar } from "../components/ui/Avatar"
+import { Button } from "../components/ui/Button"
 import { cn, formatDistanceToNow } from "../lib/utils"
 import { renderEnhancedPreview } from "../lib/latex"
 
@@ -290,7 +291,7 @@ export function PostDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white pb-16 lg:pb-0">
+      <div className="min-h-screen bg-white">
         <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
           <Sidebar />
           <main className="flex-1 max-w-[600px] min-w-0">
@@ -307,18 +308,20 @@ export function PostDetailPage() {
 
   if (error || !post) {
     return (
-      <div className="min-h-screen bg-white pb-16 lg:pb-0">
+      <div className="min-h-screen bg-white">
         <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
           <Sidebar />
           <main className="flex-1 max-w-[600px] min-w-0 py-12 text-center space-y-4">
             <p className="text-red-500 font-geist font-medium text-lg">Post not found or failed to load.</p>
-            <button 
+            <Button 
+              variant="outline"
+              size="md"
               onClick={() => navigate("/feed")}
-              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+              icon={<ArrowLeft size={16} />}
+              className="text-gray-700 hover:bg-gray-50 border-gray-300"
             >
-              <ArrowLeft size={16} />
               Back to Feed
-            </button>
+            </Button>
           </main>
           <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4 pt-2 sticky top-4 h-[calc(100vh-2rem)] overflow-y-auto">
             <TrendingWidget />
@@ -332,33 +335,35 @@ export function PostDetailPage() {
   const variant = post.event ? "announcement" : post.poll ? "discussion" : "default"
 
   return (
-    <div className="min-h-screen bg-white pb-16 lg:pb-0">
+    <div className="min-h-screen bg-white">
       <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
         <Sidebar />
 
         <main className="flex-1 max-w-[600px] min-w-0 space-y-6">
           {/* Header Action Bar */}
           <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-900 transition-colors py-1 cursor-pointer font-geist font-semibold text-sm group"
+              icon={<ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />}
+              className="text-gray-500 hover:text-gray-900 font-semibold"
             >
-              <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
               Back
-            </button>
+            </Button>
             <div className="flex items-center gap-3">
-              <button
+              <Button
+                variant={copied ? "secondary" : "outline"}
+                size="sm"
                 onClick={handleShareClick}
+                icon={copied ? <Check size={13} className="stroke-[2.5]" /> : <Share2 size={13} />}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold font-geist cursor-pointer transition-all duration-200 select-none shadow-sm",
-                  copied 
-                    ? "bg-green-50 border-green-200 text-green-700" 
-                    : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  "rounded-full text-xs font-semibold px-3 py-1.5 shadow-sm",
+                  copied && "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
                 )}
               >
-                {copied ? <Check size={13} className="stroke-[2.5]" /> : <Share2 size={13} />}
                 {copied ? "Link Copied" : "Share"}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -459,22 +464,16 @@ export function PostDetailPage() {
                 )}
 
                 <div className="flex justify-end">
-                  <button
+                  <Button
                     type="submit"
-                    disabled={!newCommentText.trim() || createComment.isPending}
-                    className={cn(
-                      "px-4 py-1.5 rounded-lg text-[13px] font-geist font-semibold transition-all duration-200 cursor-pointer flex items-center gap-1.5 select-none",
-                      newCommentText.trim() && !createComment.isPending
-                        ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-sm"
-                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    )}
+                    variant="primary"
+                    size="sm"
+                    className="px-4 py-1.5 rounded-lg text-[13px] font-geist font-semibold"
+                    disabled={!newCommentText.trim()}
+                    loading={createComment.isPending}
                   >
-                    {createComment.isPending ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      "Post Comment"
-                    )}
-                  </button>
+                    Post Comment
+                  </Button>
                 </div>
               </div>
             </form>
@@ -638,18 +637,16 @@ export function PostDetailPage() {
                                  </div>
                                )}
 
-                               <button
+                               <Button
                                  type="submit"
-                                 disabled={!newReplyText.trim() || createComment.isPending}
-                                 className={cn(
-                                   "px-3 py-1.5 rounded-lg text-[12px] font-geist font-semibold cursor-pointer shrink-0 transition-all select-none",
-                                   newReplyText.trim() && !createComment.isPending
-                                     ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                 )}
+                                 variant="primary"
+                                 size="sm"
+                                 className="px-3 py-1.5 rounded-lg text-[12px] font-geist font-semibold shrink-0"
+                                 disabled={!newReplyText.trim()}
+                                 loading={createComment.isPending}
                                >
                                  Post
-                               </button>
+                               </Button>
                              </form>
                           )}
                         </div>
@@ -754,12 +751,14 @@ export function PostDetailPage() {
 
                 {commentsData && commentsData.comments.length < commentsData.total && (
                   <div className="flex justify-center pt-4">
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setCommentLimit((prev) => prev + 10)}
-                      className="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150 shadow-sm cursor-pointer select-none"
+                      className="text-xs font-semibold shadow-sm"
                     >
                       Load More Comments
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>

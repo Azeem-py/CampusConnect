@@ -358,7 +358,7 @@ export function SettingsPage() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-surface pb-16 lg:pb-0 animate-scale-in">
+    <div className="min-h-screen bg-surface animate-scale-in">
       <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
         <Sidebar />
 

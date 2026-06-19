@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient';
  * @returns The public CDN URL of the uploaded asset
  */
 export async function uploadPublicFile(
-  folder: 'avatars' | 'banners' | 'posts',
+  folder: 'avatars' | 'banners' | 'posts' | 'notes',
   file: File,
   customPath?: string
 ): Promise<string> {

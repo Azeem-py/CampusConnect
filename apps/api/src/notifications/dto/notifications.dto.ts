@@ -19,7 +19,8 @@ export type NotificationTypeApi =
   | 'REPLY'
   | 'REPOST'
   | 'FOLLOW'
-  | 'SYSTEM';
+  | 'SYSTEM'
+  | 'NOTE_SHARE';
 
 export class NotificationFilterDto {
   @ApiPropertyOptional({ default: 1 })
@@ -37,7 +38,7 @@ export class NotificationFilterDto {
   @Max(100)
   limit?: number;
 
-  @ApiPropertyOptional({ enum: ['MENTION', 'LIKE', 'LIKE_COMMENT', 'COMMENT', 'REPLY', 'REPOST', 'FOLLOW', 'SYSTEM'] })
+  @ApiPropertyOptional({ enum: ['MENTION', 'LIKE', 'LIKE_COMMENT', 'COMMENT', 'REPLY', 'REPOST', 'FOLLOW', 'SYSTEM', 'NOTE_SHARE'] })
   @IsOptional()
   @IsString()
   type?: string;
@@ -51,7 +52,7 @@ export class NotificationFilterDto {
 export class UpdatePreferencesDto {
   @ApiProperty({ example: 'LIKE' })
   @IsString()
-  @IsEnum(['MENTION', 'LIKE', 'LIKE_COMMENT', 'COMMENT', 'REPLY', 'REPOST', 'FOLLOW', 'SYSTEM'])
+  @IsEnum(['MENTION', 'LIKE', 'LIKE_COMMENT', 'COMMENT', 'REPLY', 'REPOST', 'FOLLOW', 'SYSTEM', 'NOTE_SHARE'])
   type!: NotificationTypeApi;
 
   @ApiPropertyOptional({ default: true })

@@ -138,7 +138,7 @@ function renderInlineContent(text: string, key: number | string) {
       case "block":
         return <BlockMath key={`${key}-${i}`} math={seg.value} />
       case "inline":
-        return <InlineMath key={`${key}-${i}`} math={seg.value} />
+        return <span key={`${key}-${i}`} className="overflow-x-auto inline-block max-w-full align-middle"><InlineMath math={seg.value} /></span>
       case "text":
         return <FormattedText key={`${key}-${i}`} text={seg.value} />
     }
@@ -176,14 +176,14 @@ export function renderEnhancedPreview(text: string) {
 
     if (lines.length === 1) {
       return (
-        <div key={i} className="min-h-[1em]">
+        <div key={i} className="min-h-[1em] max-w-full">
           {renderInlineContent(block, i)}
         </div>
       )
     }
 
     return (
-      <div key={i} className="min-h-[1em]">
+      <div key={i} className="min-h-[1em] max-w-full">
         {lines.map((line, j) => (
           <Fragment key={j}>
             {j > 0 && <br />}
@@ -200,7 +200,7 @@ function renderLatexCommands(text: string): React.ReactNode[] {
 
   const fullHtml = renderCommandToHtml(text)
   if (fullHtml) {
-    return [<span key="full" dangerouslySetInnerHTML={{ __html: fullHtml }} />]
+    return [<span key="full" className="overflow-x-auto inline-block max-w-full align-middle" dangerouslySetInnerHTML={{ __html: fullHtml }} />]
   }
 
   const parts: React.ReactNode[] = []
@@ -228,7 +228,7 @@ function renderLatexCommands(text: string): React.ReactNode[] {
     const { cmd } = collected
     const html = renderCommandToHtml(cmd)
     if (html) {
-      parts.push(<span key={idx++} dangerouslySetInnerHTML={{ __html: html }} />)
+      parts.push(<span key={idx++} className="overflow-x-auto inline-block max-w-full align-middle" dangerouslySetInnerHTML={{ __html: html }} />)
     } else {
       parts.push(<Fragment key={idx++}>{cmd}</Fragment>)
     }

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Calendar, Vote as VoteIcon, Check, Trash2, Loader2, ChevronUp, ChevronDown, Share2, Copy, AlertTriangle, User as UserIcon } from "lucide-react"
 import { Avatar } from "../ui/Avatar"
+import { Button } from "../ui/Button"
 import { Tag } from "../ui/Tag"
 import { cn, formatDistanceToNow } from "../../lib/utils"
 import { renderEnhancedPreview } from "../../lib/latex"
@@ -308,6 +310,9 @@ export function FeedCard({
     setBookmarked(nextBookmarked)
     
     toggleBookmark.mutate(targetPostId, {
+      onSuccess: () => {
+        toast(nextBookmarked ? "Added to bookmarks" : "Removed from bookmarks")
+      },
       onError: () => {
         // If offline, do NOT revert the UI because Workbox Background Sync will retry it!
         if (!navigator.onLine) return
@@ -353,45 +358,41 @@ export function FeedCard({
             e.stopPropagation()
             if (displayAuthor.id) navigate(`/profile?userId=${displayAuthor.id}`)
           }}
-          className="flex items-center gap-3 cursor-pointer group/author"
+          className="flex items-center gap-2 sm:gap-3 cursor-pointer group/author"
         >
           <Avatar 
             name={displayAuthor.name} 
             src={displayAuthor.avatar || getAvatarUrl(displayAuthor.name)} 
             size="md" 
-            className="group-hover/author:opacity-90 transition-opacity" 
+            className="h-8 w-8 text-xs sm:h-10 sm:w-10 sm:text-sm group-hover/author:opacity-90 transition-opacity" 
           />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-geist font-semibold text-[15px] text-gray-900 group-hover/author:underline group-hover/author:text-primary">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 overflow-hidden">
+              <span className="font-geist font-semibold text-[13px] sm:text-[15px] text-gray-900 truncate group-hover/author:underline group-hover/author:text-primary">
                 {displayAuthor.name}
               </span>
               {departmentTag && !isSimpleRepost && (
-                <Tag variant="department">{departmentTag}</Tag>
+                <Tag variant="department" className="text-[10px] sm:text-label-sm px-2 sm:px-3 py-0.5 sm:py-1">{departmentTag}</Tag>
               )}
             </div>
-            <span className="text-[13px] text-gray-500 font-inter group-hover/author:text-gray-600">
+            <span className="text-[11px] sm:text-[13px] text-gray-500 font-inter truncate block group-hover/author:text-gray-600">
               {displayAuthor.handle} · {displayTimestamp}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {!isSelf && displayAuthor.id && !isSimpleRepost && (
-            <button
+            <Button
               onClick={(e) => {
                 e.stopPropagation()
                 handleFollowToggle()
               }}
               disabled={followUser.isPending || unfollowUser.isPending}
-              className={cn(
-                "px-3.5 py-1 text-[12px] font-geist font-semibold rounded-full transition-all duration-150 cursor-pointer select-none",
-                isFollowing
-                  ? "bg-gray-50 text-gray-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 border border-gray-200"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-              )}
+              variant={isFollowing ? "secondary" : "primary"}
+              className="rounded-full h-8 px-3.5 text-[12px]"
             >
               {isFollowing ? "Following" : "Follow"}
-            </button>
+            </Button>
           )}
           <div className="relative">
             <button 
@@ -462,14 +463,14 @@ export function FeedCard({
         </div>
       )}
       {displayContent && (
-        <div className="text-[14px] text-gray-800 font-inter leading-relaxed whitespace-pre-wrap break-words">
+        <div className="text-[14px] text-gray-800 font-inter leading-relaxed whitespace-pre-wrap break-words max-w-full">
           {renderEnhancedPreview(displayContent)}
         </div>
       )}
 
       {/* Real-time Clickable Hashtag List */}
       {displayTags && displayTags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pt-1">
+        <div className="flex flex-nowrap gap-1.5 pt-1 overflow-x-auto max-w-full scrollbar-none">
           {displayTags.map((tagObj: any) => {
             const tag = typeof tagObj === "string" ? tagObj : tagObj.name
             return (
@@ -477,9 +478,9 @@ export function FeedCard({
                 key={tag}
                 onClick={(e) => {
                   e.stopPropagation()
-                  navigate(`/explore?query=${encodeURIComponent('#' + tag)}`)
-                }}
-                className="text-[13px] font-semibold font-geist text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors"
+                  navigate(`/explore?query=${encodeURIComponent('#' + tag)}`)}
+                }
+                className="text-[13px] font-semibold font-geist text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors whitespace-nowrap shrink-0"
               >
                 #{tag}
               </span>
@@ -719,7 +720,7 @@ export function FeedCard({
           {isRepostMenuOpen && (
             <>
               <div className="fixed inset-0 z-20" onClick={() => setIsRepostMenuOpen(false)} />
-              <div className="absolute left-0 mt-2 w-72 bg-surface-container-lowest/95 backdrop-blur-md border border-outline-variant/60 rounded-xl shadow-xl z-30 p-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute left-0 mt-2 w-72 max-w-[calc(100vw-2rem)] bg-surface-container-lowest/95 backdrop-blur-md border border-outline-variant/60 rounded-xl shadow-xl z-30 p-2 animate-in fade-in slide-in-from-top-2 duration-200">
                 {/* Repost Button */}
                 <button
                   onClick={(e) => {
@@ -921,22 +922,16 @@ export function FeedCard({
                 disabled={createComment.isPending}
                 className="w-full px-3.5 py-2 text-[13px] font-inter text-gray-800 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/80 transition-all duration-200 placeholder-gray-400"
               />
-              <button
+              <Button
                 type="submit"
-                disabled={!newCommentText.trim() || createComment.isPending}
-                className={cn(
-                  "px-4 py-1.5 rounded-lg text-[13px] font-geist font-semibold transition-all duration-200 cursor-pointer flex items-center gap-1.5 shrink-0 select-none",
-                  newCommentText.trim() && !createComment.isPending
-                    ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]"
-                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                )}
+                variant="primary"
+                size="sm"
+                className="px-4 py-1.5 rounded-lg text-[13px] font-geist font-semibold shrink-0"
+                disabled={!newCommentText.trim()}
+                loading={createComment.isPending}
               >
-                {createComment.isPending ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  "Post"
-                )}
-              </button>
+                Post
+              </Button>
             </div>
           </form>
 
@@ -1079,18 +1074,16 @@ export function FeedCard({
                               className="flex-1 px-3 py-1.5 text-[12px] font-inter text-gray-800 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500/80 transition-all placeholder-gray-400"
                               autoFocus
                             />
-                            <button
+                            <Button
                               type="submit"
-                              disabled={!newReplyText.trim() || createComment.isPending}
-                              className={cn(
-                                "px-3 py-1.5 rounded-lg text-[12px] font-geist font-semibold cursor-pointer shrink-0 transition-all select-none",
-                                newReplyText.trim() && !createComment.isPending
-                                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              )}
+                              variant="primary"
+                              size="sm"
+                              className="px-3 py-1.5 rounded-lg text-[12px] font-geist font-semibold shrink-0"
+                              disabled={!newReplyText.trim()}
+                              loading={createComment.isPending}
                             >
                               Post
-                            </button>
+                            </Button>
                           </form>
                         )}
                       </div>
@@ -1266,25 +1259,23 @@ export function FeedCard({
 
               {/* Actions */}
               <div className="pt-3.5 border-t border-outline-variant/30 flex items-center justify-end gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => setIsQuoteDialogOpen(false)}
-                  className="px-4 py-2 rounded-lg text-[13px] font-geist font-semibold text-on-surface-variant hover:bg-surface-container-high transition-all duration-150 cursor-pointer"
+                  className="px-4 py-2 rounded-lg text-[13px] font-geist font-semibold text-on-surface-variant hover:bg-surface-container-high transition-all duration-150"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={!quoteCommentary.trim() || quoteMutation.isPending}
-                  className={cn(
-                    "px-5 py-2 rounded-lg text-[13px] font-geist font-semibold transition-all duration-150 cursor-pointer select-none",
-                    quoteCommentary.trim() && !quoteMutation.isPending
-                      ? "bg-primary text-on-primary hover:bg-primary/95 shadow-sm active:scale-[0.98]"
-                      : "bg-surface-container-low text-on-surface-variant/40 cursor-not-allowed border border-outline-variant/20"
-                  )}
+                  variant="primary"
+                  disabled={!quoteCommentary.trim()}
+                  loading={quoteMutation.isPending}
+                  className="px-5 py-2 rounded-lg text-[13px] font-geist font-semibold"
                 >
                   Post Quote
-                </button>
+                </Button>
               </div>
             </form>
           </div>

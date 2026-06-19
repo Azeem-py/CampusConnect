@@ -217,7 +217,7 @@ export class NotificationsService {
 
   async seedDefaultPreferences(userId: string) {
     const types: NotificationTypeApi[] = [
-      'MENTION', 'LIKE', 'LIKE_COMMENT', 'COMMENT', 'REPLY', 'REPOST', 'FOLLOW', 'SYSTEM',
+      'MENTION', 'LIKE', 'LIKE_COMMENT', 'COMMENT', 'REPLY', 'REPOST', 'FOLLOW', 'SYSTEM', 'NOTE_SHARE',
     ];
     const existing = await this.prisma.notificationPreference.findMany({
       where: { userId },
@@ -263,6 +263,7 @@ export class NotificationsService {
       REPOST: 'reposted your post',
       FOLLOW: 'followed you',
       SYSTEM: 'sent a system notification',
+      NOTE_SHARE: 'shared a note with you',
     };
     return labels[type] ?? 'interacted with you';
   }

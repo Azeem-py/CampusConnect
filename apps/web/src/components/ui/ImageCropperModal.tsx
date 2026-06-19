@@ -213,7 +213,7 @@ export function ImageCropperModal({ src, fileName, onClose, onSave }: ImageCropp
           <Button variant="outline" size="sm" onClick={onClose} className="px-4">
             Cancel
           </Button>
-          <Button variant="primary" size="sm" onClick={handleSave} className="px-4" style={{ color: "#ffffff" }}>
+          <Button variant="primary" size="sm" onClick={handleSave} className="px-4">
             Apply Crop
           </Button>
         </div>

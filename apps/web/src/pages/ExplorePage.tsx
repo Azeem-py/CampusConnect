@@ -64,7 +64,7 @@ export function ExplorePage() {
   const posts = data?.posts || []
 
   return (
-    <div className="min-h-screen bg-surface pb-16 lg:pb-0">
+    <div className="min-h-screen bg-surface">
       <div className="mx-auto max-w-7xl flex gap-6 px-4 lg:px-6 pt-4">
         <Sidebar />
 

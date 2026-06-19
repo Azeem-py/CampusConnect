@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { Toaster } from "sonner"
 import { AppLayout } from "./components/layout/AppLayout"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { NotificationProvider } from "./contexts/NotificationContext"
@@ -9,6 +11,8 @@ import { HomePage } from "./pages/HomePage"
 import { ExplorePage } from "./pages/ExplorePage"
 import { ProfilePage } from "./pages/ProfilePage"
 import { CreatePostPage } from "./pages/CreatePostPage"
+import { CreateNotePage } from "./pages/CreateNotePage"
+import { NoteDetailPage } from "./pages/NoteDetailPage"
 import { NotificationsPage } from "./pages/NotificationsPage"
 import { SettingsPage } from "./pages/SettingsPage"
 import { PostDetailPage } from "./pages/PostDetailPage"
@@ -53,6 +57,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const [toastPosition, setToastPosition] = useState<"top-center" | "top-right">("top-right")
+
+  useEffect(() => {
+    const checkWidth = () => setToastPosition(window.innerWidth < 768 ? "top-center" : "top-right")
+    checkWidth()
+    window.addEventListener("resize", checkWidth)
+    return () => window.removeEventListener("resize", checkWidth)
+  }, [])
+
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -66,6 +79,9 @@ function App() {
             <Route path="/explore" element={<ProtectedRoute><ExplorePage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreatePostPage /></ProtectedRoute>} />
+            <Route path="/notes/create" element={<ProtectedRoute><CreateNotePage /></ProtectedRoute>} />
+            <Route path="/notes/:id" element={<ProtectedRoute><NoteDetailPage /></ProtectedRoute>} />
+            <Route path="/notes/:id/edit" element={<ProtectedRoute><CreateNotePage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/post/:id" element={<ProtectedRoute><PostDetailPage /></ProtectedRoute>} />
@@ -95,6 +111,7 @@ function App() {
               <Route path="groups/:groupId/quizzes/:quizId/attempt/:attemptId" element={<AttemptResultPage />} />
             </Route>
           </Routes>
+          <Toaster position={toastPosition} richColors closeButton />
         </AppLayout>
         </NotificationProvider>
       </AuthProvider>
