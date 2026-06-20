@@ -30,9 +30,27 @@ export function Footer() {
             </Link>
           </nav>
         </div>
-        <p className="mt-6 text-center text-label-sm text-on-surface-variant/60 font-inter">
-          &copy; 2024 Logos. Precision in Academic Discourse.
-        </p>
+        <div className="mt-6 text-center text-label-sm text-on-surface-variant/60 font-inter space-y-1">
+          <p>&copy; {new Date().getFullYear()} Logos. Precision in Academic Discourse.</p>
+          <p>
+            Built by{" "}
+            <a
+              href="https://devazeem.cv"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/80 transition-colors"
+            >
+              Azeem
+            </a>{" "}
+            &mdash;{" "}
+            <a
+              href="mailto:bljazeem@gmail.com"
+              className="text-primary hover:text-primary/80 transition-colors"
+            >
+              bljazeem@gmail.com
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   )
