@@ -1,55 +1,47 @@
-import { FlaskConical } from "lucide-react"
-import { Link } from "react-router-dom"
-
 export function Footer() {
   return (
-    <footer className="border-t border-outline-variant/15 bg-surface">
-      <div className="mx-auto max-w-7xl px-4 lg:px-6 py-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <Link to="/" className="flex items-center gap-2 no-underline">
-            <FlaskConical size={20} className="text-primary" />
-            <span className="font-geist font-bold text-title-md text-on-surface">
-              Logos
-            </span>
-          </Link>
-          <nav className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-label-sm text-on-surface-variant font-geist">
-            <Link to="/" className="hover:text-on-surface transition-colors no-underline">
-              Privacy Policy
-            </Link>
-            <Link to="/" className="hover:text-on-surface transition-colors no-underline">
-              Terms of Service
-            </Link>
-            <Link to="/" className="hover:text-on-surface transition-colors no-underline">
-              Institutional Access
-            </Link>
-            <Link to="/" className="hover:text-on-surface transition-colors no-underline">
-              API Documentation
-            </Link>
-            <Link to="/" className="hover:text-on-surface transition-colors no-underline">
-              Contact Support
-            </Link>
-          </nav>
-        </div>
-        <div className="mt-6 text-center text-label-sm text-on-surface-variant/60 font-inter space-y-1">
-          <p>&copy; {new Date().getFullYear()} Logos. Precision in Academic Discourse.</p>
-          <p>
-            Built by{" "}
-            <a
-              href="https://devazeem.cv"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:text-primary/80 transition-colors"
-            >
-              Azeem
-            </a>{" "}
-            &mdash;{" "}
-            <a
-              href="mailto:bljazeem@gmail.com"
-              className="text-primary hover:text-primary/80 transition-colors"
-            >
-              bljazeem@gmail.com
-            </a>
+    <footer className="w-full pt-16 pb-12 border-t border-outline-variant bg-surface-container">
+      <div className="max-w-7xl mx-auto px-5 md:px-20 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        <div className="col-span-2 lg:col-span-2 mb-8 md:mb-0">
+          <div className="font-geist font-bold tracking-tight text-on-surface lp-headline-sm mb-4">
+            Logos
+          </div>
+          <p className="font-mono text-xs text-on-surface-variant mt-8" style={{ letterSpacing: "0.5px", lineHeight: "16px", fontWeight: 500 }}>
+            &copy; {new Date().getFullYear()} Logos. All rights reserved. Defined by precision.
           </p>
+        </div>
+
+        <div>
+          <h4 className="font-geist text-on-surface font-medium mb-4" style={{ fontSize: "22px", lineHeight: "28px" }}>Platform</h4>
+          <ul className="space-y-3">
+            <li><a href="#" className="font-inter text-on-surface-variant hover:text-on-surface hover:underline transition-all no-underline" style={{ fontSize: "16px", lineHeight: "24px" }}>Product</a></li>
+            <li><a href="#" className="font-inter text-on-surface-variant hover:text-on-surface hover:underline transition-all no-underline" style={{ fontSize: "16px", lineHeight: "24px" }}>Features</a></li>
+            <li><a href="#" className="font-inter text-on-surface-variant hover:text-on-surface hover:underline transition-all no-underline" style={{ fontSize: "16px", lineHeight: "24px" }}>Pricing</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="font-geist text-on-surface font-medium mb-4" style={{ fontSize: "22px", lineHeight: "28px" }}>Company</h4>
+          <ul className="space-y-3">
+            <li><a href="#" className="font-inter text-on-surface-variant hover:text-on-surface hover:underline transition-all no-underline" style={{ fontSize: "16px", lineHeight: "24px" }}>About Us</a></li>
+            <li><a href="#" className="font-inter text-on-surface-variant hover:text-on-surface hover:underline transition-all no-underline" style={{ fontSize: "16px", lineHeight: "24px" }}>Team</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="font-geist text-on-surface font-medium mb-4" style={{ fontSize: "22px", lineHeight: "28px" }}>Resources</h4>
+          <ul className="space-y-3">
+            <li><a href="#" className="font-inter text-on-surface-variant hover:text-on-surface hover:underline transition-all no-underline" style={{ fontSize: "16px", lineHeight: "24px" }}>Support</a></li>
+            <li><a href="#" className="font-inter text-on-surface-variant hover:text-on-surface hover:underline transition-all no-underline" style={{ fontSize: "16px", lineHeight: "24px" }}>FAQ</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="font-geist text-on-surface font-medium mb-4" style={{ fontSize: "22px", lineHeight: "28px" }}>Legal</h4>
+          <ul className="space-y-3">
+            <li><a href="#" className="font-inter text-on-surface-variant hover:text-on-surface hover:underline transition-all no-underline" style={{ fontSize: "16px", lineHeight: "24px" }}>Privacy Policy</a></li>
+            <li><a href="#" className="font-inter text-on-surface-variant hover:text-on-surface hover:underline transition-all no-underline" style={{ fontSize: "16px", lineHeight: "24px" }}>Terms of Service</a></li>
+          </ul>
         </div>
       </div>
     </footer>

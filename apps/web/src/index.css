@@ -5,6 +5,12 @@
   --font-inter: "Inter", sans-serif;
   --font-jetbrains-mono: "JetBrains Mono", monospace;
 
+  --spacing-section-gap: 64px;
+  --spacing-page-margin-mobile: 20px;
+  --spacing-container-max: 1280px;
+  --spacing-gutter: 24px;
+  --spacing-page-margin-desktop: 80px;
+
   --font-display: "Geist", sans-serif;
   --font-headline: "Geist", sans-serif;
   --font-title: "Geist", sans-serif;
